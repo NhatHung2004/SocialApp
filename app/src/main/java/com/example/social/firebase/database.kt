@@ -7,6 +7,8 @@ import androidx.navigation.NavController
 import com.example.social.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
@@ -21,7 +23,7 @@ object Database {
                 .addOnCompleteListener{task->
                     if (task.isSuccessful){
                         Toast.makeText(context,"Successfully logged in", Toast.LENGTH_SHORT).show()
-                        navController.navigate(Routes.HOME)
+                        navController.navigate(Routes.TAC_VU)
                     }else{
                         Toast.makeText(context,task.exception?.message?:"Something went wrong", Toast.LENGTH_SHORT).show()
                     }
@@ -44,14 +46,16 @@ object Database {
         }
     }
 
-    private fun addUser(user: FirebaseUser, displayName: String) {
+    private fun addUser(user: FirebaseUser, userName: String) {
         val data = hashMapOf(
             "uid" to user.uid,
             "email" to user.email,
-            "displayName" to displayName
+            "displayName" to userName,
         )
-
-        db.collection("users").document(user.uid)
-            .set(data)
+        val profileUpdates = userProfileChangeRequest {
+            displayName = userName
+        }
+        user.updateProfile(profileUpdates)
+        db.collection("users").document(user.uid).set(data)
     }
 }

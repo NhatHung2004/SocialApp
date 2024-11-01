@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.social.layouts.HomeScreen
 import com.example.social.layouts.SignInScreen
 import com.example.social.layouts.SignUpScreen
+import com.example.social.layouts.TacVu2
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -19,7 +20,7 @@ fun Navigation(modifier: Modifier) {
         composable(Routes.SIGN_IN) {
             SignInScreen(navController, Modifier)
         }
-        composable(Routes.HOME) { HomeScreen(navController) }
         composable(Routes.SIGN_UP) { SignUpScreen(navController) }
+        composable(Routes.TAC_VU) { TacVu2(navController) }
     }
 }

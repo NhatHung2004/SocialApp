@@ -68,7 +68,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(colorResource(R.color.primary_color).copy(0.25f)),
+            .background(colorResource(R.color.pink).copy(0.25f)),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -93,7 +93,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                     fontSize = 45.sp,
                     fontFamily = FontFamily(Font(R.font.jaro)),
                     fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.primary_color),
+                    color = colorResource(R.color.pink),
                     modifier =  Modifier.padding(0.dp, 0.dp, 0.dp, 20.dp)
                 )
                 TextField(
@@ -165,7 +165,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                     },
                     colors = ButtonColors(
                         containerColor = Color.White,
-                        contentColor = colorResource(R.color.primary_color),
+                        contentColor = colorResource(R.color.pink),
                         disabledContainerColor = Color.Gray,
                         disabledContentColor = Color.Black
                     ),
@@ -187,7 +187,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                     TextButton(onClick = {}) {
                         Text(
                             text = "password",
-                            color = colorResource(R.color.text_color),
+                            color = colorResource(R.color.pinkBlur),
                             fontSize = 15.sp
                         )
                     }
@@ -202,7 +202,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                     }) {
                         Text(
                             text = "account",
-                            color = colorResource(R.color.text_color),
+                            color = colorResource(R.color.pinkBlur),
                             fontSize = 15.sp
                         )
                     }

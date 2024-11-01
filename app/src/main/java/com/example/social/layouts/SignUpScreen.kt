@@ -28,6 +28,8 @@ import androidx.navigation.NavController
 import com.example.social.R
 import androidx.compose.ui.platform.LocalContext
 import com.example.social.firebase.Database
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun SignUpScreen(navController: NavController) {
@@ -52,7 +54,7 @@ fun SignUpScreen(navController: NavController) {
             fontSize = 45.sp,
             fontFamily = FontFamily(Font(R.font.jaro)),
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.primary_color),
+            color = colorResource(R.color.pink),
             modifier =  Modifier.padding(0.dp, 0.dp, 0.dp, 20.dp)
         )
         TextField(
