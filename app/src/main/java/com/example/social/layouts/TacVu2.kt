@@ -21,6 +21,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -53,15 +54,14 @@ fun TacVu2(navController: NavController){
     // trang được xác định bởi số lượng mục trong enum HomeTabs.
     val selectedIndex = remember { derivedStateOf { pagerState.currentPage } }//Tạo một state được tính toán dựa trên trang hiện tại của HorizontalPager.
     // Khi trang thay đổi, giá trị này sẽ tự động cập nhật.
-    val navController= rememberNavController()
+    val navController = rememberNavController()
     //Hai dòng lệnh này đóng vai trò quan trọng trong việc theo dõi màn hình hiện tại trong
     // NavController và xác định liệu bạn đang ở màn hình AllFreindReq hay không
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf("AllFreindReq", "AllFreindSend", "allFreind","profileEdit")
+    val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf("AllFriendReq", "AllFriendSend", "AllFriend","ProfileEdit")
     Scaffold(//Cau truc xay dung giao dien
         containerColor = Color.White,
         topBar = {//cai nay la top bar chua "TÊN APP"(phần trên cùng)
-
             if (selectedIndex.value == HomeTabs.Home.ordinal ) { // Nếu mục Home được chọn thì
                 TopAppBar(
                     title = {
@@ -73,8 +73,10 @@ fun TacVu2(navController: NavController){
 
                         )
                     },
-                    colors = TopAppBarDefaults.smallTopAppBarColors( // Thiết lập màu cho TopAppBar
-                        containerColor = Color.White)
+                    colors = topAppBarColors(
+                        // Thiết lập màu cho TopAppBar
+                        containerColor = Color.White
+                    )
                 ) // -> TOPBAR mới xuất hiện
             }
         }
@@ -109,7 +111,6 @@ fun TacVu2(navController: NavController){
                                     pagerState.animateScrollToPage(currentTab.ordinal)
                                 }
                             },
-
                             icon = {
                                 Icon(
                                     painter = painterResource(
@@ -117,9 +118,8 @@ fun TacVu2(navController: NavController){
                                             currentTab.selectedIcon else currentTab.unSelectedIcon
                                     ),
                                     contentDescription = "Tab icon",
-                                    modifier = Modifier.size(24.dp),
-
-                                    )
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                         )
                     }
@@ -145,39 +145,39 @@ fun TacVu2(navController: NavController){
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
                                     navController = navController,
-                                    startDestination = "friendScreen",
+                                    startDestination = "FriendScreen",
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    composable("friendScreen") {
+                                    composable("FriendScreen") {
                                         FriendScreen(navController)
                                     }
-                                    composable("AllFreindReq") {
+                                    composable("AllFriendReq") {
                                         AllFriendReq()
                                     }
-                                    composable("AllFreindSend") {
+                                    composable("AllFriendSend") {
                                         AllFriendSend()
                                     }
                                 }
                             }
                         }
                         HomeTabs.Status -> {
-                            statusScreen()
+                            StatusScreen()
                         }
                         HomeTabs.Notification -> NoficationScreen()
                         HomeTabs.Profile -> {
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
                                     navController = navController,
-                                    startDestination = "profileScreen",
+                                    startDestination = "ProfileScreen",
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    composable("profileScreen") {
+                                    composable("ProfileScreen") {
                                         ProfileScreen(navController)
                                     }
-                                    composable("allFreind") {
+                                    composable("AllFriend") {
                                         AllFriend()
                                     }
-                                    composable("profileEdit") {
+                                    composable("ProfileEdit") {
                                         ProfileEdit()
                                     }
                                 }
@@ -191,8 +191,8 @@ fun TacVu2(navController: NavController){
 }
 enum class HomeTabs(// Định nghĩa một enum để đại diện cho các tab trong ứng dụng
     val selectedIcon: Int,
-    val unSelectedIcon:Int,
-    val text:String
+    val unSelectedIcon: Int,
+    val text: String
 ){
     Home(
         selectedIcon= R.drawable.home,
@@ -202,12 +202,12 @@ enum class HomeTabs(// Định nghĩa một enum để đại diện cho các ta
     Friend(
         selectedIcon = R.drawable.friends,
         unSelectedIcon = R.drawable.friends,
-        text = "Status"
+        text = "Friend"
     ),
     Status(
         selectedIcon = R.drawable.plus,
         unSelectedIcon = R.drawable.plus,
-        text = "Friend"
+        text = "Status"
     ),
     Notification(
         selectedIcon = R.drawable.alert,

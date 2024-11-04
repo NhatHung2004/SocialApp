@@ -7,7 +7,6 @@ import androidx.navigation.NavController
 import com.example.social.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -31,13 +30,14 @@ object Database {
         }
     }
 
-    fun signup(email : String, password : String, displayName : String, navController: NavController, context: Context){
+    fun signup(email : String, password : String, ho : String, ten : String, gioiTinh : String, date : String, navController: NavController, context: Context){
         if(email.isNotEmpty() && password.isNotEmpty()){
+            val displayName = "$ho $ten"
             FirebaseAuth.getInstance().createUserWithEmailAndPassword(email,password)
                 .addOnCompleteListener{ task->
                     if (task.isSuccessful){
                         Toast.makeText(context, "Create account successfully", Toast.LENGTH_SHORT).show()
-                        addUser(task.result.user!!, displayName)
+                        addUser(task.result.user!!, displayName, gioiTinh, date)
                         navController.navigate(Routes.SIGN_IN)
                     }else{
                         Toast.makeText(context, task.exception?.message?:"Something went wrong", Toast.LENGTH_SHORT).show()
@@ -46,11 +46,13 @@ object Database {
         }
     }
 
-    private fun addUser(user: FirebaseUser, userName: String) {
+    private fun addUser(user: FirebaseUser, userName: String, gioiTinh: String, date: String) {
         val data = hashMapOf(
             "uid" to user.uid,
             "email" to user.email,
             "displayName" to userName,
+            "sex" to gioiTinh,
+            "date" to date
         )
         val profileUpdates = userProfileChangeRequest {
             displayName = userName

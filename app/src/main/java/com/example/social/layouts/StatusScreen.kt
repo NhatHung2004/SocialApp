@@ -1,10 +1,8 @@
 package com.example.social.layouts
 
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,14 +15,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -49,7 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.example.social.R
 
 @Composable
-fun statusScreen(){
+fun StatusScreen(){
     Column(
         modifier = Modifier
             .fillMaxSize() // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
@@ -64,20 +61,20 @@ fun statusScreen(){
             verticalArrangement = Arrangement.Top, // Căn đều theo chiều dọc
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            firstLine2() // Đặt firstLine2 ở trên
-            Divider(
-                color = colorResource(R.color.pink),
-                thickness = 1.dp
+            FirstLine2() // Đặt firstLine2 ở trên
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = colorResource(R.color.pink)
             )
             Spacer(Modifier.height(15.dp))
 
             // Thêm TextField trực tiếp vào Column
-            textFieldStatus() // Đặt textFieldStatus ở dưới
+            TextFieldStatus() // Đặt textFieldStatus ở dưới
         }
 
-        Divider(
-            color = colorResource(R.color.pink),
-            thickness = 1.dp
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = colorResource(R.color.pink)
         )
         // Box ở dưới cùng
         Box(
@@ -135,7 +132,7 @@ fun statusScreen(){
     }
 }
 @Composable
-fun firstLine2(){
+fun FirstLine2(){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -161,11 +158,11 @@ fun firstLine2(){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun textFieldStatus(){
+fun TextFieldStatus(){
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
     Row() {
-        getHinhDaiDienStatus(R.drawable.avt2)
+        GetHinhDaiDienStatus(R.drawable.avt2)
         TextField(
             value = text,
             onValueChange = { newText -> text = newText },
@@ -183,16 +180,16 @@ fun textFieldStatus(){
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White),
-            colors = TextFieldDefaults.textFieldColors(
-                containerColor = Color.White,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
+                colors = TextFieldDefaults.textFieldColors(
+                    containerColor = Color.White,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent
+                ),
         )
     }
 }
 @Composable
-fun getHinhDaiDienStatus(img2 : Int){
+fun GetHinhDaiDienStatus(img2 : Int){
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(8.dp)) // Thêm spacer ở đây để đẩy hình ảnh xuống
         Image(

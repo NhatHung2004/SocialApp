@@ -1,8 +1,6 @@
 package com.example.social.layouts
 
-import android.content.Context
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -47,9 +45,6 @@ import androidx.navigation.NavController
 import com.example.social.R
 import com.example.social.Routes
 import com.example.social.firebase.Database
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -89,7 +84,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = "Sign in",
+                    text = "Sign In",
                     fontSize = 45.sp,
                     fontFamily = FontFamily(Font(R.font.jaro)),
                     fontWeight = FontWeight.Bold,
@@ -187,7 +182,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                     TextButton(onClick = {}) {
                         Text(
                             text = "password",
-                            color = colorResource(R.color.pinkBlur),
+                            color = colorResource(R.color.text_color),
                             fontSize = 15.sp
                         )
                     }
@@ -202,7 +197,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                     }) {
                         Text(
                             text = "account",
-                            color = colorResource(R.color.pinkBlur),
+                            color = colorResource(R.color.text_color),
                             fontSize = 15.sp
                         )
                     }
