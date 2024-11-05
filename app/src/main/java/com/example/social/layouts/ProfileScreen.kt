@@ -193,7 +193,7 @@ fun Firstline5(navController: NavController){
                         fontSize = 12.sp,
                         modifier= Modifier
                             .padding(start = 11.dp)
-                            .offset(y = -1.dp)
+                            .offset(y = (-1).dp)
                         )
                     }
             }
