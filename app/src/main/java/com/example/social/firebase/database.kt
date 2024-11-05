@@ -2,6 +2,7 @@ package com.example.social.firebase
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import android.widget.Toast
 import androidx.navigation.NavController
 import com.example.social.Routes
@@ -30,14 +31,14 @@ object Database {
         }
     }
 
-    fun signup(email : String, password : String, ho : String, ten : String, gioiTinh : String, date : String, navController: NavController, context: Context){
+    fun signup(email : String, password : String, ho : String, ten : String, gioiTinh : String, date : String, avatar: Int, backgroundAvatar: Int, navController: NavController, context: Context){
         if(email.isNotEmpty() && password.isNotEmpty()){
             val displayName = "$ho $ten"
             FirebaseAuth.getInstance().createUserWithEmailAndPassword(email,password)
                 .addOnCompleteListener{ task->
                     if (task.isSuccessful){
                         Toast.makeText(context, "Create account successfully", Toast.LENGTH_SHORT).show()
-                        addUser(task.result.user!!, displayName, gioiTinh, date)
+                        addUser(task.result.user!!, displayName, gioiTinh, date, avatar, backgroundAvatar)
                         navController.navigate(Routes.SIGN_IN)
                     }else{
                         Toast.makeText(context, task.exception?.message?:"Something went wrong", Toast.LENGTH_SHORT).show()
@@ -46,16 +47,19 @@ object Database {
         }
     }
 
-    private fun addUser(user: FirebaseUser, userName: String, gioiTinh: String, date: String) {
+    private fun addUser(user: FirebaseUser, userName: String, gioiTinh: String, date: String, avatar: Int, backgroundAvatar: Int) {
         val data = hashMapOf(
             "uid" to user.uid,
             "email" to user.email,
             "displayName" to userName,
             "sex" to gioiTinh,
-            "date" to date
+            "date" to date,
+            "photoUri" to Uri.parse("android.resource://com.example.social/drawable/$avatar"),
+            "backgroundAvatar" to Uri.parse("android.resource://com.example.social/drawable/$backgroundAvatar")
         )
         val profileUpdates = userProfileChangeRequest {
             displayName = userName
+            photoUri = Uri.parse("android.resource://com.example.social/drawable/$avatar")
         }
         user.updateProfile(profileUpdates)
         db.collection("users").document(user.uid).set(data)

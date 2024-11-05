@@ -40,11 +40,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil3.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.db.userPostDataProvider
 import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @Composable
 fun ProfileScreen(navController: NavController){
@@ -78,7 +81,8 @@ fun ProfileScreen(navController: NavController){
         ) {
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
-                Button(onClick={isPressed = !isPressed },
+                Button(
+                    onClick = { isPressed = !isPressed },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White
                     ),
@@ -103,7 +107,8 @@ fun ProfileScreen(navController: NavController){
                     }
                 }
                 Spacer(Modifier.width(95.dp))
-                Button(onClick={},
+                Button(
+                    onClick = {},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White
                     ),
@@ -120,15 +125,21 @@ fun ProfileScreen(navController: NavController){
         }
     }
 }
+
 @Composable
 fun Firstline5(navController: NavController){
     Column(modifier= Modifier.fillMaxWidth()){
-        Box(modifier = Modifier.fillMaxWidth().height(195.dp)) {
-            GetHinhDaiDienProfile(R.drawable.hinhbia)
-            Box(modifier = Modifier.fillMaxWidth().padding(start = 25.dp)
-                .align(Alignment.BottomStart).offset(y = 1.dp)) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(195.dp)) {
+            GetNenHinhDaiDien()
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 25.dp)
+                .align(Alignment.BottomStart)
+                .offset(y = 1.dp)) {
                 Row( verticalAlignment = Alignment.CenterVertically) {
-                    GetHinhDaiDienProfile1(R.drawable.avt2)
+                    GetHinhDaiDienProfile()
                     Spacer(Modifier.width(15.dp))
                     Box(modifier=Modifier.offset(y=25.dp)){
                         Row() {
@@ -180,7 +191,9 @@ fun Firstline5(navController: NavController){
                         text = "Chỉnh sửa trang cá nhân",
                         color = colorResource(R.color.pink),
                         fontSize = 12.sp,
-                        modifier=Modifier.padding(start = 11.dp).offset(y=-1.dp)
+                        modifier= Modifier
+                            .padding(start = 11.dp)
+                            .offset(y = -1.dp)
                         )
                     }
             }
@@ -190,7 +203,9 @@ fun Firstline5(navController: NavController){
 @Composable
 fun FriendLine(navController: NavController){
     Column(){
-        Row(modifier=Modifier.fillMaxWidth().padding(start =15.dp,end=15.dp)){
+        Row(modifier= Modifier
+            .fillMaxWidth()
+            .padding(start = 15.dp, end = 15.dp)){
             Text(text="Bạn bè", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
                 color=Color.Gray,
                 modifier = Modifier.alpha(0.5f)
@@ -201,7 +216,10 @@ fun FriendLine(navController: NavController){
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White
                 ),
-                modifier = Modifier.width(165.dp).offset(y = -4.dp).height(30.dp)
+                modifier = Modifier
+                    .width(165.dp)
+                    .offset(y = -4.dp)
+                    .height(30.dp)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ không gian của Button
@@ -215,8 +233,11 @@ fun FriendLine(navController: NavController){
                 }
             }
         }
-        Column(modifier = Modifier.fillMaxWidth().padding(start = 15.dp, end = 15.dp),
-           ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 15.dp, end = 15.dp),
+        ) {
             // Chia danh sách thành các hàng 3 phần tử
             userPostDataProvider.friendList.chunked(3).forEach { friendRow ->
                 Row(
@@ -255,22 +276,31 @@ fun FriendLine(navController: NavController){
     }
 }
 @Composable
-fun GetHinhDaiDienProfile(img2 : Int){
-        // Ảnh chính
-        Image(
-            painter = painterResource(img2),
-            contentDescription = "Main Image",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .border(5.dp, colorResource(R.color.pinkBlur)) // Viền ảnh chính
-        )
+fun GetNenHinhDaiDien(){
+    // Ảnh chính
+    var backgroundAvatar by remember { mutableStateOf("") }
+    val db = FirebaseFirestore.getInstance()
+    val docRef = db.collection("users").document(Firebase.auth.currentUser!!.uid)
+    docRef.get().addOnSuccessListener { documentSnapshot: DocumentSnapshot ->
+        if (documentSnapshot.exists()) {
+            backgroundAvatar = documentSnapshot.getString("backgroundAvatar").toString()
+        }
+    }
+    Image(
+        painter = rememberAsyncImagePainter(model = backgroundAvatar),
+        contentDescription = "Main Image",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp)
+            .border(5.dp, colorResource(R.color.pinkBlur)) // Viền ảnh chính
+    )
 }
 @Composable
-fun GetHinhDaiDienProfile1(img2 : Int){
+fun GetHinhDaiDienProfile(){
+    val avatar = Firebase.auth.currentUser?.photoUrl
     Image(
-        painter = painterResource(img2),
+        painter = rememberAsyncImagePainter(model = avatar),
         contentDescription = "Circular Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier

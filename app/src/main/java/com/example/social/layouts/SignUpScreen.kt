@@ -70,6 +70,9 @@ fun SignUpScreen(navController: NavController) {
     var sex by remember { mutableStateOf("") }
     val sexOptions = listOf("Nam", "Nữ", "Khác")
 
+    val avatar = if (sex == "Nam") R.drawable.nam else if (sex == "Nữ") R.drawable.nu else R.drawable.khac
+    val backgroundAvatar = R.drawable.background
+
     var date by remember { mutableStateOf("") }
     val calendar = Calendar.getInstance()
     val year = calendar.get(Calendar.YEAR)
@@ -477,7 +480,7 @@ fun SignUpScreen(navController: NavController) {
                 ) {
                     Button(
                         onClick = {
-                            Database.signup(emailInput, password, ho, ten, sex, date, navController, context)
+                            Database.signup(emailInput, password, ho, ten, sex, date, avatar, backgroundAvatar, navController, context)
                         },
                         colors = ButtonColors(
                             containerColor = Color.White,
