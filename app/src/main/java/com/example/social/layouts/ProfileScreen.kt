@@ -1,5 +1,7 @@
 package com.example.social.layouts
 
+import android.content.Context
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,7 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,24 +36,27 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.compose.rememberAsyncImagePainter
+import coil3.compose.AsyncImage
 import com.example.social.R
+import com.example.social.Routes
 import com.example.social.db.userPostDataProvider
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.social.firebase.Database
 
 
 @Composable
 fun ProfileScreen(navController: NavController){
     var isPressed by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize(), // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
@@ -59,7 +64,7 @@ fun ProfileScreen(navController: NavController){
     ) {
         LazyColumn() {
             item {
-                Firstline5(navController)
+                Firstline5(navController, context)
             }
             item {
                 Spacer(Modifier.height(15.dp))
@@ -67,9 +72,9 @@ fun ProfileScreen(navController: NavController){
             }
         }
         Spacer(Modifier.height(185.dp))
-        Divider(
-            color = colorResource(R.color.pink),
-            thickness = 1.dp
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = colorResource(R.color.pink)
         )
         // Box ở dưới cùng
         Box(
@@ -127,19 +132,19 @@ fun ProfileScreen(navController: NavController){
 }
 
 @Composable
-fun Firstline5(navController: NavController){
+fun Firstline5(navController: NavController, context: Context){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(195.dp)) {
-            GetNenHinhDaiDien()
+            GetNenHinhDaiDien(context)
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 25.dp)
                 .align(Alignment.BottomStart)
                 .offset(y = 1.dp)) {
                 Row( verticalAlignment = Alignment.CenterVertically) {
-                    GetHinhDaiDienProfile()
+                    GetHinhDaiDienProfile(context)
                     Spacer(Modifier.width(15.dp))
                     Box(modifier=Modifier.offset(y=25.dp)){
                         Row() {
@@ -170,7 +175,7 @@ fun Firstline5(navController: NavController){
             )
             Spacer(Modifier.weight(1f))
             Button(
-                onClick = {navController.navigate("profileEdit")},
+                onClick = {navController.navigate(Routes.PROFILE_EDIT)},
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White
                 ),
@@ -218,7 +223,7 @@ fun FriendLine(navController: NavController){
                 ),
                 modifier = Modifier
                     .width(165.dp)
-                    .offset(y = -4.dp)
+                    .offset(y = (-4).dp)
                     .height(30.dp)
             ) {
                 Box(
@@ -257,7 +262,7 @@ fun FriendLine(navController: NavController){
         }
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Button(
-                onClick = {navController.navigate("allFreind")},
+                onClick = {navController.navigate(Routes.ALL_FRIEND)},
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorResource(R.color.white)
                 ),
@@ -268,7 +273,6 @@ fun FriendLine(navController: NavController){
                         shape = RoundedCornerShape(10.dp)
                     )
                     .size(width = 335.dp, height = 32.dp)
-
             ) {
                 Text(text = "Xem tất cả", color = colorResource(R.color.pink))
             }
@@ -276,18 +280,16 @@ fun FriendLine(navController: NavController){
     }
 }
 @Composable
-fun GetNenHinhDaiDien(){
+fun GetNenHinhDaiDien(context: Context){
     // Ảnh chính
-    var backgroundAvatar by remember { mutableStateOf("") }
-    val db = FirebaseFirestore.getInstance()
-    val docRef = db.collection("users").document(Firebase.auth.currentUser!!.uid)
-    docRef.get().addOnSuccessListener { documentSnapshot: DocumentSnapshot ->
-        if (documentSnapshot.exists()) {
-            backgroundAvatar = documentSnapshot.getString("backgroundAvatar").toString()
-        }
+    var backgroundAvatar by remember { mutableStateOf<Uri?>(null) }
+    backgroundAvatar = if (Database.getData("users", "backgroundAvatar").contains("content://")) {
+        Database.loadImageFromInternalStorage(context, "backgroundAvatar", Firebase.auth.currentUser!!.uid)
+    } else {
+        Uri.parse(Database.getData("users", "backgroundAvatar"))
     }
-    Image(
-        painter = rememberAsyncImagePainter(model = backgroundAvatar),
+    AsyncImage(
+        model = backgroundAvatar,
         contentDescription = "Main Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -297,10 +299,15 @@ fun GetNenHinhDaiDien(){
     )
 }
 @Composable
-fun GetHinhDaiDienProfile(){
-    val avatar = Firebase.auth.currentUser?.photoUrl
-    Image(
-        painter = rememberAsyncImagePainter(model = avatar),
+fun GetHinhDaiDienProfile(context: Context){
+    var avatar by remember { mutableStateOf<Uri?>(null) }
+    avatar = if (Database.getData("users", "avatar").contains("content://")) {
+        Database.loadImageFromInternalStorage(context, "avatar", Firebase.auth.currentUser!!.uid)
+    } else {
+        Uri.parse(Database.getData("users", "avatar"))
+    }
+    AsyncImage(
+        model = avatar,
         contentDescription = "Circular Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier

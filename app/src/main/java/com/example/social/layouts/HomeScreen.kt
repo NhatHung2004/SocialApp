@@ -99,7 +99,6 @@ fun UserListItems(userPosts: userPosts,//Hiển thị nội dung của một bà
     val likeTextColor = if (isLiked) Color.Blue else Color.Black
     val likeImage=if (isLiked) painterResource(userPosts.blueLikeIcon) else painterResource(userPosts.like)
     val showBottomSheet = remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
     Column (
         modifier=Modifier.fillMaxWidth()
     ){

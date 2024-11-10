@@ -20,7 +20,6 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -41,6 +40,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.social.R
+import com.example.social.Routes
 import kotlinx.coroutines.launch
 
 @SuppressLint("RememberReturnType")
@@ -145,16 +145,16 @@ fun TacVu2(navController: NavController){
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
                                     navController = navController,
-                                    startDestination = "FriendScreen",
+                                    startDestination = Routes.FRIEND_SCREEN,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    composable("FriendScreen") {
+                                    composable(Routes.FRIEND_SCREEN) {
                                         FriendScreen(navController)
                                     }
-                                    composable("AllFriendReq") {
+                                    composable(Routes.ALL_FRIEND_REQ) {
                                         AllFriendReq()
                                     }
-                                    composable("AllFriendSend") {
+                                    composable(Routes.ALL_FRIEND_SEND) {
                                         AllFriendSend()
                                     }
                                 }
@@ -168,17 +168,17 @@ fun TacVu2(navController: NavController){
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
                                     navController = navController,
-                                    startDestination = "ProfileScreen",
+                                    startDestination = Routes.PROFILE_SCREEN,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    composable("ProfileScreen") {
+                                    composable(Routes.PROFILE_SCREEN) {
                                         ProfileScreen(navController)
                                     }
-                                    composable("AllFriend") {
+                                    composable(Routes.ALL_FRIEND) {
                                         AllFriend()
                                     }
-                                    composable("ProfileEdit") {
-                                        ProfileEdit()
+                                    composable(Routes.PROFILE_EDIT) {
+                                        ProfileEdit(navController)
                                     }
                                 }
                             }

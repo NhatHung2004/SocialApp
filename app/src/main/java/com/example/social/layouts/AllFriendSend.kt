@@ -21,7 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -54,9 +54,9 @@ fun AllFriendSend(){
             Text(text="Lời mời đã gửi",modifier=Modifier.offset(y=10.dp), fontSize = 19.sp)
         }
         Spacer(Modifier.width(10.dp))
-        Divider(
-            color = colorResource(R.color.pink),
-            thickness = 1.dp
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = colorResource(R.color.pink)
         )
         Spacer(Modifier.height(10.dp))
         Row(modifier=Modifier.padding(start=6.dp)) {
@@ -90,15 +90,15 @@ fun ListSend(){
                 Spacer(Modifier.width(10.dp))
                 Column {
 
-                    Row(){Text(
-                        text = friend.nameFriend)
+                    Row(){
+                        Text(text = friend.nameFriend)
                         Spacer(Modifier.weight(1f))
                         Text(text = friend.timeFriend,modifier=Modifier.padding(end = 10.dp))
                     }
                     Spacer(Modifier.height(10.dp))
                     Row(){
                         val context = LocalContext.current
-                        Button(onClick={Toast.makeText(context,"Đã huy loi moi ket ban voi  " + friend.nameFriend,Toast.LENGTH_SHORT).show()},
+                        Button(onClick={Toast.makeText(context,"Đã hủy lời mời kết bạn với " + friend.nameFriend,Toast.LENGTH_SHORT).show()},
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorResource(R.color.white)
                             ),

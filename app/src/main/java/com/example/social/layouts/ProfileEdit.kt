@@ -1,6 +1,12 @@
 package com.example.social.layouts
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -21,11 +27,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,20 +44,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import coil3.compose.AsyncImage
 import com.example.social.R
+import com.example.social.Routes
+import com.example.social.firebase.Database
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
-fun ProfileEdit(){
+fun ProfileEdit(navController: NavController){
+    val context = LocalContext.current
+
+    var selectedImageUriBackground by remember { mutableStateOf<Uri?>(null) }
+    val photoPickerLauncherBackground = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            selectedImageUriBackground = uri
+        }
+    )
+
+    var selectedImageUriAvatar by remember { mutableStateOf<Uri?>(null) }
+    val photoPickerLauncherAvatar = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            selectedImageUriAvatar = uri
+        }
+    )
+
     Column(){
         Row(modifier =  Modifier.fillMaxWidth()) {
             Button(
-                onClick = {},
+                onClick = {
+                    navController.navigate(Routes.PROFILE_SCREEN)
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White
                 ),
@@ -69,14 +101,18 @@ fun ProfileEdit(){
             )
 
         }
-        Divider(
-            color = colorResource(R.color.pink),
-            thickness = 1.dp
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = colorResource(R.color.pink)
         )
         Spacer(Modifier.height(10.dp))
         LazyColumn(modifier=Modifier.fillMaxSize()) {
             item{
-                ImageEdit()
+                ImageEdit(photoPickerLauncherAvatar,
+                    photoPickerLauncherBackground,
+                    selectedImageUriAvatar,
+                    selectedImageUriBackground,
+                    context)
             }
             item{
                 TextFieldHo()
@@ -98,7 +134,25 @@ fun ProfileEdit(){
                     contentAlignment = Alignment.Center // Căn giữa nội dung bên trong Box
                 ) {
                     Button(
-                        onClick = {},
+                        onClick = {
+                            if (selectedImageUriAvatar != null && selectedImageUriBackground != null) {
+                                Database.updateData("users", "avatar",
+                                    selectedImageUriAvatar!!
+                                )
+                                Database.updateData("users", "backgroundAvatar",
+                                    selectedImageUriBackground!!
+                                )
+                                val imagePathAvatar = Database.saveImageToInternalStorage(
+                                    selectedImageUriAvatar,
+                                    context, "avatar", Firebase.auth.currentUser!!.uid)
+                                Database.saveImagePath(context, imagePathAvatar)
+                                val imagePathBackAvatar = Database.saveImageToInternalStorage(
+                                    selectedImageUriBackground,
+                                    context, "backgroundAvatar", Firebase.auth.currentUser!!.uid)
+                                Database.saveImagePath(context, imagePathBackAvatar)
+                            }
+                            navController.navigate(Routes.PROFILE_SCREEN)
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.White
                         ),
@@ -116,20 +170,29 @@ fun ProfileEdit(){
         }
     }
 }
+
 @Composable
-fun ImageEdit(){
+fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
+              photoPickerLauncherBackground: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
+              selectedImageUriAvatar: Uri?,
+              selectedImageUriBackground: Uri?,
+              context: Context){
     Column(modifier=Modifier.padding(top=15.dp)){
         Row(modifier=Modifier.fillMaxWidth()){
             Text(text="Ảnh đại diện", fontSize = 25.sp)
             Spacer(Modifier.weight(1f))
             Button(
-                onClick = {},
+                onClick = {
+                    photoPickerLauncherAvatar.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White
                 ),
                 modifier = Modifier
                     .width(165.dp)
-                    .offset(y = -4.dp)
+                    .offset(y = (-4).dp)
                     .height(30.dp)
             ) {
                 Box(
@@ -145,19 +208,33 @@ fun ImageEdit(){
             }
         }
         Spacer(Modifier.height(25.dp))
-        GetHinhDaiDienChinhSua(R.drawable.avt2)
+        if(selectedImageUriAvatar != null){
+            GetHinhDaiDienChinhSua(selectedImageUriAvatar)
+        }else {
+            if (Database.getData("users", "avatar").contains("content://")){
+                val uriImage = Database.loadImageFromInternalStorage(context, "avatar", Firebase.auth.currentUser!!.uid)
+                GetHinhDaiDienChinhSua(uriImage)
+            }
+            else {
+                GetHinhDaiDienChinhSua(Uri.parse(Database.getData("users", "avatar")))
+            }
+        }
         Spacer(Modifier.height(25.dp))
         Row(){
             Text(text="Ảnh bìa", fontSize = 25.sp)
             Spacer(Modifier.weight(1f))
             Button(
-                onClick = {},
+                onClick = {
+                    photoPickerLauncherBackground.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White
                 ),
                 modifier = Modifier
                     .width(165.dp)
-                    .offset(y = -4.dp)
+                    .offset(y = (-4).dp)
                     .height(30.dp)
             ) {
                 Box(
@@ -173,10 +250,21 @@ fun ImageEdit(){
             }
         }
         Spacer(Modifier.height(20.dp))
-        GetHinhBiaChinhSua(R.drawable.hinhbia)
+        if(selectedImageUriBackground != null){
+            GetHinhBiaChinhSua(selectedImageUriBackground)
+        }else {
+            if (Database.getData("users", "backgroundAvatar").contains("content://")){
+                val uriImage = Database.loadImageFromInternalStorage(context, "backgroundAvatar", Firebase.auth.currentUser!!.uid)
+                GetHinhBiaChinhSua(uriImage)
+            }
+            else {
+                GetHinhBiaChinhSua(Uri.parse(Database.getData("users", "backgroundAvatar")))
+            }
+        }
     }
     Spacer(Modifier.height(20.dp))
 }
+
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -195,6 +283,7 @@ fun TextFieldHo(){
         )
     )
 }
+
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -213,6 +302,7 @@ fun TextFieldTen(){
         )
     )
 }
+
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -250,11 +340,12 @@ fun TextFieldGioiTinh() {
         }
     }
 }
+
 @Composable
-fun GetHinhDaiDienChinhSua(img2 : Int){
+fun GetHinhDaiDienChinhSua(img : Uri?){
     Box(modifier = Modifier.fillMaxSize() ) {
-        Image(
-            painter = painterResource(img2),
+        AsyncImage(
+            model = img,
             contentDescription = "avatar",
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -265,14 +356,13 @@ fun GetHinhDaiDienChinhSua(img2 : Int){
                     shape = RoundedCornerShape(100.dp)
                 )
                 .align(Alignment.Center)
-                )
-
+        )
     }
 }
 @Composable
-fun GetHinhBiaChinhSua(img2 : Int) {
-    Image(
-        painter = painterResource(img2),
+fun GetHinhBiaChinhSua(img: Uri?) {
+    AsyncImage(
+        model = img,
         contentDescription = "Main Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier
