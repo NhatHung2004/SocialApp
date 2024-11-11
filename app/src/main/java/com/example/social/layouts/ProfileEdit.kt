@@ -27,10 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -47,7 +44,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -61,6 +57,18 @@ import com.google.firebase.auth.auth
 @Composable
 fun ProfileEdit(navController: NavController){
     val context = LocalContext.current
+
+    val ho = Database.getData("users", "firstname")
+    val ten = Database.getData("users", "lastname")
+    val email = Database.getData("users", "email")
+
+    var tenState by remember { mutableStateOf("") }
+    var hoState by remember { mutableStateOf("") }
+    var emailState by remember { mutableStateOf("") }
+
+    tenState = ten
+    hoState = ho
+    emailState = email
 
     var selectedImageUriBackground by remember { mutableStateOf<Uri?>(null) }
     val photoPickerLauncherBackground = rememberLauncherForActivityResult(
@@ -115,15 +123,21 @@ fun ProfileEdit(navController: NavController){
                     context)
             }
             item{
-                TextFieldHo()
+                TextFieldHo(hoState){
+                    hoState = it
+                }
                 Spacer(Modifier.height(20.dp))
             }
             item {
-                TextFieldTen()
+                TextFieldTen(tenState){
+                    tenState = it
+                }
                 Spacer(Modifier.height(20.dp))
             }
             item{
-                TextFieldGioiTinh()
+                TextFieldEmail(emailState){
+                    emailState = it
+                }
                 Spacer(Modifier.height(20.dp))
             }
             item{
@@ -135,22 +149,13 @@ fun ProfileEdit(navController: NavController){
                 ) {
                     Button(
                         onClick = {
-                            if (selectedImageUriAvatar != null && selectedImageUriBackground != null) {
-                                Database.updateData("users", "avatar",
-                                    selectedImageUriAvatar!!
-                                )
-                                Database.updateData("users", "backgroundAvatar",
-                                    selectedImageUriBackground!!
-                                )
-                                val imagePathAvatar = Database.saveImageToInternalStorage(
-                                    selectedImageUriAvatar,
-                                    context, "avatar", Firebase.auth.currentUser!!.uid)
-                                Database.saveImagePath(context, imagePathAvatar)
-                                val imagePathBackAvatar = Database.saveImageToInternalStorage(
-                                    selectedImageUriBackground,
-                                    context, "backgroundAvatar", Firebase.auth.currentUser!!.uid)
-                                Database.saveImagePath(context, imagePathBackAvatar)
+                            if(selectedImageUriBackground != null) {
+                                saoChepAnh(selectedImageUriAvatar, "avatar", context)
                             }
+                            if(selectedImageUriBackground != null) {
+                                saoChepAnh(selectedImageUriAvatar, "backgroundAvatar", context)
+                            }
+                            Database.updateUser(hoState, tenState, emailState)
                             navController.navigate(Routes.PROFILE_SCREEN)
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -208,16 +213,8 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
             }
         }
         Spacer(Modifier.height(25.dp))
-        if(selectedImageUriAvatar != null){
-            GetHinhDaiDienChinhSua(selectedImageUriAvatar)
-        }else {
-            if (Database.getData("users", "avatar").contains("content://")){
-                val uriImage = Database.loadImageFromInternalStorage(context, "avatar", Firebase.auth.currentUser!!.uid)
-                GetHinhDaiDienChinhSua(uriImage)
-            }
-            else {
-                GetHinhDaiDienChinhSua(Uri.parse(Database.getData("users", "avatar")))
-            }
+        HienThiAnh("avatar", selectedImageUriAvatar, context){uri: Uri? ->
+            GetHinhDaiDienChinhSua(uri)
         }
         Spacer(Modifier.height(25.dp))
         Row(){
@@ -250,16 +247,8 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
             }
         }
         Spacer(Modifier.height(20.dp))
-        if(selectedImageUriBackground != null){
-            GetHinhBiaChinhSua(selectedImageUriBackground)
-        }else {
-            if (Database.getData("users", "backgroundAvatar").contains("content://")){
-                val uriImage = Database.loadImageFromInternalStorage(context, "backgroundAvatar", Firebase.auth.currentUser!!.uid)
-                GetHinhBiaChinhSua(uriImage)
-            }
-            else {
-                GetHinhBiaChinhSua(Uri.parse(Database.getData("users", "backgroundAvatar")))
-            }
+        HienThiAnh("backgroundAvatar", selectedImageUriBackground, context){uri: Uri? ->
+            GetHinhBiaChinhSua(uri)
         }
     }
     Spacer(Modifier.height(20.dp))
@@ -268,12 +257,10 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TextFieldHo(){
-    val textState = remember { mutableStateOf(TextFieldValue("Văn Nô")) }
-
+fun TextFieldHo(ho: String, onHoChange: (String) ->Unit){
     OutlinedTextField(
-        value = textState.value,
-        onValueChange = { textState.value = it },
+        value = ho,
+        onValueChange = { newHo -> onHoChange(newHo) },
         label = { Text("Họ") },  // Nhãn nổi phía trên
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), // Bo góc nhẹ
@@ -287,12 +274,10 @@ fun TextFieldHo(){
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TextFieldTen(){
-    val textState = remember { mutableStateOf(TextFieldValue("Shin")) }
-
+fun TextFieldTen(ten: String, onHoChange: (String) ->Unit){
     OutlinedTextField(
-        value = textState.value,
-        onValueChange = { textState.value = it },
+        value = ten,
+        onValueChange = { newTen -> onHoChange(newTen) },
         label = { Text("Tên") },  // Nhãn nổi phía trên
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), // Bo góc nhẹ
@@ -306,40 +291,21 @@ fun TextFieldTen(){
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TextFieldGioiTinh() {
-    val option= listOf("Nam","Nữ","Khác")
-    var expanded by remember { mutableStateOf(false) }
-    var selectedOptionText by remember { mutableStateOf(option[0]) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-    ) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            value = selectedOptionText,
-            onValueChange = { },
-            label = { Text("Giơi tính") }, // Nhãn nổi phía trên
-            readOnly = false,
-            trailingIcon = {ExposedDropdownMenuDefaults.TrailingIcon(expanded=expanded)},
-            colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = colorResource(R.color.pink),   // Màu viền khi được chọn
-                unfocusedBorderColor = Color.Gray  // Màu viền khi không chọn
-            )
+fun TextFieldEmail(email: String, onEmailChange: (String) ->Unit){
+    OutlinedTextField(
+        value = email,
+        onValueChange = { newEmail -> onEmailChange(newEmail) },
+        label = { Text("Tên") },  // Nhãn nổi phía trên
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), // Bo góc nhẹ
+        colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = colorResource(R.color.pink),   // Màu viền khi được chọn
+            unfocusedBorderColor = Color.Gray  // Màu viền khi không chọn
         )
-        ExposedDropdownMenu(expanded=expanded, onDismissRequest = {expanded=false}){
-            option.forEach{selectedOption->
-                DropdownMenuItem(
-                    text = { Text(selectedOption)},
-                    onClick = {
-                        selectedOptionText = selectedOption
-                        expanded = false
-                    },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                )
-            }
-        }
-    }
+    )
 }
+
+
 
 @Composable
 fun GetHinhDaiDienChinhSua(img : Uri?){
@@ -359,6 +325,7 @@ fun GetHinhDaiDienChinhSua(img : Uri?){
         )
     }
 }
+
 @Composable
 fun GetHinhBiaChinhSua(img: Uri?) {
     AsyncImage(
@@ -369,4 +336,34 @@ fun GetHinhBiaChinhSua(img: Uri?) {
             .fillMaxWidth()
             .height(150.dp)
     )
+}
+
+@Composable
+fun GetHinh(field: String, selectedUri: Uri?, context: Context, callback: @Composable (Uri?) -> Unit) {
+    if(selectedUri != null){
+        callback(selectedUri)
+    }else {
+        if (Database.getData("users", field).contains("content://")){
+            val uriImage = Database.loadImageFromInternalStorage(context, field, Firebase.auth.currentUser!!.uid)
+            callback(uriImage)
+        }
+        else {
+            callback(Uri.parse(Database.getData("users", field)))
+        }
+    }
+}
+
+@Composable
+fun HienThiAnh(field: String, selectedUri: Uri?, context: Context, callback: @Composable (Uri?) -> Unit) {
+    GetHinh(field, selectedUri, context) { uri ->
+        callback(uri)
+    }
+}
+
+fun saoChepAnh(selectedUri: Uri?, field: String, context: Context) {
+    Database.updateData("users", field, selectedUri!!.toString())
+    val imagePathAvatar = Database.saveImageToInternalStorage(
+        selectedUri,
+        context, field, Firebase.auth.currentUser!!.uid)
+    Database.saveImagePath(context, imagePathAvatar)
 }

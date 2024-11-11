@@ -3,7 +3,6 @@ package com.example.social.firebase
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,14 +17,12 @@ import com.google.firebase.auth.auth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import okio.IOException
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.util.UUID
 
 object Database {
 
@@ -73,7 +70,7 @@ object Database {
         return data
     }
 
-    fun updateData(collections: String, field: String, value: Uri?) {
+    fun updateData(collections: String, field: String, value: String) {
         val docRef = db.collection(collections).document(Firebase.auth.currentUser!!.uid)
         docRef.update(field, value)
     }
@@ -159,5 +156,17 @@ object Database {
         }
         user.updateProfile(profileUpdates)
         db.collection("users").document(user.uid).set(data)
+    }
+
+    fun updateUser(ho: String, ten: String, email: String) {
+        val profileUpdates = userProfileChangeRequest {
+            displayName = "$ho $ten"
+        }
+        com.google.firebase.Firebase.auth.currentUser!!.updateProfile(profileUpdates)
+        updateData("users", "firstname", ho)
+        updateData("users", "lastname", ten)
+        Firebase.auth.currentUser?.verifyBeforeUpdateEmail(email)?.addOnSuccessListener { task ->
+            updateData("users", "email", email)
+        }
     }
 }
