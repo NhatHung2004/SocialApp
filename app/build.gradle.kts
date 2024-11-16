@@ -55,6 +55,8 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("io.coil-kt.coil3:coil-compose:3.0.0")
+    implementation("com.google.firebase:firebase-database")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

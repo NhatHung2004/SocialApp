@@ -32,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,16 +47,18 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.social.R
 import com.example.social.Routes
+import com.example.social.controller.HinhAnh.HienThiAnh
+import com.example.social.controller.HinhAnh.saoChepAnh
 import com.example.social.firebase.Database
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
+import com.example.social.viewModel.ProfileViewModel
 
 @Composable
-fun ProfileEdit(navController: NavController){
+fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel = viewModel()){
     val context = LocalContext.current
 
     val ho = Database.getData("users", "firstname")
@@ -69,6 +72,12 @@ fun ProfileEdit(navController: NavController){
     tenState = ten
     hoState = ho
     emailState = email
+
+    val imgAvatar = profileViewModel.imageAvatarUri.collectAsState().value
+    var newImgAvatar by remember { mutableStateOf(imgAvatar) }
+
+    val imgBackground = profileViewModel.imageBackgroundUri.collectAsState().value
+    var newImgBackground by remember { mutableStateOf(imgBackground) }
 
     var selectedImageUriBackground by remember { mutableStateOf<Uri?>(null) }
     val photoPickerLauncherBackground = rememberLauncherForActivityResult(
@@ -149,11 +158,15 @@ fun ProfileEdit(navController: NavController){
                 ) {
                     Button(
                         onClick = {
-                            if(selectedImageUriBackground != null) {
+                            if(selectedImageUriAvatar != null) {
                                 saoChepAnh(selectedImageUriAvatar, "avatar", context)
+                                newImgAvatar = selectedImageUriAvatar
+                                profileViewModel.updateImageAvatarUri(newImgAvatar)
                             }
                             if(selectedImageUriBackground != null) {
-                                saoChepAnh(selectedImageUriAvatar, "backgroundAvatar", context)
+                                saoChepAnh(selectedImageUriBackground, "backgroundAvatar", context)
+                                newImgBackground = selectedImageUriBackground
+                                profileViewModel.updateImageBackgroundUri(newImgBackground)
                             }
                             Database.updateUser(hoState, tenState, emailState)
                             navController.navigate(Routes.PROFILE_SCREEN)
@@ -338,32 +351,3 @@ fun GetHinhBiaChinhSua(img: Uri?) {
     )
 }
 
-@Composable
-fun GetHinh(field: String, selectedUri: Uri?, context: Context, callback: @Composable (Uri?) -> Unit) {
-    if(selectedUri != null){
-        callback(selectedUri)
-    }else {
-        if (Database.getData("users", field).contains("content://")){
-            val uriImage = Database.loadImageFromInternalStorage(context, field, Firebase.auth.currentUser!!.uid)
-            callback(uriImage)
-        }
-        else {
-            callback(Uri.parse(Database.getData("users", field)))
-        }
-    }
-}
-
-@Composable
-fun HienThiAnh(field: String, selectedUri: Uri?, context: Context, callback: @Composable (Uri?) -> Unit) {
-    GetHinh(field, selectedUri, context) { uri ->
-        callback(uri)
-    }
-}
-
-fun saoChepAnh(selectedUri: Uri?, field: String, context: Context) {
-    Database.updateData("users", field, selectedUri!!.toString())
-    val imagePathAvatar = Database.saveImageToInternalStorage(
-        selectedUri,
-        context, field, Firebase.auth.currentUser!!.uid)
-    Database.saveImagePath(context, imagePathAvatar)
-}

@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -26,6 +28,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,39 +43,78 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.social.R
 import com.example.social.Routes
+import com.example.social.controller.HinhAnh.checkImgUri
 import com.example.social.db.userPostDataProvider
+import com.example.social.firebase.Database
+import com.example.social.firebase.Database.getPost
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.example.social.firebase.Database
+import com.example.social.viewModel.ProfileViewModel
 
 
 @Composable
-fun ProfileScreen(navController: NavController){
+fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewModel = viewModel()){
     var isPressed by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    var imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
+    var imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
+
+    // kiểm tra hình ảnh từ viewmodel có null hay không
+    if (imageAvatar == null) {
+         imageAvatar = checkImgUri(context, "avatar")
+    }
+    if (imageBackground == null) {
+        imageBackground = checkImgUri(context, "backgroundAvatar")
+    }
+
+    var posts by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    LaunchedEffect(Firebase.auth.currentUser!!.uid) {
+        getPost(
+            userId = Firebase.auth.currentUser!!.uid,
+            onSuccess = { postList ->
+                posts = postList
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize(), // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
         verticalArrangement = Arrangement.SpaceBetween // Căn đều giữa các thành phần
     ) {
-        LazyColumn() {
-            item {
-                Firstline5(navController, context)
-            }
-            item {
-                Spacer(Modifier.height(15.dp))
-                FriendLine(navController)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+            LazyColumn() {
+                item {
+                    Firstline5(navController, context, imageAvatar, imageBackground)
+                }
+                item {
+                    Spacer(Modifier.height(15.dp))
+                    FriendLine(navController)
+                }
+                items(posts){post->
+                    val content = post["content"] as? String ?: "No content"
+                    val timestamp = post["timestamp"] as? Long ?: 0L
+                    val imageUris = post["imageUris"] as? List<String> ?: emptyList()
+                    SelfPost(content,timestamp,imageUris)
+                }
             }
         }
-        Spacer(Modifier.height(185.dp))
         HorizontalDivider(
             thickness = 1.dp,
             color = colorResource(R.color.pink)
@@ -132,19 +175,19 @@ fun ProfileScreen(navController: NavController){
 }
 
 @Composable
-fun Firstline5(navController: NavController, context: Context){
+fun Firstline5(navController: NavController, context: Context, imageAvatar: Uri?, imageBackground: Uri?){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(195.dp)) {
-            GetNenHinhDaiDien(context)
+            GetNenHinhDaiDien(context, imageBackground)
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 25.dp)
                 .align(Alignment.BottomStart)
                 .offset(y = 1.dp)) {
                 Row( verticalAlignment = Alignment.CenterVertically) {
-                    GetHinhDaiDienProfile(context)
+                    GetHinhDaiDienProfile(context, imageAvatar)
                     Spacer(Modifier.width(15.dp))
                     Box(modifier=Modifier.offset(y=25.dp)){
                         Row() {
@@ -280,16 +323,10 @@ fun FriendLine(navController: NavController){
     }
 }
 @Composable
-fun GetNenHinhDaiDien(context: Context){
+fun GetNenHinhDaiDien(context: Context, image: Uri?){
     // Ảnh chính
-    var backgroundAvatar by remember { mutableStateOf<Uri?>(null) }
-    backgroundAvatar = if (Database.getData("users", "backgroundAvatar").contains("content://")) {
-        Database.loadImageFromInternalStorage(context, "backgroundAvatar", Firebase.auth.currentUser!!.uid)
-    } else {
-        Uri.parse(Database.getData("users", "backgroundAvatar"))
-    }
     AsyncImage(
-        model = backgroundAvatar,
+        model = image,
         contentDescription = "Main Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -299,15 +336,9 @@ fun GetNenHinhDaiDien(context: Context){
     )
 }
 @Composable
-fun GetHinhDaiDienProfile(context: Context){
-    var avatar by remember { mutableStateOf<Uri?>(null) }
-    avatar = if (Database.getData("users", "avatar").contains("content://")) {
-        Database.loadImageFromInternalStorage(context, "avatar", Firebase.auth.currentUser!!.uid)
-    } else {
-        Uri.parse(Database.getData("users", "avatar"))
-    }
+fun GetHinhDaiDienProfile(context: Context, image: Uri?){
     AsyncImage(
-        model = avatar,
+        model = image,
         contentDescription = "Circular Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -316,8 +347,10 @@ fun GetHinhDaiDienProfile(context: Context){
             .border(5.dp, colorResource(R.color.pinkBlur), CircleShape)
     )
 }
+
+
 @Composable
-fun GetHinhDaiDienProfileFriend(img2 : Int){
+fun GetHinhDaiDienProfileFriend(img2: Int) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(8.dp)) // Thêm spacer ở đây để đẩy hình ảnh xuống
         Image(
@@ -328,5 +361,45 @@ fun GetHinhDaiDienProfileFriend(img2 : Int){
                 .size(width = 92.dp, height = 51.dp)
                 .clip(RoundedCornerShape(2.dp))
         )
+    }
+}
+
+@Composable
+fun SelfPost(content:String,timestamp: Long, mageResources: List<String>){
+    val context= LocalContext.current
+    Column(){
+        Row(modifier= Modifier
+            .fillMaxWidth()){
+            val uriImage = Database.loadImageFromInternalStorage(context,
+                "avatar", Firebase.auth.currentUser!!.uid
+            )
+            GetHinhDaiDienChinhSua1(uriImage)
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    text = Firebase.auth.currentUser?.displayName.toString(),
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                )
+                Text(text = "$timestamp")
+            }
+            Spacer(Modifier.weight(1f))
+            Image(
+                painter= painterResource(R.drawable.meatballsmenuc),
+                contentDescription = "option Icon",
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Row (modifier = Modifier.fillMaxWidth()){
+            Text(text = content)
+        }
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(), // Chiều rộng đầy đủ
+            horizontalArrangement = Arrangement.spacedBy(8.dp) // Khoảng cách giữa các hình ảnh
+        ) {
+
+        }
+        Spacer(Modifier.height(11.dp))
+
     }
 }

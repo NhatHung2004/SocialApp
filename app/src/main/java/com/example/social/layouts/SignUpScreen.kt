@@ -2,6 +2,7 @@ package com.example.social.layouts
 
 import android.app.DatePickerDialog
 import android.widget.DatePicker
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -480,7 +481,12 @@ fun SignUpScreen(navController: NavController) {
                 ) {
                     Button(
                         onClick = {
-                            Database.signup(emailInput, password, ho, ten, sex, date, avatar, backgroundAvatar, navController, context)
+                            if(password == confirmPassword) {
+                                Database.signup(emailInput, password, ho, ten, sex, date, avatar, backgroundAvatar, navController, context)
+                            }else {
+                                Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
+                            }
+
                         },
                         colors = ButtonColors(
                             containerColor = Color.White,

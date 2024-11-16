@@ -111,15 +111,24 @@ object Database {
         prefs.edit().putStringSet("image_paths", savedPaths).apply()
     }
 
-    fun deleteImageFromInternalStorage(filePath: String): Boolean {
-        val file = File(filePath)
-        return file.exists() && file.delete()
+    fun deleteImageFromInternalStorage(context: Context, child: String, uid: String): Boolean {
+        val prefs = context.getSharedPreferences("saved_images", Context.MODE_PRIVATE)
+        val savedPaths = prefs.getStringSet("image_paths", emptySet()) ?: emptySet()
+        val fileName = "image_" + child + "_" + uid + ".jpg"
+        for(path in savedPaths) {
+            val file = File(path)
+            if (file.name == fileName) {
+                return file.delete()
+            }
+        }
+        return false
     }
 
-    fun removeImagePathFromPreferences(context: Context, imagePath: String) {
+    @SuppressLint("SdCardPath")
+    fun removeImagePathFromPreferences(context: Context, child: String, uid: String) {
         val prefs = context.getSharedPreferences("saved_images", Context.MODE_PRIVATE)
         val savedPaths = prefs.getStringSet("image_paths", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-
+        val imagePath = "/data/user/0/com.example.social/files/" + "image_" + child + "_" + uid + ".jpg"
         // Xóa đường dẫn ảnh khỏi `SharedPreferences`
         if (savedPaths.contains(imagePath)) {
             savedPaths.remove(imagePath)
@@ -149,7 +158,8 @@ object Database {
             "sex" to gioiTinh,
             "date" to date,
             "avatar" to Uri.parse("android.resource://com.example.social/drawable/$avatar"),
-            "backgroundAvatar" to Uri.parse("android.resource://com.example.social/drawable/$backgroundAvatar")
+            "backgroundAvatar" to Uri.parse("android.resource://com.example.social/drawable/$backgroundAvatar"),
+            "posts" to emptyMap<String,Any>()
         )
         val profileUpdates = userProfileChangeRequest {
             displayName = "$ho $ten"
@@ -168,5 +178,42 @@ object Database {
         Firebase.auth.currentUser?.verifyBeforeUpdateEmail(email)?.addOnSuccessListener { task ->
             updateData("users", "email", email)
         }
+    }
+
+    fun addPost(userId:String,content:String,imageUris: List<Uri?>,onSuccess: (String) -> Unit){
+        val timeStamp=System.currentTimeMillis()
+        val userDocRef = db.collection("users").document(userId)
+        userDocRef.get()
+            .addOnSuccessListener { document->
+                if(document.exists()){
+                    val posts = document.get("posts") as? Map<*, *>
+                    val postCount=posts?.size?:0
+                    val newPostId="post${postCount+1}"
+                    val newPost= hashMapOf(
+                        "content" to content,
+                        "timestamp" to timeStamp,
+                        "imageUris" to imageUris
+                    )
+                    userDocRef.update("posts.$newPostId", newPost).addOnSuccessListener {
+                        onSuccess(newPostId)
+                    }
+                }
+            }
+    }
+
+    fun getPost(userId: String, onSuccess: (List<Map<String, Any>>) -> Unit) {
+        val docRef = db.collection("users").document(userId)
+        docRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists() && document != null) {
+                    if (document.exists() && document != null) {
+                        val posts = document.get("posts") as? Map<String, Map<String, Any>>
+                        val postList = posts?.values?.toList() ?: emptyList()
+                        onSuccess(postList)
+                    } else {
+                        onSuccess(emptyList())
+                    }
+                }
+            }
     }
 }
