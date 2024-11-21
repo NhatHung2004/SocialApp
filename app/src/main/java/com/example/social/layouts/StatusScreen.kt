@@ -1,6 +1,5 @@
 package com.example.social.layouts
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -60,10 +59,11 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import com.example.social.R
-import com.example.social.firebase.Database
+import com.example.social.repository.FirestoreRepo
+import com.example.social.repository.ImageRepo
+import com.example.social.repository.PostRepo
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import java.io.File
 
 @Composable
 fun StatusScreen(){
@@ -110,15 +110,7 @@ fun StatusScreen(){
                 context,
                 imageBitmaps = imageBitmaps,
                 imageUris = imageUris,
-                text = text,
-                onPostCreated = {
-                    imageUris = listOf()
-                    imageBitmaps = listOf()
-                    text = ""
-                },
-                onSuccess = { postId ->
-                    Log.d("Post Created", "Post ID: $postId")
-                }
+                text = text
             ) // Đặt firstLine2 ở trên
             HorizontalDivider(
                 thickness = 1.dp,
@@ -129,7 +121,7 @@ fun StatusScreen(){
             LazyColumn (modifier = Modifier.fillMaxSize()) {
                 item{
                     Row(modifier=Modifier.fillMaxWidth().padding(start = 5.dp)) {
-                        val uriImage = Database.loadImageFromInternalStorage(
+                        val uriImage = ImageRepo.loadImageFromInternalStorage(
                             context,
                             "avatar", Firebase.auth.currentUser!!.uid
                         )
@@ -217,8 +209,9 @@ fun StatusScreen(){
         }
     }
 }
+
 @Composable
-fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri>, text:String, onPostCreated: () -> Unit, onSuccess: (String) -> Unit){
+fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri>, text:String){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -229,13 +222,13 @@ fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
             if(imageUris.isNotEmpty()) {
-                Database.addPost(Firebase.auth.currentUser!!.uid, text, imageUris) { postId ->
-                    savePostImageToInternalStorage(imageUris, context, "imageUris", postId)
-                    saveImagePath1(context,imageUris.map { it.toString() })
-                    onPostCreated()
-                    Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
-                    onSuccess(postId)
+                PostRepo.getPost(Firebase.auth.currentUser!!.uid){post ->
+                    val postId = "post${post?.size?.plus(1)}"
+                    ImageRepo.saveImageToInternalStorage(imageUris, context, "imageUris", postId)
                 }
+                ImageRepo.saveImagePath(context, imageUris.map { it.toString() })
+                PostRepo.updatePost("imageUris", text, imageUris)
+                Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
             }
         },
             colors = ButtonDefaults.buttonColors(
@@ -272,11 +265,11 @@ fun TextFieldStatus(text: String, context: Context, onTextChange: (String) -> Un
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White),
-                colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.White,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent
-                ),
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = Color.White,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent
+            ),
         )
     }
 }
@@ -343,38 +336,4 @@ fun SetHinh(imageBitmaps: List<Bitmap>,imageUris: List<Uri>){
             }
         }
     }
-}
-
-@SuppressLint("MutatingSharedPrefs")
-fun saveImagePath1(context: Context, filePath: List<String>) {
-    val prefs = context.getSharedPreferences("saved_images", Context.MODE_PRIVATE)
-
-    // Lấy danh sách đường dẫn hiện tại từ SharedPreferences
-    val savedPaths = prefs.getStringSet("image_paths", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-
-    // Thêm các đường dẫn mới vào danh sách hiện có
-    savedPaths.addAll(filePath)
-
-    // Lưu lại danh sách cập nhật vào SharedPreferences
-    prefs.edit().putStringSet("image_paths", savedPaths).apply()
-}
-
-fun savePostImageToInternalStorage(imageUris: List<Uri>, context: Context, child: String, uid: String): List<String> {
-    val savedImagePaths = mutableListOf<String>()
-    for ((index, uri) in imageUris.withIndex()) {
-        try {
-            val fileName = "image_" + child + "_" + uid + "_" + index + ".jpg"
-            val file = File(context.filesDir, fileName)
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                file.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-
-            // Thêm đường dẫn của ảnh vào danh sách
-            savedImagePaths.add(file.absolutePath)
-        } catch (_: Exception) {
-        }
-    }
-    return savedImagePaths
 }

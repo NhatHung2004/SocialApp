@@ -52,18 +52,18 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.social.R
 import com.example.social.Routes
-import com.example.social.controller.HinhAnh.HienThiAnh
-import com.example.social.controller.HinhAnh.saoChepAnh
+import com.example.social.utils.HinhAnh
 import com.example.social.firebase.Database
+import com.example.social.repository.FirestoreRepo
 import com.example.social.viewModel.ProfileViewModel
 
 @Composable
 fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel = viewModel()){
     val context = LocalContext.current
 
-    val ho = Database.getData("users", "firstname")
-    val ten = Database.getData("users", "lastname")
-    val email = Database.getData("users", "email")
+    val ho = FirestoreRepo.getData("users", "firstname")
+    val ten = FirestoreRepo.getData("users", "lastname")
+    val email = FirestoreRepo.getData("users", "email")
 
     var tenState by remember { mutableStateOf("") }
     var hoState by remember { mutableStateOf("") }
@@ -114,7 +114,7 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
             Spacer(Modifier.width(6.dp))
             Text(text="Chỉnh sửa trang cá nhân",modifier=Modifier.offset(y=10.dp),
                 fontSize = 20.sp, fontWeight = FontWeight.ExtraBold
-            ,color= colorResource(R.color.pink)
+                ,color= colorResource(R.color.pink)
             )
 
         }
@@ -159,16 +159,16 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
                     Button(
                         onClick = {
                             if(selectedImageUriAvatar != null) {
-                                saoChepAnh(selectedImageUriAvatar, "avatar", context)
+                                HinhAnh.saoChepAnh(selectedImageUriAvatar, "avatar", context)
                                 newImgAvatar = selectedImageUriAvatar
                                 profileViewModel.updateImageAvatarUri(newImgAvatar)
                             }
                             if(selectedImageUriBackground != null) {
-                                saoChepAnh(selectedImageUriBackground, "backgroundAvatar", context)
+                                HinhAnh.saoChepAnh(selectedImageUriBackground, "backgroundAvatar", context)
                                 newImgBackground = selectedImageUriBackground
                                 profileViewModel.updateImageBackgroundUri(newImgBackground)
                             }
-                            Database.updateUser(hoState, tenState, emailState)
+                            FirestoreRepo.updateUser(hoState, tenState, emailState)
                             navController.navigate(Routes.PROFILE_SCREEN)
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -226,7 +226,7 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
             }
         }
         Spacer(Modifier.height(25.dp))
-        HienThiAnh("avatar", selectedImageUriAvatar, context){uri: Uri? ->
+        HinhAnh.HienThiAnh("avatar", selectedImageUriAvatar, context){uri: Uri? ->
             GetHinhDaiDienChinhSua(uri)
         }
         Spacer(Modifier.height(25.dp))
@@ -260,7 +260,7 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
             }
         }
         Spacer(Modifier.height(20.dp))
-        HienThiAnh("backgroundAvatar", selectedImageUriBackground, context){uri: Uri? ->
+        HinhAnh.HienThiAnh("backgroundAvatar", selectedImageUriBackground, context){uri: Uri? ->
             GetHinhBiaChinhSua(uri)
         }
     }
@@ -318,8 +318,6 @@ fun TextFieldEmail(email: String, onEmailChange: (String) ->Unit){
     )
 }
 
-
-
 @Composable
 fun GetHinhDaiDienChinhSua(img : Uri?){
     Box(modifier = Modifier.fillMaxSize() ) {
@@ -350,4 +348,3 @@ fun GetHinhBiaChinhSua(img: Uri?) {
             .height(150.dp)
     )
 }
-

@@ -45,6 +45,7 @@ import androidx.navigation.NavController
 import com.example.social.R
 import com.example.social.Routes
 import com.example.social.firebase.Database
+import com.example.social.repository.AuthRepo
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -156,7 +157,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                 Spacer(modifier = Modifier.height(30.dp))
                 Button(
                     onClick = {
-                        Database.login(emailInput, password, navController, context)
+                        AuthRepo.login(emailInput, password, navController, context)
                     },
                     colors = ButtonColors(
                         containerColor = Color.White,

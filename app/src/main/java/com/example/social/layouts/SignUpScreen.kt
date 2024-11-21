@@ -51,6 +51,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.navigation.NavController
 import com.example.social.Routes
 import com.example.social.firebase.Database
+import com.example.social.repository.AuthRepo
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -267,7 +268,7 @@ fun SignUpScreen(navController: NavController) {
                         label = { Text(text = "Password") },
                         textStyle = TextStyle(fontSize = 20.sp),
                         visualTransformation = if (visiblePassword) VisualTransformation.None
-                                                else PasswordVisualTransformation(),
+                        else PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.password),
@@ -335,7 +336,7 @@ fun SignUpScreen(navController: NavController) {
                         },
                         singleLine = true,
                         visualTransformation = if (visibleConfirmPassword) VisualTransformation.None
-                                                else PasswordVisualTransformation(),
+                        else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = {visibleConfirmPassword = !visibleConfirmPassword}) {
                                 Icon(
@@ -482,7 +483,7 @@ fun SignUpScreen(navController: NavController) {
                     Button(
                         onClick = {
                             if(password == confirmPassword) {
-                                Database.signup(emailInput, password, ho, ten, sex, date, avatar, backgroundAvatar, navController, context)
+                                AuthRepo.signup(emailInput, password, ho, ten, sex, date, avatar, backgroundAvatar, navController, context)
                             }else {
                                 Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                             }

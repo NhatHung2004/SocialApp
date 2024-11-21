@@ -1,7 +1,7 @@
 package com.example.social.layouts
 
-import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,7 +28,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,10 +51,10 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.social.R
 import com.example.social.Routes
-import com.example.social.controller.HinhAnh.checkImgUri
+import com.example.social.utils.HinhAnh.checkImgUri
 import com.example.social.db.userPostDataProvider
-import com.example.social.firebase.Database
-import com.example.social.firebase.Database.getPost
+import com.example.social.repository.FirestoreRepo
+import com.example.social.repository.ImageRepo
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.example.social.viewModel.ProfileViewModel
@@ -71,21 +70,14 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
 
     // kiểm tra hình ảnh từ viewmodel có null hay không
     if (imageAvatar == null) {
-         imageAvatar = checkImgUri(context, "avatar")
+        imageAvatar = checkImgUri(context, "avatar")
     }
     if (imageBackground == null) {
         imageBackground = checkImgUri(context, "backgroundAvatar")
     }
 
-    var posts by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
-    LaunchedEffect(Firebase.auth.currentUser!!.uid) {
-        getPost(
-            userId = Firebase.auth.currentUser!!.uid,
-            onSuccess = { postList ->
-                posts = postList
-            }
-        )
-    }
+//    val posts = FirestoreRepo.getData("users", "posts")
+//    Log.i("posts", posts.toString())
 
     Column(
         modifier = Modifier
@@ -101,18 +93,19 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
         ){
             LazyColumn() {
                 item {
-                    Firstline5(navController, context, imageAvatar, imageBackground)
+                    Firstline5(navController, imageAvatar, imageBackground)
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
                     FriendLine(navController)
                 }
-                items(posts){post->
-                    val content = post["content"] as? String ?: "No content"
-                    val timestamp = post["timestamp"] as? Long ?: 0L
-                    val imageUris = post["imageUris"] as? List<String> ?: emptyList()
-                    SelfPost(content,timestamp,imageUris)
-                }
+//                items(posts){post->
+//                    val content = post["content"]
+//                    val timestamp = post["timestamp"]
+//                    val imageUris = post["imageUris"]
+//                    Log.i("post", imageUris.toString())
+//                    SelfPost(content.toString(), timestamp.toString(), imageUris)
+//                }
             }
         }
         HorizontalDivider(
@@ -137,7 +130,7 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
                 )
                 {
                     Row(){
-                    Text(text="Shin Văn Nô",color= colorResource(R.color.pink), fontSize = 20.sp)
+                        Text(text="Shin Văn Nô",color= colorResource(R.color.pink), fontSize = 20.sp)
                         Spacer(Modifier.width(10.dp))
                         if (isPressed) {
                             Image(
@@ -175,19 +168,19 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
 }
 
 @Composable
-fun Firstline5(navController: NavController, context: Context, imageAvatar: Uri?, imageBackground: Uri?){
+fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground: Uri?){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(195.dp)) {
-            GetNenHinhDaiDien(context, imageBackground)
+            GetNenHinhDaiDien(imageBackground)
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 25.dp)
                 .align(Alignment.BottomStart)
                 .offset(y = 1.dp)) {
                 Row( verticalAlignment = Alignment.CenterVertically) {
-                    GetHinhDaiDienProfile(context, imageAvatar)
+                    GetHinhDaiDienProfile(imageAvatar)
                     Spacer(Modifier.width(15.dp))
                     Box(modifier=Modifier.offset(y=25.dp)){
                         Row() {
@@ -242,8 +235,8 @@ fun Firstline5(navController: NavController, context: Context, imageAvatar: Uri?
                         modifier= Modifier
                             .padding(start = 11.dp)
                             .offset(y = (-1).dp)
-                        )
-                    }
+                    )
+                }
             }
         }
     }
@@ -323,7 +316,7 @@ fun FriendLine(navController: NavController){
     }
 }
 @Composable
-fun GetNenHinhDaiDien(context: Context, image: Uri?){
+fun GetNenHinhDaiDien(image: Uri?){
     // Ảnh chính
     AsyncImage(
         model = image,
@@ -336,7 +329,7 @@ fun GetNenHinhDaiDien(context: Context, image: Uri?){
     )
 }
 @Composable
-fun GetHinhDaiDienProfile(context: Context, image: Uri?){
+fun GetHinhDaiDienProfile(image: Uri?){
     AsyncImage(
         model = image,
         contentDescription = "Circular Image",
@@ -365,15 +358,16 @@ fun GetHinhDaiDienProfileFriend(img2: Int) {
 }
 
 @Composable
-fun SelfPost(content:String,timestamp: Long, mageResources: List<String>){
+fun SelfPost(content: String, timestamp: String, imageResources: Any?){
     val context= LocalContext.current
+    val posts = listOf(imageResources)
     Column(){
         Row(modifier= Modifier
             .fillMaxWidth()){
-            val uriImage = Database.loadImageFromInternalStorage(context,
+            val uriAvatarImage = ImageRepo.loadImageFromInternalStorage(context,
                 "avatar", Firebase.auth.currentUser!!.uid
             )
-            GetHinhDaiDienChinhSua1(uriImage)
+            GetHinhDaiDienChinhSua1(uriAvatarImage)
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(
@@ -381,14 +375,9 @@ fun SelfPost(content:String,timestamp: Long, mageResources: List<String>){
                     color = Color.Black,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
-                Text(text = "$timestamp")
+                Text(text = timestamp)
             }
             Spacer(Modifier.weight(1f))
-            Image(
-                painter= painterResource(R.drawable.meatballsmenuc),
-                contentDescription = "option Icon",
-                modifier = Modifier.size(24.dp)
-            )
         }
         Row (modifier = Modifier.fillMaxWidth()){
             Text(text = content)
@@ -397,7 +386,13 @@ fun SelfPost(content:String,timestamp: Long, mageResources: List<String>){
             modifier = Modifier.fillMaxWidth(), // Chiều rộng đầy đủ
             horizontalArrangement = Arrangement.spacedBy(8.dp) // Khoảng cách giữa các hình ảnh
         ) {
-
+            items(posts) { post ->
+                AsyncImage(
+                    model = Uri.parse(post.toString()),
+                    contentDescription = "option Icon",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
         Spacer(Modifier.height(11.dp))
 
