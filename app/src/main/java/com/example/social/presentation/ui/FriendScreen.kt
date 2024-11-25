@@ -1,4 +1,4 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import com.example.social.R
 import com.example.social.db.userPostDataProvider

@@ -1,4 +1,4 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image

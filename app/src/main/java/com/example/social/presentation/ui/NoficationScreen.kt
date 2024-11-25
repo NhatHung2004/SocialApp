@@ -1,4 +1,4 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import android.annotation.SuppressLint
 import android.widget.Toast

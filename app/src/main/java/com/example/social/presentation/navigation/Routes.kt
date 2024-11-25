@@ -1,11 +1,11 @@
-package com.example.social
+package com.example.social.presentation.navigation
 
 object Routes {
-    const val SIGN_IN = "sign_in"
+    const val LOGIN = "login"
     const val HOME = "home"
-    const val SIGN_UP = "sign_up"
-    const val TAC_VU = "tac_vu"
-    const val FRIEND_SCREEN = "friend_screen"
+    const val REGISTER = "register"
+    const val TABS = "tabs"
+    const val FRIEND= "friend"
     const val ALL_FRIEND_REQ = "all_friend_req"
     const val ALL_FRIEND_SEND = "all_friend_send"
     const val PROFILE_SCREEN = "profile_screen"

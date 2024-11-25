@@ -1,6 +1,7 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -26,6 +27,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,15 +43,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.social.R
-import com.example.social.Routes
-import com.example.social.firebase.Database
-import com.example.social.repository.AuthRepo
+import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.AuthViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SignInScreen(navController: NavController, modifier: Modifier) {
+fun LoginScreen(authViewModel: AuthViewModel = viewModel(), navController: NavController) {
+    val currentUser by authViewModel.currentUser.observeAsState()
+
     var emailInput by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visiblePassword by remember { mutableStateOf(false) }
@@ -113,8 +117,6 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedTextColor = Color.Black,
-//                        focusedContainerColor = Color.Transparent,
-//                        unfocusedContainerColor = Color.Transparent,
                         unfocusedTextColor = Color.Black,
                         errorContainerColor = Color.White,
                         errorTextColor = Color.Red
@@ -147,8 +149,6 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedTextColor = Color.Black,
-//                        focusedContainerColor = Color.White,
-//                        unfocusedContainerColor = Color.White,
                         unfocusedTextColor = Color.Black,
                         errorContainerColor = Color.White,
                         errorTextColor = Color.Red
@@ -157,7 +157,7 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                 Spacer(modifier = Modifier.height(30.dp))
                 Button(
                     onClick = {
-                        AuthRepo.login(emailInput, password, navController, context)
+                        authViewModel.login(emailInput, password)
                     },
                     colors = ButtonColors(
                         containerColor = Color.White,
@@ -194,7 +194,8 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
                 ) {
                     Text(text = "Create an", fontSize = 15.sp)
                     TextButton(onClick = {
-                        navController.navigate(Routes.SIGN_UP)
+                        authViewModel.setRegistrationState(null)
+                        navController.navigate("register")
                     }) {
                         Text(
                             text = "account",
@@ -206,4 +207,16 @@ fun SignInScreen(navController: NavController, modifier: Modifier) {
             }
         }
     }
+    // Nếu đăng nhập thành công, chuyển sang màn hình home
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            Toast.makeText(context, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
+
+            // Chuyển về màn hình đăng nhập sau khi đăng ký thành công
+            navController.navigate(Routes.TABS) {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
 }
+

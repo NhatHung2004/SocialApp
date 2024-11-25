@@ -1,6 +1,7 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import android.app.DatePickerDialog
+import android.net.Uri
 import android.widget.DatePicker
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -33,6 +34,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,16 +50,19 @@ import androidx.compose.ui.unit.sp
 import com.example.social.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.social.Routes
-import com.example.social.firebase.Database
-import com.example.social.repository.AuthRepo
+import com.example.social.presentation.viewmodel.AuthViewModel
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignUpScreen(navController: NavController) {
+fun RegisterScreen(authViewModel: AuthViewModel = viewModel(), navController: NavController) {
+    // Lắng nghe trạng thái đăng ký
+    val registrationState by authViewModel.registrationState.observeAsState()
+
     val context = LocalContext.current
+
     var ho by remember { mutableStateOf("") }
     var ten by remember { mutableStateOf("") }
     var emailInput by remember { mutableStateOf("") }
@@ -108,7 +113,7 @@ fun SignUpScreen(navController: NavController) {
             modifier = Modifier.padding(10.dp, 20.dp)
         ) {
             IconButton(onClick = {
-                navController.navigate(Routes.SIGN_IN)
+                navController.navigate("login")
             }) {
                 Icon(
                     painter = painterResource(R.drawable.arrow5),
@@ -482,12 +487,9 @@ fun SignUpScreen(navController: NavController) {
                 ) {
                     Button(
                         onClick = {
-                            if(password == confirmPassword) {
-                                AuthRepo.signup(emailInput, password, ho, ten, sex, date, avatar, backgroundAvatar, navController, context)
-                            }else {
-                                Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
-                            }
-
+                            authViewModel.register(emailInput, password, ho, ten, sex, date,
+                                "android.resource://com.example.social/drawable/$avatar",
+                                "android.resource://com.example.social/drawable/$backgroundAvatar")
                         },
                         colors = ButtonColors(
                             containerColor = Color.White,
@@ -498,7 +500,7 @@ fun SignUpScreen(navController: NavController) {
                         border = BorderStroke(1.dp, Color.Black.copy(0.8f))
                     ) {
                         Text(
-                            text = "Sign up",
+                            text = "ĐĂNG KÝ",
                             fontSize = 24.sp,
                             fontFamily = FontFamily(Font(R.font.jaro)),
                             fontWeight = FontWeight.Bold,
@@ -506,6 +508,18 @@ fun SignUpScreen(navController: NavController) {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    // Nếu đăng ký thành công, chuyển sang màn hình login
+    LaunchedEffect(registrationState) {
+        if (registrationState == true) {
+            Toast.makeText(context, "Đăng ký thành công", Toast.LENGTH_SHORT).show()
+
+            // Chuyển về màn hình đăng nhập sau khi đăng ký thành công
+            navController.navigate("login") {
+                popUpTo("login") { inclusive = true }
             }
         }
     }

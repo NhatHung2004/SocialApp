@@ -1,8 +1,8 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -50,34 +50,25 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
 import com.example.social.R
-import com.example.social.Routes
-import com.example.social.utils.HinhAnh
-import com.example.social.firebase.Database
-import com.example.social.repository.FirestoreRepo
-import com.example.social.viewModel.ProfileViewModel
+import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel = viewModel()){
     val context = LocalContext.current
 
-    val ho = FirestoreRepo.getData("users", "firstname")
-    val ten = FirestoreRepo.getData("users", "lastname")
-    val email = FirestoreRepo.getData("users", "email")
-
-    var tenState by remember { mutableStateOf("") }
-    var hoState by remember { mutableStateOf("") }
+    var firstnameState by remember { mutableStateOf("") }
+    var lastnameState by remember { mutableStateOf("") }
     var emailState by remember { mutableStateOf("") }
 
-    tenState = ten
-    hoState = ho
-    emailState = email
+    firstnameState = profileViewModel.firstname.collectAsState().value
+    lastnameState = profileViewModel.lastname.collectAsState().value
+    emailState = profileViewModel.email.collectAsState().value
 
-    val imgAvatar = profileViewModel.imageAvatarUri.collectAsState().value
-    var newImgAvatar by remember { mutableStateOf(imgAvatar) }
-
-    val imgBackground = profileViewModel.imageBackgroundUri.collectAsState().value
-    var newImgBackground by remember { mutableStateOf(imgBackground) }
+    val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
+    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
 
     var selectedImageUriBackground by remember { mutableStateOf<Uri?>(null) }
     val photoPickerLauncherBackground = rememberLauncherForActivityResult(
@@ -127,19 +118,21 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
             item{
                 ImageEdit(photoPickerLauncherAvatar,
                     photoPickerLauncherBackground,
+                    imageAvatar,
+                    imageBackground,
                     selectedImageUriAvatar,
-                    selectedImageUriBackground,
-                    context)
+                    selectedImageUriBackground
+                )
             }
             item{
-                TextFieldHo(hoState){
-                    hoState = it
+                TextFieldHo(firstnameState){
+                    firstnameState = it
                 }
                 Spacer(Modifier.height(20.dp))
             }
             item {
-                TextFieldTen(tenState){
-                    tenState = it
+                TextFieldTen(lastnameState){
+                    lastnameState = it
                 }
                 Spacer(Modifier.height(20.dp))
             }
@@ -159,16 +152,24 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
                     Button(
                         onClick = {
                             if(selectedImageUriAvatar != null) {
-                                HinhAnh.saoChepAnh(selectedImageUriAvatar, "avatar", context)
-                                newImgAvatar = selectedImageUriAvatar
-                                profileViewModel.updateImageAvatarUri(newImgAvatar)
+                                profileViewModel.copyImage(
+                                    selectedImageUriAvatar!!,
+                                    "avatar",
+                                    imageAvatar.toString(),
+                                    context
+                                )
+                                profileViewModel.updateImageAvatarUri("avatar")
                             }
                             if(selectedImageUriBackground != null) {
-                                HinhAnh.saoChepAnh(selectedImageUriBackground, "backgroundAvatar", context)
-                                newImgBackground = selectedImageUriBackground
-                                profileViewModel.updateImageBackgroundUri(newImgBackground)
+                                profileViewModel.copyImage(
+                                    selectedImageUriBackground!!,
+                                    "backgroundAvatar",
+                                    imageBackground.toString(),
+                                    context
+                                )
+                                profileViewModel.updateImageBackgroundUri("backgroundAvatar")
                             }
-                            FirestoreRepo.updateUser(hoState, tenState, emailState)
+                            profileViewModel.updateUserInfo(firstnameState, lastnameState, emailState)
                             navController.navigate(Routes.PROFILE_SCREEN)
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -192,9 +193,11 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
 @Composable
 fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
               photoPickerLauncherBackground: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
+              imageAvatarUri: Uri?,
+              imageBackgroundUri: Uri?,
               selectedImageUriAvatar: Uri?,
-              selectedImageUriBackground: Uri?,
-              context: Context){
+              selectedImageUriBackground: Uri?
+){
     Column(modifier=Modifier.padding(top=15.dp)){
         Row(modifier=Modifier.fillMaxWidth()){
             Text(text="Ảnh đại diện", fontSize = 25.sp)
@@ -226,9 +229,12 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
             }
         }
         Spacer(Modifier.height(25.dp))
-        HinhAnh.HienThiAnh("avatar", selectedImageUriAvatar, context){uri: Uri? ->
-            GetHinhDaiDienChinhSua(uri)
+        if(selectedImageUriAvatar == null) {
+            GetHinhDaiDienChinhSua(imageAvatarUri)
+        }else {
+            GetHinhDaiDienChinhSua(selectedImageUriAvatar)
         }
+
         Spacer(Modifier.height(25.dp))
         Row(){
             Text(text="Ảnh bìa", fontSize = 25.sp)
@@ -260,8 +266,10 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
             }
         }
         Spacer(Modifier.height(20.dp))
-        HinhAnh.HienThiAnh("backgroundAvatar", selectedImageUriBackground, context){uri: Uri? ->
-            GetHinhBiaChinhSua(uri)
+        if(selectedImageUriBackground == null) {
+            GetHinhBiaChinhSua(imageBackgroundUri)
+        }else {
+            GetHinhBiaChinhSua(selectedImageUriBackground)
         }
     }
     Spacer(Modifier.height(20.dp))
@@ -321,8 +329,8 @@ fun TextFieldEmail(email: String, onEmailChange: (String) ->Unit){
 @Composable
 fun GetHinhDaiDienChinhSua(img : Uri?){
     Box(modifier = Modifier.fillMaxSize() ) {
-        AsyncImage(
-            model = img,
+        Image(
+            painter = rememberAsyncImagePainter(img),
             contentDescription = "avatar",
             contentScale = ContentScale.Crop,
             modifier = Modifier

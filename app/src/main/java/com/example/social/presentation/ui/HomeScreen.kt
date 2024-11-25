@@ -1,4 +1,4 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,7 +89,6 @@ fun LazyListScope.subListContent(userPosts: List<userPosts>, likedStates: Mutabl
 }
 @Composable
 fun UserListItems(userPosts: userPosts,//Hiển thị nội dung của một bài viết.
-
                   onLikeChanged: (Boolean) -> Unit){// Thêm hàm callback để cập nhật trạng thái liked
     //->: Dấu này được sử dụng để chỉ ra rằng đây là một hàm
     //Unit trong Kotlin tương tự như void

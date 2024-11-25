@@ -1,7 +1,6 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,7 +38,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -49,35 +47,29 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
 import com.example.social.R
-import com.example.social.Routes
-import com.example.social.utils.HinhAnh.checkImgUri
+import com.example.social.data.model.Post
 import com.example.social.db.userPostDataProvider
-import com.example.social.repository.FirestoreRepo
-import com.example.social.repository.ImageRepo
+import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.PostViewModel
+import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.example.social.viewModel.ProfileViewModel
 
 
 @Composable
-fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewModel = viewModel()){
+fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewModel = viewModel(),
+                  postViewModel: PostViewModel = viewModel()){
     var isPressed by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val posts = postViewModel.posts.collectAsState().value
+    postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
 
-    var imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
-    var imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
+    val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
+    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
 
-    // kiểm tra hình ảnh từ viewmodel có null hay không
-    if (imageAvatar == null) {
-        imageAvatar = checkImgUri(context, "avatar")
-    }
-    if (imageBackground == null) {
-        imageBackground = checkImgUri(context, "backgroundAvatar")
-    }
-
-//    val posts = FirestoreRepo.getData("users", "posts")
-//    Log.i("posts", posts.toString())
+    val firstname = profileViewModel.firstname.collectAsState().value
+    val lastname = profileViewModel.lastname.collectAsState().value
 
     Column(
         modifier = Modifier
@@ -93,19 +85,32 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
         ){
             LazyColumn() {
                 item {
-                    Firstline5(navController, imageAvatar, imageBackground)
+                    //, imageAvatar, imageBackground
+                    Firstline5(navController,
+                        imageAvatar,
+                        imageBackground,
+                        firstname,
+                        lastname
+                    )
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
                     FriendLine(navController)
                 }
-//                items(posts){post->
-//                    val content = post["content"]
-//                    val timestamp = post["timestamp"]
-//                    val imageUris = post["imageUris"]
-//                    Log.i("post", imageUris.toString())
-//                    SelfPost(content.toString(), timestamp.toString(), imageUris)
-//                }
+                item {
+                    if (posts != null) {
+                        for ((index, entry) in posts.entries.withIndex()) {
+                            val postData = entry.value as? Map<*, *>
+                            val imageUris = postData?.get("imageUris") as? List<String>
+                            val content = postData?.get("content")
+                            val timestamp = postData?.get("timestamp") as Long
+                            val post = imageUris?.let { Post(content.toString(), timestamp, it) }
+                            if (post != null) {
+                                SelfPost(post, imageAvatar)
+                            }
+                        }
+                    }
+                }
             }
         }
         HorizontalDivider(
@@ -168,7 +173,9 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
 }
 
 @Composable
-fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground: Uri?){
+
+fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground: Uri?,
+               firstname: String, lastname: String){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
             .fillMaxWidth()
@@ -206,7 +213,7 @@ fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground:
         Spacer(Modifier.height(10.dp))
         Row(modifier = Modifier.fillMaxWidth()){
             Spacer(Modifier.height(10.dp))
-            Text(text=Firebase.auth.currentUser?.displayName.toString(),modifier=Modifier.padding(start = 15 .dp),
+            Text(text= "$firstname $lastname", modifier=Modifier.padding(start = 15 .dp),
                 fontWeight = FontWeight.ExtraBold, fontSize = 20.sp
             )
             Spacer(Modifier.weight(1f))
@@ -329,9 +336,9 @@ fun GetNenHinhDaiDien(image: Uri?){
     )
 }
 @Composable
-fun GetHinhDaiDienProfile(image: Uri?){
-    AsyncImage(
-        model = image,
+fun  GetHinhDaiDienProfile(image: Uri?){
+    Image(
+        painter = rememberAsyncImagePainter(image),
         contentDescription = "Circular Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -340,7 +347,6 @@ fun GetHinhDaiDienProfile(image: Uri?){
             .border(5.dp, colorResource(R.color.pinkBlur), CircleShape)
     )
 }
-
 
 @Composable
 fun GetHinhDaiDienProfileFriend(img2: Int) {
@@ -358,16 +364,11 @@ fun GetHinhDaiDienProfileFriend(img2: Int) {
 }
 
 @Composable
-fun SelfPost(content: String, timestamp: String, imageResources: Any?){
-    val context= LocalContext.current
-    val posts = listOf(imageResources)
+fun SelfPost(post: Post, imageAvatar: Uri?){
     Column(){
         Row(modifier= Modifier
             .fillMaxWidth()){
-            val uriAvatarImage = ImageRepo.loadImageFromInternalStorage(context,
-                "avatar", Firebase.auth.currentUser!!.uid
-            )
-            GetHinhDaiDienChinhSua1(uriAvatarImage)
+            GetHinhDaiDienProfile(imageAvatar)
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(
@@ -375,26 +376,25 @@ fun SelfPost(content: String, timestamp: String, imageResources: Any?){
                     color = Color.Black,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
-                Text(text = timestamp)
+                Text(text = post.timestamp.toString())
             }
             Spacer(Modifier.weight(1f))
         }
         Row (modifier = Modifier.fillMaxWidth()){
-            Text(text = content)
+            Text(text = post.content)
         }
         LazyRow(
             modifier = Modifier.fillMaxWidth(), // Chiều rộng đầy đủ
             horizontalArrangement = Arrangement.spacedBy(8.dp) // Khoảng cách giữa các hình ảnh
         ) {
-            items(posts) { post ->
+            items(post.imageUris) { uri ->
                 AsyncImage(
-                    model = Uri.parse(post.toString()),
+                    model = Uri.parse(uri),
                     contentDescription = "option Icon",
                     modifier = Modifier.size(24.dp)
                 )
             }
         }
         Spacer(Modifier.height(11.dp))
-
     }
 }

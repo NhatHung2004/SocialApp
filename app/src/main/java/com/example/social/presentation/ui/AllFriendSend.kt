@@ -1,5 +1,4 @@
-package com.example.social.layouts
-
+package com.example.social.presentation.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -118,6 +117,5 @@ fun ListSend(){
             }
             Spacer(Modifier.height(20.dp))
         }
-
     }
 }

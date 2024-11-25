@@ -1,4 +1,4 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import android.content.Context
 import android.content.Intent
@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,17 +57,22 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.rememberAsyncImagePainter
 import com.example.social.R
-import com.example.social.repository.FirestoreRepo
-import com.example.social.repository.ImageRepo
-import com.example.social.repository.PostRepo
+import com.example.social.presentation.viewmodel.PostViewModel
+import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
 @Composable
-fun StatusScreen(){
+fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel: PostViewModel = viewModel()){
+    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
+    profileViewModel.updateImageAvatarUri("avatar")
+
+    val posts = postViewModel.posts.collectAsState().value
+    postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
+
     val context = LocalContext.current
     var imageBitmaps by remember { mutableStateOf<List<Bitmap>>(listOf()) }
     var imageUris by remember { mutableStateOf<List<Uri>>(listOf()) } // Lưu trữ URI ảnh đã chọn
@@ -78,19 +84,17 @@ fun StatusScreen(){
         if(result.resultCode == android.app.Activity.RESULT_OK)
         {
             val bitmap=result.data?.extras?.get("data") as Bitmap
-            imageBitmaps=imageBitmaps+bitmap
+            imageBitmaps = imageBitmaps + bitmap
             Toast.makeText(context, "Ảnh đã được chụp",Toast.LENGTH_SHORT).show()
         }
         else
             Toast.makeText(context, "Không thể chụp ảnh", Toast.LENGTH_SHORT).show()
     }
-    val mutipleGalleryLauncher = rememberLauncherForActivityResult(
+    val multipleGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ){ uris: List<Uri> ->
-        imageUris=uris.toMutableList()
+        imageUris = uris.toMutableList()
     }
-
-
 
     Column(
         modifier = Modifier
@@ -108,9 +112,11 @@ fun StatusScreen(){
         ) {
             FirstLine2(
                 context,
-                imageBitmaps = imageBitmaps,
-                imageUris = imageUris,
-                text = text
+                imageBitmaps,
+                imageUris,
+                text,
+                postViewModel,
+                posts
             ) // Đặt firstLine2 ở trên
             HorizontalDivider(
                 thickness = 1.dp,
@@ -121,11 +127,7 @@ fun StatusScreen(){
             LazyColumn (modifier = Modifier.fillMaxSize()) {
                 item{
                     Row(modifier=Modifier.fillMaxWidth().padding(start = 5.dp)) {
-                        val uriImage = ImageRepo.loadImageFromInternalStorage(
-                            context,
-                            "avatar", Firebase.auth.currentUser!!.uid
-                        )
-                        GetHinhDaiDienChinhSua1(uriImage)
+                        GetHinhDaiDienChinhSua1(imageAvatar)
                         Spacer(Modifier.width(10.dp))
                         Text(
                             text = Firebase.auth.currentUser?.displayName.toString(),
@@ -140,7 +142,7 @@ fun StatusScreen(){
                     }
                 }
                 item{
-                    SetHinh(imageBitmaps,imageUris)
+                    SetHinh(imageBitmaps, imageUris)
                 }
             }
         }
@@ -193,7 +195,7 @@ fun StatusScreen(){
                     )
                 }
                 Button(onClick={
-                    mutipleGalleryLauncher.launch("image/*")
+                    multipleGalleryLauncher.launch("image/*")
                 },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 )
@@ -211,7 +213,8 @@ fun StatusScreen(){
 }
 
 @Composable
-fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri>, text:String){
+fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri>?, text: String,
+               postViewModel: PostViewModel = viewModel(), posts: Map<String, Any>?){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -221,14 +224,20 @@ fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri
         )
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            if(imageUris.isNotEmpty()) {
-                PostRepo.getPost(Firebase.auth.currentUser!!.uid){post ->
-                    val postId = "post${post?.size?.plus(1)}"
-                    ImageRepo.saveImageToInternalStorage(imageUris, context, "imageUris", postId)
+            if (imageUris != null) {
+                if(imageUris.isNotEmpty()) {
+                    val postId = "post${posts?.size?.plus(1)}"
+                    val savedImagePaths = imageUris.let {
+                        postViewModel.savePostImageToInternalStorage(
+                            it,
+                            context,
+                            "posts", postId)
+                    }
+                    Log.i("a", savedImagePaths.toString())
+                    postViewModel.savePostImagePathToLocal(context, savedImagePaths)
+                    postViewModel.updatePostToFirestore("posts", text, savedImagePaths)
+                    Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
                 }
-                ImageRepo.saveImagePath(context, imageUris.map { it.toString() })
-                PostRepo.updatePost("imageUris", text, imageUris)
-                Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
             }
         },
             colors = ButtonDefaults.buttonColors(
@@ -277,8 +286,8 @@ fun TextFieldStatus(text: String, context: Context, onTextChange: (String) -> Un
 @Composable
 fun GetHinhDaiDienChinhSua1(img : Uri?){
     Box() {
-        AsyncImage(
-            model = img,
+        Image(
+            painter = rememberAsyncImagePainter(img),
             contentDescription = "avatar",
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -337,3 +346,4 @@ fun SetHinh(imageBitmaps: List<Bitmap>,imageUris: List<Uri>){
         }
     }
 }
+

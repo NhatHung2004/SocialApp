@@ -1,4 +1,4 @@
-package com.example.social.layouts
+package com.example.social.presentation.ui
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
@@ -34,22 +34,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.social.R
-import com.example.social.Routes
-import com.example.social.viewModel.ProfileViewModel
+import com.example.social.presentation.navigation.Routes
 import kotlinx.coroutines.launch
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TacVu2(navController: NavController){
-    val profileViewModel: ProfileViewModel = viewModel()
+fun TabScreen(){
     val context = LocalContext.current
     val scope = rememberCoroutineScope()//o một coroutine scope để quản lý các coroutine bên trong composable này.
     // Điều này thường được sử dụng để thực hiện các tác vụ bất đồng bộ như thay đổi trang trong HorizontalPager.
@@ -148,10 +144,10 @@ fun TacVu2(navController: NavController){
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
                                     navController = navController,
-                                    startDestination = Routes.FRIEND_SCREEN,
+                                    startDestination = Routes.FRIEND,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    composable(Routes.FRIEND_SCREEN) {
+                                    composable(Routes.FRIEND) {
                                         FriendScreen(navController)
                                     }
                                     composable(Routes.ALL_FRIEND_REQ) {
@@ -175,13 +171,13 @@ fun TacVu2(navController: NavController){
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     composable(Routes.PROFILE_SCREEN) {
-                                        ProfileScreen(navController, profileViewModel)
+                                        ProfileScreen(navController)
                                     }
                                     composable(Routes.ALL_FRIEND) {
                                         AllFriend()
                                     }
                                     composable(Routes.PROFILE_EDIT) {
-                                        ProfileEdit(navController, profileViewModel)
+                                        ProfileEdit(navController)
                                     }
                                 }
                             }
@@ -192,6 +188,7 @@ fun TacVu2(navController: NavController){
         }
     }
 }
+
 enum class HomeTabs(// Định nghĩa một enum để đại diện cho các tab trong ứng dụng
     val selectedIcon: Int,
     val unSelectedIcon: Int,
