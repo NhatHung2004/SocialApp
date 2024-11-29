@@ -33,10 +33,10 @@ class PostViewModel: ViewModel() {
     }
 
     fun savePostImageToInternalStorage(
-         imageUris: List<Uri>,
-         context: Context,
-         child: String,
-         postId: String): List<Uri> {
+        imageUris: MutableList<Uri>,
+        context: Context,
+        child: String,
+        postId: String): List<Uri> {
         return imageProcess.saveImageToInternalStorage(
             imageUris, context, child, postId
         )

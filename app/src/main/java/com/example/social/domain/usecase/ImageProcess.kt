@@ -15,6 +15,7 @@ import java.io.InputStream
 class ImageProcess(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
     private val firestoreMethod = FirestoreMethod(firebaseAuth, firestore)
 
+
     // dùng đường dẫn được lưu trên firestore để load ảnh local
     suspend fun getImageFromLocal(field: String): Uri? {
         return Uri.parse(firestoreMethod.fetchInfoData("users", field))
@@ -40,7 +41,7 @@ class ImageProcess(private val firebaseAuth: FirebaseAuth, private val firestore
     }
 
     // lưu 1 ảnh vào local
-    private fun saveImageToInternalStorage(uri: Uri?, context: Context, child: String, uid: String): String? {
+    fun saveImageToInternalStorage(uri: Uri?, context: Context, child: String, uid: String): String? {
         return try {
             // Tạo tên file duy nhất cho mỗi ảnh
             val fileName = "image_" + child + "_" + uid + "_"+ System.currentTimeMillis() + ".jpg"
@@ -63,7 +64,7 @@ class ImageProcess(private val firebaseAuth: FirebaseAuth, private val firestore
     }
 
     // lưu nhiều ảnh
-    fun saveImageToInternalStorage(imageUris: List<Uri>, context: Context, child: String, postId: String): List<Uri> {
+    fun saveImageToInternalStorage(imageUris: MutableList<Uri>, context: Context, child: String, postId: String): List<Uri> {
         val savedImagePaths = mutableListOf<Uri>()
         for ((index, uri) in imageUris.withIndex()) {
             try {

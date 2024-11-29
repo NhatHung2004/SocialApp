@@ -1,5 +1,6 @@
 package com.example.social.presentation.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -65,6 +66,7 @@ import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
+@SuppressLint("MutableCollectionMutableState", "SdCardPath")
 @Composable
 fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel: PostViewModel = viewModel()){
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
@@ -75,7 +77,8 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
 
     val context = LocalContext.current
     var imageBitmaps by remember { mutableStateOf<List<Bitmap>>(listOf()) }
-    var imageUris by remember { mutableStateOf<List<Uri>>(listOf()) } // Lưu trữ URI ảnh đã chọn
+    var imagesSelected by remember { mutableStateOf<List<Uri>>(listOf()) } // Lưu trữ URI ảnh đã chọn
+    val imageUris = remember { mutableListOf<Uri>() }
     var text by remember { mutableStateOf("") }
     val cameraLauncher= rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -93,8 +96,9 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
     val multipleGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ){ uris: List<Uri> ->
-        imageUris = uris.toMutableList()
+        imagesSelected = uris.toMutableList()
     }
+    imageUris.addAll(imagesSelected)
 
     Column(
         modifier = Modifier
@@ -213,8 +217,9 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
 }
 
 @Composable
-fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri>?, text: String,
-               postViewModel: PostViewModel = viewModel(), posts: Map<String, Any>?){
+fun FirstLine2(
+    context: Context, imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>, text: String,
+    postViewModel: PostViewModel = viewModel(), posts: Map<String, Any>?){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -224,20 +229,17 @@ fun FirstLine2(context: Context, imageBitmaps: List<Bitmap>, imageUris: List<Uri
         )
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            if (imageUris != null) {
-                if(imageUris.isNotEmpty()) {
-                    val postId = "post${posts?.size?.plus(1)}"
-                    val savedImagePaths = imageUris.let {
-                        postViewModel.savePostImageToInternalStorage(
-                            it,
-                            context,
-                            "posts", postId)
-                    }
-                    Log.i("a", savedImagePaths.toString())
-                    postViewModel.savePostImagePathToLocal(context, savedImagePaths)
-                    postViewModel.updatePostToFirestore("posts", text, savedImagePaths)
-                    Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
+            if(imageUris.isNotEmpty()) {
+                val postId = "post${posts?.size?.plus(1)}"
+                val savedImagePaths = imageUris.let {
+                    postViewModel.savePostImageToInternalStorage(
+                        it,
+                        context,
+                        "posts", postId)
                 }
+                postViewModel.savePostImagePathToLocal(context, savedImagePaths)
+                postViewModel.updatePostToFirestore("posts", text, savedImagePaths)
+                Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
             }
         },
             colors = ButtonDefaults.buttonColors(
@@ -302,7 +304,7 @@ fun GetHinhDaiDienChinhSua1(img : Uri?){
 }
 
 @Composable
-fun SetHinh(imageBitmaps: List<Bitmap>,imageUris: List<Uri>){
+fun SetHinh(imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>){
     LazyRow (modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {

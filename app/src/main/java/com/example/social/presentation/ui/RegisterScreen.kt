@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
 import java.util.Calendar
 
@@ -59,7 +60,7 @@ import java.util.Calendar
 @Composable
 fun RegisterScreen(authViewModel: AuthViewModel = viewModel(), navController: NavController) {
     // Lắng nghe trạng thái đăng ký
-    val registrationState by authViewModel.registrationState.observeAsState()
+    val registrationState = authViewModel.registrationState.collectAsState().value
 
     val context = LocalContext.current
 
@@ -518,8 +519,8 @@ fun RegisterScreen(authViewModel: AuthViewModel = viewModel(), navController: Na
             Toast.makeText(context, "Đăng ký thành công", Toast.LENGTH_SHORT).show()
 
             // Chuyển về màn hình đăng nhập sau khi đăng ký thành công
-            navController.navigate("login") {
-                popUpTo("login") { inclusive = true }
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(Routes.LOGIN) { inclusive = true }
             }
         }
     }

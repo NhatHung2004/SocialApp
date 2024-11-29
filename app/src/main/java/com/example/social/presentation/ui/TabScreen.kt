@@ -29,34 +29,34 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.social.R
 import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TabScreen(){
-    val context = LocalContext.current
+fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
     val scope = rememberCoroutineScope()//o một coroutine scope để quản lý các coroutine bên trong composable này.
     // Điều này thường được sử dụng để thực hiện các tác vụ bất đồng bộ như thay đổi trang trong HorizontalPager.
     val pagerState = rememberPagerState(pageCount = { HomeTabs.entries.size })//Tạo một trạng thái cho HorizontalPager, số lượng
     // trang được xác định bởi số lượng mục trong enum HomeTabs.
     val selectedIndex = remember { derivedStateOf { pagerState.currentPage } }//Tạo một state được tính toán dựa trên trang hiện tại của HorizontalPager.
     // Khi trang thay đổi, giá trị này sẽ tự động cập nhật.
-    val navController = rememberNavController()
+    val navControllerTab = rememberNavController()
     //Hai dòng lệnh này đóng vai trò quan trọng trong việc theo dõi màn hình hiện tại trong
     // NavController và xác định liệu bạn đang ở màn hình AllFreindReq hay không
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val navBackStackEntry by navControllerTab.currentBackStackEntryAsState()
     val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf("AllFriendReq", "AllFriendSend", "AllFriend","ProfileEdit")
     Scaffold(//Cau truc xay dung giao dien
         containerColor = Color.White,
@@ -137,18 +137,18 @@ fun TabScreen(){
                     contentAlignment = Alignment.Center
                 ) {
                     when(HomeTabs.entries[pageIndex]){
-                        HomeTabs.Home -> { HomeScreen(navController)
+                        HomeTabs.Home -> { HomeScreen(navControllerTab)
                             // Bạn có thể thay thế nó bằng mã cần thiết để hiển thị nội dung Home.
                         }
                         HomeTabs.Friend -> {
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
-                                    navController = navController,
+                                    navController = navControllerTab,
                                     startDestination = Routes.FRIEND,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     composable(Routes.FRIEND) {
-                                        FriendScreen(navController)
+                                        FriendScreen(navControllerTab)
                                     }
                                     composable(Routes.ALL_FRIEND_REQ) {
                                         AllFriendReq()
@@ -166,18 +166,18 @@ fun TabScreen(){
                         HomeTabs.Profile -> {
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
-                                    navController = navController,
+                                    navController = navControllerTab,
                                     startDestination = Routes.PROFILE_SCREEN,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     composable(Routes.PROFILE_SCREEN) {
-                                        ProfileScreen(navController)
+                                        ProfileScreen(navController, navControllerTab, authViewModel)
                                     }
                                     composable(Routes.ALL_FRIEND) {
                                         AllFriend()
                                     }
                                     composable(Routes.PROFILE_EDIT) {
-                                        ProfileEdit(navController)
+                                        ProfileEdit(navControllerTab)
                                     }
                                 }
                             }

@@ -1,5 +1,4 @@
 package com.example.social.presentation.viewmodel
-import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,30 +8,32 @@ import com.example.social.data.repository.PostRepo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class AuthViewModel: ViewModel() {
     private val authRepository = AuthRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val postRepo = PostRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
-    private val _currentUser = MutableLiveData<FirebaseUser?>()
-    val currentUser: LiveData<FirebaseUser?> = _currentUser
+    private val _currentUser = MutableStateFlow<FirebaseUser?>(null)
+    val currentUser: StateFlow<FirebaseUser?> = _currentUser
 
-    private val _registrationState = MutableLiveData<Boolean?>()
-    val registrationState: LiveData<Boolean?> = _registrationState
+    private val _registrationState = MutableStateFlow<Boolean?>(null)
+    val registrationState: StateFlow<Boolean?> = _registrationState
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
             val user = authRepository.login(email, password)
             if (user != null) {
-                _currentUser.postValue(user)
+                _currentUser.value = user
                 postRepo.createPostDocument()
             }
         }
     }
 
     fun setRegistrationState(state: Boolean?) {
-        _registrationState.postValue(state)
+        _registrationState.value = state
     }
 
     fun register(email: String, password: String, ho: String, ten: String, gioiTinh: String, date: String, avatar: String, backgroundAvatar: String) {
@@ -48,12 +49,9 @@ class AuthViewModel: ViewModel() {
         }
     }
 
-    fun checkCurrentUser() {
-        _currentUser.postValue(authRepository.getCurrentUser())
-    }
-
     fun logout() {
-        authRepository.logout()
-        _currentUser.postValue(null)
+        if(_currentUser.value != null) {
+            _currentUser.value = null
+        }
     }
 }

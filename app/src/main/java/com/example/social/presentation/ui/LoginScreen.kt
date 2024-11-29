@@ -52,7 +52,7 @@ import com.example.social.presentation.viewmodel.AuthViewModel
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LoginScreen(authViewModel: AuthViewModel = viewModel(), navController: NavController) {
-    val currentUser by authViewModel.currentUser.observeAsState()
+    val currentUser = authViewModel.currentUser.collectAsState().value
 
     var emailInput by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -212,9 +212,9 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel(), navController: NavCo
         if (currentUser != null) {
             Toast.makeText(context, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
 
-            // Chuyển về màn hình đăng nhập sau khi đăng ký thành công
+            // Chuyển về màn hình home
             navController.navigate(Routes.TABS) {
-                popUpTo("login") { inclusive = true }
+                popUpTo(Routes.TABS) { inclusive = true }
             }
         }
     }

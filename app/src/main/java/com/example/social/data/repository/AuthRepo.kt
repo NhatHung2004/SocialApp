@@ -1,6 +1,5 @@
 package com.example.social.data.repository
 
-import android.net.Uri
 import android.util.Log
 import com.example.social.data.model.User
 import com.google.firebase.auth.FirebaseAuth

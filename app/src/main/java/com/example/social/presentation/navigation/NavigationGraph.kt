@@ -27,7 +27,7 @@ fun NavigationGraph(authViewModel: AuthViewModel = viewModel(), modifier: Modifi
             RegisterScreen(authViewModel, navController)
         }
         composable(Routes.TABS) {
-            TabScreen()
+            TabScreen(navController, authViewModel)
         }
     }
 }

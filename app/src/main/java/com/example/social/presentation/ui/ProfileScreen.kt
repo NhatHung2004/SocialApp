@@ -52,6 +52,7 @@ import com.example.social.R
 import com.example.social.data.model.Post
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
@@ -59,8 +60,10 @@ import com.google.firebase.auth.auth
 
 
 @Composable
-fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewModel = viewModel(),
-                  postViewModel: PostViewModel = viewModel()){
+fun ProfileScreen(navController: NavController, navControllerTab: NavController,
+                  authViewModel: AuthViewModel,
+                  profileViewModel: ProfileViewModel = viewModel(),
+                  postViewModel: PostViewModel = viewModel()) {
     var isPressed by remember { mutableStateOf(false) }
     val posts = postViewModel.posts.collectAsState().value
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
@@ -70,6 +73,8 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
 
     val firstname = profileViewModel.firstname.collectAsState().value
     val lastname = profileViewModel.lastname.collectAsState().value
+
+    val showBottomSheet = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -86,7 +91,7 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
             LazyColumn() {
                 item {
                     //, imageAvatar, imageBackground
-                    Firstline5(navController,
+                    Firstline5(navControllerTab,
                         imageAvatar,
                         imageBackground,
                         firstname,
@@ -95,7 +100,7 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
-                    FriendLine(navController)
+                    FriendLine(navControllerTab)
                 }
                 item {
                     if (posts != null) {
@@ -128,7 +133,10 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
                 Button(
-                    onClick = { isPressed = !isPressed },
+                    onClick = {
+                        isPressed = !isPressed
+                        showBottomSheet.value = true
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White
                     ),
@@ -169,6 +177,9 @@ fun ProfileScreen(navController: NavController, profileViewModel: ProfileViewMod
                 }
             }
         }
+    }
+    if (showBottomSheet.value) {
+        SignOutPart(navController, profileViewModel, authViewModel, onDismiss = {showBottomSheet.value=false})
     }
 }
 

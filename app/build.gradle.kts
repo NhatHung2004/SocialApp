@@ -57,6 +57,8 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.0.0")
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
+    implementation("io.coil-kt:coil-compose:2.1.0")
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -69,6 +71,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.play.services.cast.tv)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
