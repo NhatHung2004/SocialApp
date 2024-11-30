@@ -171,7 +171,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     composable(Routes.PROFILE_SCREEN) {
-                                        ProfileScreen(navController, navControllerTab, authViewModel)
+                                        ProfileScreen(navController, navControllerTab)
                                     }
                                     composable(Routes.ALL_FRIEND) {
                                         AllFriend()

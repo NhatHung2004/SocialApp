@@ -50,6 +50,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
+import com.example.social.db.cmtPart
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
@@ -60,10 +61,9 @@ import com.google.firebase.auth.auth
 
 
 @Composable
-fun ProfileScreen(navController: NavController, navControllerTab: NavController,
-                  authViewModel: AuthViewModel,
-                  profileViewModel: ProfileViewModel = viewModel(),
-                  postViewModel: PostViewModel = viewModel()) {
+fun ProfileScreen(navController: NavController, navController1: NavController, profileViewModel: ProfileViewModel = viewModel(),
+                  postViewModel: PostViewModel = viewModel(),authViewModel: AuthViewModel= viewModel()
+){
     var isPressed by remember { mutableStateOf(false) }
     val posts = postViewModel.posts.collectAsState().value
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
@@ -91,7 +91,7 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
             LazyColumn() {
                 item {
                     //, imageAvatar, imageBackground
-                    Firstline5(navControllerTab,
+                    Firstline5(navController,
                         imageAvatar,
                         imageBackground,
                         firstname,
@@ -100,9 +100,10 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
-                    FriendLine(navControllerTab)
+                    FriendLine(navController)
                 }
                 item {
+                    Spacer(Modifier.height(10.dp))
                     if (posts != null) {
                         for ((index, entry) in posts.entries.withIndex()) {
                             val postData = entry.value as? Map<*, *>
@@ -111,7 +112,7 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             val timestamp = postData?.get("timestamp") as Long
                             val post = imageUris?.let { Post(content.toString(), timestamp, it) }
                             if (post != null) {
-                                SelfPost(post, imageAvatar)
+                                SelfPost(post, imageAvatar, "$firstname $lastname")
                             }
                         }
                     }
@@ -133,17 +134,15 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
                 Button(
-                    onClick = {
-                        isPressed = !isPressed
-                        showBottomSheet.value = true
-                    },
+                    onClick = { isPressed = !isPressed
+                        showBottomSheet.value=true},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White
                     ),
                 )
                 {
                     Row(){
-                        Text(text="Shin Văn Nô",color= colorResource(R.color.pink), fontSize = 20.sp)
+                        Text(text=firstname+" "+lastname,color= colorResource(R.color.pink), fontSize = 20.sp)
                         Spacer(Modifier.width(10.dp))
                         if (isPressed) {
                             Image(
@@ -179,7 +178,7 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
         }
     }
     if (showBottomSheet.value) {
-        SignOutPart(navController, profileViewModel, authViewModel, onDismiss = {showBottomSheet.value=false})
+        SignOutPart(navController1 ,profileViewModel, authViewModel ,onDismiss = {showBottomSheet.value=false})
     }
 }
 
@@ -358,7 +357,18 @@ fun  GetHinhDaiDienProfile(image: Uri?){
             .border(5.dp, colorResource(R.color.pinkBlur), CircleShape)
     )
 }
-
+@Composable
+fun  GetHinhDaiDienPost1(image: Uri?){
+    Image(
+        painter = rememberAsyncImagePainter(image),
+        contentDescription = "Circular Image",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .size(41.dp) // Kích thước ảnh tròn
+            .clip(CircleShape) // Cắt ảnh thành hình tròn
+            .border(1.dp, colorResource(R.color.pinkBlur), CircleShape)
+    )
+}
 @Composable
 fun GetHinhDaiDienProfileFriend(img2: Int) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -375,11 +385,13 @@ fun GetHinhDaiDienProfileFriend(img2: Int) {
 }
 
 @Composable
-fun SelfPost(post: Post, imageAvatar: Uri?){
-    Column(){
+fun SelfPost(post: Post, imageAvatar: Uri?,name:String){
+    val showBottomSheet = remember { mutableStateOf(false) }
+
+    Column(modifier=Modifier.fillMaxSize()){
         Row(modifier= Modifier
             .fillMaxWidth()){
-            GetHinhDaiDienProfile(imageAvatar)
+            GetHinhDaiDienPost1(imageAvatar)
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(
@@ -389,7 +401,7 @@ fun SelfPost(post: Post, imageAvatar: Uri?){
                 )
                 Text(text = post.timestamp.toString())
             }
-            Spacer(Modifier.weight(1f))
+            //Spacer(Modifier.weight(1f))
         }
         Row (modifier = Modifier.fillMaxWidth()){
             Text(text = post.content)
@@ -402,10 +414,56 @@ fun SelfPost(post: Post, imageAvatar: Uri?){
                 AsyncImage(
                     model = Uri.parse(uri),
                     contentDescription = "option Icon",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
         Spacer(Modifier.height(11.dp))
+        Spacer(Modifier.height(11.dp))
+        Row(modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically){
+            Image(
+                painter= painterResource(R.drawable.like1),
+                contentDescription="option",
+                modifier = Modifier.size(16.dp)
+            )
+            Image(
+                painter= painterResource(R.drawable.heart),
+                contentDescription="option",
+                modifier = Modifier.size(16.dp)
+            )
+            //Text(text=userPosts.count.toString()+userPosts.quantity) text hien thi so luong tim va like
+        }
+        Row(modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = {  }, // Đổi trạng thái khi nhấn
+                //Gọi hàm callback: Khi người dùng nhấn nút, hàm callback onLikeChanged sẽ được gọi với trạng thái mới (đã bị đảo ngược), giúp cập nhật trạng thái "liked" trong dữ liệu của bạn.
+                modifier = Modifier.padding(start = 0.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.like),
+                    contentDescription = "option",
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(11.dp))
+                Text(text = "Thích",color=Color.Black, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.weight(1f))
+
+            Button(onClick={showBottomSheet.value = true},modifier = Modifier.padding(end = 5.dp), colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White)) {
+                Image(
+                    painter = painterResource(R.drawable.speechbubble),
+                    contentDescription = "option",
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(11.dp))
+                Text(text = "Bình luận",color=Color.Black, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+    if (showBottomSheet.value) {
+        cmtPart(onDismiss = { showBottomSheet.value = false }, name) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }
