@@ -176,7 +176,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                 )
                 {
                     Image(
-                        painter = painterResource(R.drawable.home),
+                        painter = painterResource(R.drawable.smile),
                         contentDescription = "option Icon",
                         modifier = Modifier
                             .size(25.dp)
@@ -192,7 +192,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                 )
                 {
                     Image(
-                        painter = painterResource(R.drawable.plus),
+                        painter = painterResource(R.drawable.camera),
                         contentDescription = "option Icon",
                         modifier = Modifier
                             .size(29.dp)
@@ -205,7 +205,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                 )
                 {
                     Image(
-                        painter = painterResource(R.drawable.searching),
+                        painter = painterResource(R.drawable.upload),
                         contentDescription = "option Icon",
                         modifier = Modifier
                             .size(29.dp)
@@ -247,7 +247,7 @@ fun FirstLine2(
             ),
         ){
             Image(
-                painter = painterResource(R.drawable.searching),
+                painter = painterResource(R.drawable.email),
                 contentDescription = "option Icon",
                 modifier = Modifier
                     .size(29.dp)
