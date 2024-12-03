@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -76,9 +75,15 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
 
     val context = LocalContext.current
-    var imageBitmaps by remember { mutableStateOf<List<Bitmap>>(listOf()) }
-    var imagesSelected by remember { mutableStateOf<List<Uri>>(listOf()) } // Lưu trữ URI ảnh đã chọn
+    // ghi nhớ trạng thái chụp ảnh
+    var imageBitmap   by remember { mutableStateOf<Bitmap?>(null) }
+    // ghi nhớ trạng thái chọn ảnh từ thư viện
+    var imagesSelected by remember { mutableStateOf<List<Uri>>(listOf()) }
+
+    // biến lưu trữ ảnh chọn
     val imageUris = remember { mutableListOf<Uri>() }
+    val imageBitmapSelected = remember { mutableListOf<Bitmap?>() }
+
     var text by remember { mutableStateOf("") }
     val cameraLauncher= rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -86,8 +91,8 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
             result->
         if(result.resultCode == android.app.Activity.RESULT_OK)
         {
-            val bitmap=result.data?.extras?.get("data") as Bitmap
-            imageBitmaps = imageBitmaps + bitmap
+            imageBitmap = result.data?.extras?.get("data") as Bitmap
+//            Log.i("img", imageBitmapSelected.toString())
             Toast.makeText(context, "Ảnh đã được chụp",Toast.LENGTH_SHORT).show()
         }
         else
@@ -99,6 +104,8 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
         imagesSelected = uris.toMutableList()
     }
     imageUris.addAll(imagesSelected)
+    if (imageBitmap != null)
+        imageBitmapSelected.add(imageBitmap)
 
     Column(
         modifier = Modifier
@@ -116,7 +123,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
         ) {
             FirstLine2(
                 context,
-                imageBitmaps,
+                imageBitmapSelected,
                 imageUris,
                 text,
                 postViewModel,
@@ -146,7 +153,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                     }
                 }
                 item{
-                    SetHinh(imageBitmaps, imageUris)
+                    SetHinh(imageBitmapSelected, imageUris)
                 }
             }
         }
@@ -176,7 +183,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                 )
                 {
                     Image(
-                        painter = painterResource(R.drawable.home),
+                        painter = painterResource(R.drawable.smile),
                         contentDescription = "option Icon",
                         modifier = Modifier
                             .size(25.dp)
@@ -192,7 +199,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                 )
                 {
                     Image(
-                        painter = painterResource(R.drawable.plus),
+                        painter = painterResource(R.drawable.camera),
                         contentDescription = "option Icon",
                         modifier = Modifier
                             .size(29.dp)
@@ -205,7 +212,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                 )
                 {
                     Image(
-                        painter = painterResource(R.drawable.searching),
+                        painter = painterResource(R.drawable.upload),
                         contentDescription = "option Icon",
                         modifier = Modifier
                             .size(29.dp)
@@ -218,7 +225,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
 
 @Composable
 fun FirstLine2(
-    context: Context, imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>, text: String,
+    context: Context, imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>, text: String,
     postViewModel: PostViewModel = viewModel(), posts: Map<String, Any>?){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -229,25 +236,24 @@ fun FirstLine2(
         )
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            if(imageUris.isNotEmpty()) {
-                val postId = "post${posts?.size?.plus(1)}"
-                val savedImagePaths = imageUris.let {
-                    postViewModel.savePostImageToInternalStorage(
-                        it,
-                        context,
-                        "posts", postId)
-                }
-                postViewModel.savePostImagePathToLocal(context, savedImagePaths)
-                postViewModel.updatePostToFirestore("posts", text, savedImagePaths)
+            if (imageUris.isNotEmpty()) {
+                postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imageUris, text)
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
             }
+            if (imageBitmaps.isNotEmpty()) {
+                val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmaps)
+                postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imgBitmapUris, text)
+                Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
+
+            }
+
         },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White
             ),
         ){
             Image(
-                painter = painterResource(R.drawable.searching),
+                painter = painterResource(R.drawable.email),
                 contentDescription = "option Icon",
                 modifier = Modifier
                     .size(29.dp)
@@ -304,7 +310,7 @@ fun GetHinhDaiDienChinhSua1(img : Uri?){
 }
 
 @Composable
-fun SetHinh(imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>){
+fun  SetHinh(imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>){
     LazyRow (modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
@@ -318,13 +324,15 @@ fun SetHinh(imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>){
                     .border(2.dp, Color.Gray, RoundedCornerShape(0.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Captured Image",
-                    modifier = Modifier.fillMaxSize()
-                        .height(400.dp),
-                    contentScale = ContentScale.Crop
-                )
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Captured Image",
+                        modifier = Modifier.fillMaxSize()
+                            .height(400.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
         items(imageUris.size) { index ->

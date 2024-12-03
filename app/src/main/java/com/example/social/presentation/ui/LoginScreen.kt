@@ -213,9 +213,7 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel(), navController: NavCo
             Toast.makeText(context, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
 
             // Chuyển về màn hình home
-            navController.navigate(Routes.TABS) {
-                popUpTo(Routes.TABS) { inclusive = true }
-            }
+            navController.navigate(Routes.TABS)
         }
     }
 }

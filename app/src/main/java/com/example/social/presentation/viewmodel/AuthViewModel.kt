@@ -1,6 +1,4 @@
 package com.example.social.presentation.viewmodel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.AuthRepo
@@ -50,8 +48,6 @@ class AuthViewModel: ViewModel() {
     }
 
     fun logout() {
-        if(_currentUser.value != null) {
-            _currentUser.value = null
-        }
+        _currentUser.value = null
     }
 }
