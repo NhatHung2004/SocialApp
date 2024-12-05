@@ -23,6 +23,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -30,11 +32,24 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.social.R
 import com.example.social.db.userPostDataProvider
+import com.example.social.presentation.viewmodel.FriendViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
-fun AllFriendSend(){
+fun AllFriendSend(friendViewModel: FriendViewModel = viewModel()){
+    val friendSends=friendViewModel.friends.collectAsState().value
+
+    friendViewModel.getFriends(Firebase.auth.currentUser!!.uid, "friendSends")
+    val userIdSends = remember(friendSends) {
+        friendSends?.mapNotNull { (key, value) ->
+            (value as? Map<*, *>)?.get("uid")?.toString()
+        }.orEmpty()
+    }
+
     Column(modifier= Modifier.fillMaxSize()){
         Row(modifier =  Modifier.fillMaxWidth()) {
             Button(
@@ -65,7 +80,7 @@ fun AllFriendSend(){
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = "100", fontSize = 20.sp,
+                text = userIdSends.size.toString(), fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color= colorResource(R.color.pink)
             )
@@ -73,49 +88,18 @@ fun AllFriendSend(){
         Spacer(Modifier.height(20.dp))
         LazyColumn (modifier=Modifier.fillMaxSize().padding(start=6.dp)){
             item {
-                ListSend()
-            }
-        }
-    }
-}
-@Composable
-fun ListSend(){
-    Column (
-        modifier=Modifier.fillMaxWidth(),
-    ) {
-        userPostDataProvider.friendList.forEach { friend->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                GetHinhDaiDienFriend(friend.avtFriend.avatarRes)
-                Spacer(Modifier.width(10.dp))
-                Column {
-
-                    Row(){
-                        Text(text = friend.nameFriend)
-                        Spacer(Modifier.weight(1f))
-                        Text(text = friend.timeFriend,modifier=Modifier.padding(end = 10.dp))
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Row(){
-                        val context = LocalContext.current
-                        Button(onClick={Toast.makeText(context,"Đã hủy lời mời kết bạn với " + friend.nameFriend,Toast.LENGTH_SHORT).show()},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.white)
-                            ),
-                            modifier = Modifier
-                                // Đặt kích thước cho nút
-                                .border(
-                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                                .fillMaxWidth().height(37.dp)
-
-                        ){
-                            Text(text="Hủy",color= colorResource(R.color.pink))
-                        }
+                val userInfoList = friendViewModel.userInfo.collectAsState().value
+                if (userInfoList.isEmpty() && userIdSends.isNotEmpty()) {
+                    friendViewModel.getFriendInfo(userIdSends)
+                }
+                userInfoList.forEachIndexed{index,userInfo->
+                    val userId = userIdSends.getOrNull(index)
+                    if(userId!=null) {
+                        FriendSendDisplay(userInfo,userId)
                     }
                 }
             }
-            Spacer(Modifier.height(20.dp))
         }
     }
 }
+

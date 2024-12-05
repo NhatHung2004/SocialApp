@@ -4,6 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.AuthRepo
+import com.example.social.data.repository.FriendRepo
 import com.example.social.data.repository.PostRepo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 class AuthViewModel: ViewModel() {
     private val authRepository = AuthRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val postRepo = PostRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val friendRepo = FriendRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     private val _currentUser = MutableStateFlow<FirebaseUser?>(null)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser
@@ -42,6 +44,9 @@ class AuthViewModel: ViewModel() {
             if (user != null) {
                 // Nếu đăng ký thành công, thông báo trạng thái và chuyển về trang đăng nhập
                 setRegistrationState(true)
+                friendRepo.createFriendDocument("friends")
+                friendRepo.createFriendDocument("friendReqs")
+                friendRepo.createFriendDocument("friendSends")
             } else {
                 // Nếu đăng ký thất bại
                 setRegistrationState(false)

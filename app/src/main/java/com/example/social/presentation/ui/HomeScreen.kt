@@ -1,10 +1,13 @@
 package com.example.social.presentation.ui
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,11 +19,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,11 +40,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil3.compose.rememberAsyncImagePainter
 import com.example.social.db.cmtPart
 import com.example.social.db.userAvatars
 import com.example.social.db.userPostDataProvider
 import com.example.social.db.userPosts
+import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.ProfileViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun HomeScreen(navController: NavController){//Đây là hàm chính để tạo ra giao diện của màn hình chính trong ứng dụng
@@ -56,19 +71,104 @@ fun HomeScreen(navController: NavController){//Đây là hàm chính để tạo
     }
 }
 @Composable
-fun SubList1(){//Tạo một danh sách cuộn ngang cho các avatar của người dùng.
+fun SubList1(profileViewModel: ProfileViewModel = viewModel(), friendViewModel: FriendViewModel = viewModel()){//Tạo một danh sách cuộn ngang cho các avatar của người dùng.
+    val friends=friendViewModel.friends.collectAsState().value
+    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
+
+    val firstname = profileViewModel.firstname.collectAsState().value
+    val lastname = profileViewModel.lastname.collectAsState().value
+    friendViewModel.getFriends(Firebase.auth.currentUser!!.uid,"friends")
+
+    val userIds = remember(friends) {
+        friends?.mapNotNull { (key, value) ->
+            (value as? Map<*, *>)?.get("uid")?.toString()
+        }.orEmpty()
+    }
+
     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top=16.dp)){
-        items(userAvatars.size){ index->
-            val userAvatar1=userAvatars[index]
-            Box(
-                modifier= Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(50.dp))
-                    .background(Color.Green) // Nền màu trắng
+        item(){
+            Column(horizontalAlignment = Alignment.CenterHorizontally,modifier=Modifier.padding(start = 5.dp)) {
+                Box {
+                    Button(
+                        onClick = {},
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Blue
+                        ),
+                        modifier = Modifier.size(20.dp)
+                            .clip(CircleShape)
+                            .align(Alignment.BottomEnd)
+                            .zIndex(1f),
+                        contentPadding = PaddingValues(0.dp),
+                    ){
+                        Icon( imageVector = Icons.Default.Add,
+                            contentDescription = "add",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
 
-
-            ){
-                GetHinhDaiDien(userAvatar1.avatarRes)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(Color.White) // Nền màu trắng
+                            .border(1.dp, Color.Black, RoundedCornerShape(50.dp))
+                    ) {
+                        Image(
+                            painter = rememberAsyncImagePainter(imageAvatar),
+                            contentDescription = "avatar",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(60.dp)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(5.dp))
+                Text(text=lastname)
+            }
+        }
+        item{
+            val userInfoList = friendViewModel.userInfo.collectAsState().value
+            if (userInfoList.isEmpty() && userIds.isNotEmpty()) {
+                friendViewModel.getFriendInfo(userIds)
+            }
+            userInfoList.forEachIndexed{index,userInfo->
+                val name=" ${userInfo["lastname"]}"
+                val avatarUri= Uri.parse(userInfo["avatar"].toString())
+                val status=userInfo["status"].toString()
+                val userId = userIds.getOrNull(index)
+                if (userId != null) {
+                    Column (horizontalAlignment = Alignment.CenterHorizontally,){
+                        Box() {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(RoundedCornerShape(50.dp))
+                                    .background(
+                                        if (status == "online") Color.Green else Color.Red // Thay đổi màu dựa trên trạng thái
+                                    )
+                                    .align(Alignment.BottomEnd)
+                                    .zIndex(1f)
+                            ){}
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(RoundedCornerShape(50.dp))
+                                    .background(Color.White) // Nền màu trắng
+                                    .border(1.dp, Color.Black, RoundedCornerShape(50.dp))
+                            ) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(avatarUri),
+                                    contentDescription = "avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(60.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(5.dp))
+                        Text(text = name)
+                    }
+                }
+                Spacer(Modifier.width(16.dp))
             }
         }
     }
