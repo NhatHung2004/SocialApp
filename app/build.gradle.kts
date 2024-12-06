@@ -58,6 +58,13 @@ dependencies {
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
     implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.compose.material:material:1.6.0")
+    implementation("androidx.compose.ui:ui:1.6.0")
+    implementation("androidx.compose.ui:ui-tooling:1.6.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0")
+    implementation ("androidx.compose.material:material-icons-extended")
+
 
 
     implementation(libs.androidx.core.ktx)

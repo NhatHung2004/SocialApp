@@ -23,18 +23,37 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.social.R
 import com.example.social.db.userPostDataProvider
+import com.example.social.presentation.viewmodel.FriendViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
-fun AllFriendReq(){
+fun AllFriendReq(navController: NavController, friendViewModel: FriendViewModel = viewModel()){
+    val showBottomSheet = remember { mutableStateOf(false) }
+    val friendReqs=friendViewModel.friends.collectAsState().value
+
+    friendViewModel.getFriends(Firebase.auth.currentUser!!.uid, "friendReqs")
+    val userIdReqs = remember(friendReqs) {
+        friendReqs?.mapNotNull { (key, value) ->
+            (value as? Map<*, *>)?.get("uid")?.toString()
+        }.orEmpty()
+    }
+
     Column(modifier= Modifier.fillMaxSize()){
         Row(modifier =  Modifier.fillMaxWidth()) {
             Button(
@@ -51,6 +70,18 @@ fun AllFriendReq(){
             }
             Spacer(Modifier.width(6.dp))
             Text(text="Lời mời kết bạn",modifier=Modifier.offset(y=10.dp), fontSize = 19.sp)
+            Spacer(Modifier.weight(1f))
+            Button(onClick = {showBottomSheet.value=true}
+                ,modifier=Modifier.padding(end = 2.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White
+                ),){
+                Image(
+                    painter = painterResource(R.drawable.meatballsmenuc),
+                    contentDescription = "Back",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
         Spacer(Modifier.width(10.dp))
         HorizontalDivider(
@@ -65,7 +96,7 @@ fun AllFriendReq(){
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = "100", fontSize = 20.sp,
+                text = userIdReqs.size.toString(), fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color= colorResource(R.color.pink)
             )
@@ -73,66 +104,20 @@ fun AllFriendReq(){
         Spacer(Modifier.height(20.dp))
         LazyColumn (modifier=Modifier.fillMaxSize().padding(start=6.dp)){
             item {
-                ListReq()
-            }
-        }
-    }
-}
-@Composable
-fun ListReq(){
-    Column (
-        modifier=Modifier.fillMaxWidth(),
-    ) {
-        userPostDataProvider.friendList.forEach { friend->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                GetHinhDaiDienFriend(friend.avtFriend.avatarRes)
-                Spacer(Modifier.width(10.dp))
-                Column {
-                    Text(
-                        text = friend.nameFriend,
-                    )
-                    Spacer(Modifier.width(11.dp))
-                    Text(text = friend.timeFriend)
-                    Row(){
-                        val context = LocalContext.current
-                        Button(onClick={
-                            Toast.makeText(context,"Đã đồng ý kết bạn với " + friend.nameFriend,
-                                Toast.LENGTH_SHORT).show()},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.pink)
-                            ),
-                            modifier = Modifier
-                                // Đặt kích thước cho nút
-                                .border(
-                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                                    shape = RoundedCornerShape(15.dp)
-                                )
-                                .size(width = 132.dp, height = 37.dp)
-
-                        ){
-                            Text(text="Chấp nhận",color=Color.White)
-                        }
-                        Spacer(Modifier.weight(0.7f))
-                        Button(onClick={
-                            Toast.makeText(context,"Đã từ chối kết bạn với " + friend.nameFriend,
-                                Toast.LENGTH_SHORT).show()},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White
-                            ),
-                            modifier = Modifier
-                                // Đặt kích thước cho nút
-                                .border(
-                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                                    shape = RoundedCornerShape(15.dp)
-                                )
-                                .size(width = 132.dp, height = 37.dp)
-                        ){
-                            Text(text="Từ chối",color= colorResource(R.color.pink))
-                        }
+                val userInfoList = friendViewModel.userInfo.collectAsState().value
+                if (userInfoList.isEmpty() && userIdReqs.isNotEmpty()) {
+                    friendViewModel.getFriendInfo(userIdReqs)
+                }
+                userInfoList.forEachIndexed{index,userInfo->
+                    val userId=userIdReqs.getOrNull(index)
+                    if(userId!=null){
+                        FriendReqDisplay(userInfo,userId,navController)
                     }
                 }
             }
-            Spacer(Modifier.height(20.dp))
         }
+    }
+    if (showBottomSheet.value) {
+        FriendReqToSendBottomSheet(navController , onDismiss = {showBottomSheet.value=false})
     }
 }

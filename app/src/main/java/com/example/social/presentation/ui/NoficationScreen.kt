@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
@@ -49,17 +51,24 @@ import com.example.social.db.userPostDataProvider
 @Composable
 fun NoficationScreen(){
     val viewedNotifications = mutableStateMapOf<Int, Boolean>()
-    LazyColumn (modifier=Modifier.fillMaxSize()){
-        item{
-            FirstLine1()
-            Spacer(Modifier.height(10.dp))
-            Divider(
-                color = colorResource(R.color.pink),
-                thickness = 1.dp,
-            )
-        }
-        item{
-            noficationList(viewedNotifications)
+
+    Surface(
+        modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ màn hình
+        color = MaterialTheme.colorScheme.background, // Màu nền
+        contentColor = MaterialTheme.colorScheme.onBackground // Màu chữ
+    ){
+        LazyColumn (modifier=Modifier.fillMaxSize()){
+            item{
+                FirstLine1()
+                Spacer(Modifier.height(10.dp))
+                Divider(
+                    color = colorResource(R.color.pink),
+                    thickness = 1.dp,
+                )
+            }
+            item{
+                noficationList(viewedNotifications)
+            }
         }
     }
 }
@@ -78,7 +87,7 @@ fun FirstLine1(){
         Button(
             onClick = {},
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White
+                containerColor = Color.LightGray
             ),
             modifier = Modifier
                 // Đặt kích thước cho nút
@@ -91,7 +100,8 @@ fun FirstLine1(){
             // Sử dụng Box để căn giữa nội dung
             Box(
                 // Chiếm toàn bộ không gian của nút
-                contentAlignment = Alignment.Center // Căn giữa nội dung
+                contentAlignment = Alignment.Center, // Căn giữa nội dung
+                // chỉnh màu nền của box theo nền
             ) {
                 Row( verticalAlignment = Alignment.CenterVertically, // Căn giữa theo chiều dọc
                     modifier = Modifier.fillMaxSize()) {
@@ -103,7 +113,7 @@ fun FirstLine1(){
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = "Tìm kiếm",
-                        color = colorResource(R.color.pink),
+                        color =  MaterialTheme.colorScheme.onBackground,
                         fontSize = 20.sp,
                     )
                 }

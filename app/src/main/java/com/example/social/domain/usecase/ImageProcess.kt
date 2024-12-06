@@ -11,6 +11,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import android.graphics.Bitmap
 
 class ImageProcess(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
     private val firestoreMethod = FirestoreMethod(firebaseAuth, firestore)
@@ -132,6 +133,35 @@ class ImageProcess(private val firebaseAuth: FirebaseAuth, private val firestore
         if (savedPaths.contains(imagePath)) {
             savedPaths.remove(imagePath)
             prefs.edit().putStringSet("image_paths", savedPaths).apply()
+        }
+    }
+    private fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
+        val file = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.png")
+        return try {
+            FileOutputStream(file).use { fos ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+            }
+            Uri.fromFile(file)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+    fun convertBitmapListToUriList(context: Context, bitmapList: MutableList<Bitmap?>): MutableList<Uri> {
+        val uriList = mutableListOf<Uri>()
+        bitmapList.forEach { bitmap ->
+            val uri = bitmap?.let { bitmapToUri(context, it) }
+            uri?.let { uriList.add(it) }
+        }
+        return uriList
+    }
+    fun clearCacheFiles(context: Context) {
+        val cacheDir = context.cacheDir
+        val files = cacheDir.listFiles() // Lấy danh sách file trong cache
+        files?.forEach { file ->
+            if (file.isFile) { // Chỉ xóa file, không xóa thư mục con
+                file.delete()
+            }
         }
     }
 }

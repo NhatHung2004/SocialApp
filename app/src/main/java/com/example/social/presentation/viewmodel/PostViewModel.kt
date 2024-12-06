@@ -11,6 +11,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import android.graphics.Bitmap
+import android.widget.Toast
 
 class PostViewModel: ViewModel() {
     private val imageProcess = ImageProcess(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
@@ -26,25 +28,25 @@ class PostViewModel: ViewModel() {
         }
     }
 
-    fun updatePostToFirestore(child: String, content: String, imageUris: List<Uri?>) {
-        viewModelScope.launch {
-            postRepo.updatePost(child, content, imageUris)
-        }
+    fun convertBitmap(context: Context, imageBitmaps: MutableList<Bitmap?>): MutableList<Uri> {
+        return imageProcess.convertBitmapListToUriList(context, imageBitmaps)
     }
 
-    fun savePostImageToInternalStorage(
-        imageUris: MutableList<Uri>,
-        context: Context,
-        child: String,
-        postId: String): List<Uri> {
-        return imageProcess.saveImageToInternalStorage(
-            imageUris, context, child, postId
-        )
-    }
-
-    fun savePostImagePathToLocal(context: Context, filePath: List<Uri>) {
+    fun saveAndUpdatePostToLocalAndDb(posts: Map<String, Any>?, context: Context,
+                                      imageUris: MutableList<Uri>, text: String
+    ) {
         viewModelScope.launch {
-            imageProcess.saveImagePath(context, filePath)
+            if (imageUris.isNotEmpty()) {
+                val postId = "post${posts?.size?.plus(1)}"
+                val savedImagePaths = imageProcess.saveImageToInternalStorage(
+                    imageUris,
+                    context,
+                    "posts", postId
+                )
+                imageProcess.saveImagePath(context, savedImagePaths)
+                postRepo.updatePost("posts", text, savedImagePaths)
+                imageProcess.clearCacheFiles(context)
+            }
         }
     }
 

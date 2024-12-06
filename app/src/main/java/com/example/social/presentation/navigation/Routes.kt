@@ -11,4 +11,5 @@ object Routes {
     const val PROFILE_SCREEN = "profile_screen"
     const val ALL_FRIEND = "all_friend"
     const val PROFILE_EDIT = "profile_edit"
+    const val SETTING = "setting_screen"
 }

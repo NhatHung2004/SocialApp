@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -25,6 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -50,9 +53,11 @@ import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
+import com.example.social.db.cmtPart
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
+import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
@@ -61,12 +66,16 @@ import com.google.firebase.auth.auth
 
 @Composable
 fun ProfileScreen(navController: NavController, navControllerTab: NavController,
-                  authViewModel: AuthViewModel,
+                  authViewModel: AuthViewModel= viewModel(),
                   profileViewModel: ProfileViewModel = viewModel(),
-                  postViewModel: PostViewModel = viewModel()) {
+                  postViewModel: PostViewModel = viewModel(),
+                  friendViewModel: FriendViewModel = viewModel()) {
     var isPressed by remember { mutableStateOf(false) }
     val posts = postViewModel.posts.collectAsState().value
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
+
+    val friends=friendViewModel.friends.collectAsState().value
+    friendViewModel.getFriends(Firebase.auth.currentUser!!.uid,"friends")
 
     val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
@@ -76,110 +85,184 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
     val showBottomSheet = remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize(), // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
-        verticalArrangement = Arrangement.SpaceBetween // Căn đều giữa các thành phần
-    ) {
+    val userIds = remember(friends) {
+        friends?.mapNotNull { (key, value) ->
+            (value as? Map<*, *>)?.get("uid")?.toString()
+        }.orEmpty()
+    }
+
+
+    Surface(
+        modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ màn hình
+        color = MaterialTheme.colorScheme.background, // Màu nền
+        contentColor = MaterialTheme.colorScheme.onBackground // Màu chữ
+    ){
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            LazyColumn() {
-                item {
-                    //, imageAvatar, imageBackground
-                    Firstline5(navControllerTab,
-                        imageAvatar,
-                        imageBackground,
-                        firstname,
-                        lastname
-                    )
-                }
-                item {
-                    Spacer(Modifier.height(15.dp))
-                    FriendLine(navControllerTab)
-                }
-                item {
-                    if (posts != null) {
-                        for ((index, entry) in posts.entries.withIndex()) {
-                            val postData = entry.value as? Map<*, *>
-                            val imageUris = postData?.get("imageUris") as? List<String>
-                            val content = postData?.get("content")
-                            val timestamp = postData?.get("timestamp") as Long
-                            val post = imageUris?.let { Post(content.toString(), timestamp, it) }
-                            if (post != null) {
-                                SelfPost(post, imageAvatar)
+                .fillMaxSize(), // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
+            verticalArrangement = Arrangement.SpaceBetween // Căn đều giữa các thành phần
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                LazyColumn() {
+                    item {
+                        //, imageAvatar, imageBackground
+                        Firstline5(navControllerTab,
+                            imageAvatar,
+                            imageBackground,
+                            firstname,
+                            lastname
+                        )
+                    }
+                    item {
+                        Spacer(Modifier.height(15.dp))
+                        Row(modifier= Modifier
+                            .fillMaxWidth()
+                            .padding(start = 15.dp, end = 15.dp)){
+                            Text(text="Bạn bè", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
+                                color=Color.Gray,
+                                modifier = Modifier.alpha(0.5f)
+                            )
+                            Spacer(Modifier.width(155.dp))
+                            Button(
+                                onClick = {},
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.LightGray
+                                ),
+                                modifier = Modifier
+                                    .width(165.dp)
+                                    .offset(y = (-4).dp)
+                                    .height(30.dp)
+                                    .wrapContentSize() // Đảm bảo kích thước vừa khít nội dung
+                                    ,
+                            ) {
+                                Text(
+                                    text = "Tìm bạn bè",
+                                    fontSize = 12.sp,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        val userInfoList = friendViewModel.userInfo.collectAsState().value
+                        if (userInfoList.isEmpty() && userIds.isNotEmpty()) {
+                            friendViewModel.getFriendInfo(userIds)
+                        }
+
+                        Row( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                            userInfoList.chunked(3).forEach { chunk ->
+                                chunk.forEachIndexed { index, userInfo ->
+                                    val userId = userIds.getOrNull(index)
+                                    if (userId != null) {
+                                        FriendLine(navController, userInfo)
+                                    }
+                                }
+                            }
+                        }
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Button(
+                                onClick = {navControllerTab.navigate(Routes.ALL_FRIEND)},
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.LightGray
+                                ),
+                                modifier = Modifier
+                                    // Đặt kích thước cho nút
+                                    .border(
+                                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
+                                    .size(width = 335.dp, height = 32.dp)
+                            ) {
+                                Text(text = "Xem tất cả", color = colorResource(R.color.pink))
+                            }
+                        }
+                    }
+                    item {
+                        Spacer(Modifier.height(10.dp))
+                        if (posts != null) {
+                            for ((index, entry) in posts.entries.withIndex()) {
+                                val postData = entry.value as? Map<*, *>
+                                val imageUris = postData?.get("imageUris") as? List<String>
+                                val content = postData?.get("content")
+                                val timestamp = postData?.get("timestamp") as Long
+                                val post = imageUris?.let { Post(content.toString(), timestamp, it) }
+                                if (post != null) {
+                                    SelfPost(post, imageAvatar,"$firstname $lastname")
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = colorResource(R.color.pink)
-        )
-        // Box ở dưới cùng
-        Box(
-            modifier = Modifier
-                .fillMaxWidth() // Chiếm toàn bộ chiều rộng
-                .height(52.dp) // Thiết lập chiều cao cho Box mới
-                .background(color = Color.White), // Bạn có thể đổi màu theo ý thích
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
-                Button(
-                    onClick = {
-                        isPressed = !isPressed
-                        showBottomSheet.value = true
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
-                )
-                {
-                    Row(){
-                        Text(text="Shin Văn Nô",color= colorResource(R.color.pink), fontSize = 20.sp)
-                        Spacer(Modifier.width(10.dp))
-                        if (isPressed) {
-                            Image(
-                                painter = painterResource(id = R.drawable.uparrow), // Thay đổi thành icon khi bấm
-                                contentDescription = "Icon Pressed",
-                                modifier = Modifier.size(20.dp) // Kích thước của icon
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.down), // Icon mặc định
-                                contentDescription = "Default Icon",
-                                modifier = Modifier.size(20.dp) // Kích thước của icon
-                            )
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = colorResource(R.color.pink)
+            )
+            // Box ở dưới cùng
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth() // Chiếm toàn bộ chiều rộng
+                    .height(52.dp), // Thiết lập chiều cao cho Box mới
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
+                    Button(
+                        onClick = {
+                            isPressed = !isPressed
+                            showBottomSheet.value = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        ),
+                    )
+                    {
+                        Row(){
+                            Text(text = "Shin Văn Nô" , fontSize = 20.sp)
+                            Spacer(Modifier.width(10.dp))
+                            if (isPressed) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.uparrow), // Thay đổi thành icon khi bấm
+                                    contentDescription = "Icon Pressed",
+                                    modifier = Modifier.size(20.dp) // Kích thước của icon
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.down), // Icon mặc định
+                                    contentDescription = "Default Icon",
+                                    modifier = Modifier.size(20.dp) // Kích thước của icon
+                                )
+                            }
                         }
                     }
-                }
-                Spacer(Modifier.width(95.dp))
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
-                )
-                {
-                    Image(
-                        painter = painterResource(R.drawable.menubar),
-                        contentDescription = "option Icon",
-                        modifier = Modifier
-                            .size(29.dp)
+                    Spacer(Modifier.weight(1f))
+                    Button(
+                        onClick = {
+                            navControllerTab.navigate(Routes.SETTING)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        ),
                     )
+                    {
+                        Image(
+                            painter = painterResource(R.drawable.menubar),
+                            contentDescription = "option Icon",
+                            modifier = Modifier
+                                .size(29.dp)
+                        )
+                    }
                 }
             }
         }
-    }
-    if (showBottomSheet.value) {
-        SignOutPart(navController, profileViewModel, authViewModel, onDismiss = {showBottomSheet.value=false})
+        if (showBottomSheet.value) {
+            SignOutPart(navController, profileViewModel, authViewModel, onDismiss = {showBottomSheet.value=false})
+        }
     }
 }
 
@@ -231,7 +314,7 @@ fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground:
             Button(
                 onClick = {navController.navigate(Routes.PROFILE_EDIT)},
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
+                    containerColor = Color.LightGray
                 ),
                 modifier = Modifier
                     // Đặt kích thước cho nút
@@ -248,7 +331,6 @@ fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground:
                 ) {
                     Text(
                         text = "Chỉnh sửa trang cá nhân",
-                        color = colorResource(R.color.pink),
                         fontSize = 12.sp,
                         modifier= Modifier
                             .padding(start = 11.dp)
@@ -260,77 +342,14 @@ fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground:
     }
 }
 @Composable
-fun FriendLine(navController: NavController){
-    Column(){
-        Row(modifier= Modifier
-            .fillMaxWidth()
-            .padding(start = 15.dp, end = 15.dp)){
-            Text(text="Bạn bè", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
-                color=Color.Gray,
-                modifier = Modifier.alpha(0.5f)
-            )
-            Spacer(Modifier.width(155.dp))
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
-                ),
-                modifier = Modifier
-                    .width(165.dp)
-                    .offset(y = (-4).dp)
-                    .height(30.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ không gian của Button
-                    contentAlignment = Alignment.CenterEnd // Căn trái nội dung
-                ) {
-                    Text(
-                        text = "Tìm bạn bè",
-                        color = colorResource(R.color.pinkBlur),
-                        fontSize = 12.sp,
-                    )
-                }
-            }
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 15.dp, end = 15.dp),
-        ) {
-            // Chia danh sách thành các hàng 3 phần tử
-            userPostDataProvider.friendList.chunked(3).forEach { friendRow ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    friendRow.forEach { friend ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally // Căn giữa các phần tử trong cột
-                        ) {
-                            GetHinhDaiDienProfileFriend(friend.avtFriend.avatarRes)
-                            Text(text = friend.nameFriend)
-                        }
-                    }
-                }
-            }
-        }
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Button(
-                onClick = {navController.navigate(Routes.ALL_FRIEND)},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.white)
-                ),
-                modifier = Modifier
-                    // Đặt kích thước cho nút
-                    .border(
-                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    .size(width = 335.dp, height = 32.dp)
-            ) {
-                Text(text = "Xem tất cả", color = colorResource(R.color.pink))
-            }
-        }
+fun FriendLine(navController: NavController,friend: Map<String,Any>){
+    val name = "${friend["firstname"]} ${friend["lastname"]}"
+    val avatarUri = Uri.parse(friend["avatar"].toString())
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally // Căn giữa các phần tử trong cột
+    ) {
+        GetHinhDaiDienProfileFriend(avatarUri)
+        Text(text = name)
     }
 }
 @Composable
@@ -355,31 +374,42 @@ fun  GetHinhDaiDienProfile(image: Uri?){
         modifier = Modifier
             .size(90.dp) // Kích thước ảnh tròn
             .clip(CircleShape) // Cắt ảnh thành hình tròn
-            .border(5.dp, colorResource(R.color.pinkBlur), CircleShape)
+            .border(1.dp, colorResource(R.color.pinkBlur), CircleShape)
     )
 }
 
 @Composable
-fun GetHinhDaiDienProfileFriend(img2: Int) {
+fun GetHinhDaiDienProfileFriend(img2: Uri) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(8.dp)) // Thêm spacer ở đây để đẩy hình ảnh xuống
         Image(
-            painter = painterResource(img2),
+            painter = rememberAsyncImagePainter(img2),
             contentDescription = "avatar",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(width = 92.dp, height = 51.dp)
                 .clip(RoundedCornerShape(2.dp))
+                .border(1.dp, Color.Black, RoundedCornerShape(2.dp))
         )
     }
 }
 
 @Composable
-fun SelfPost(post: Post, imageAvatar: Uri?){
-    Column(){
+fun SelfPost(post: Post, imageAvatar: Uri?,name:String){
+    val showBottomSheet = remember { mutableStateOf(false) }
+
+    Column(modifier=Modifier.fillMaxSize()){
         Row(modifier= Modifier
-            .fillMaxWidth()){
-            GetHinhDaiDienProfile(imageAvatar)
+            .fillMaxWidth().padding(start = 10.dp)){
+            Image(
+                painter = rememberAsyncImagePainter(imageAvatar),
+                contentDescription = "Circular Image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(41.dp) // Kích thước ảnh tròn
+                    .clip(CircleShape) // Cắt ảnh thành hình tròn
+                    .border(1.dp, colorResource(R.color.pinkBlur), CircleShape)
+            )
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(
@@ -392,7 +422,7 @@ fun SelfPost(post: Post, imageAvatar: Uri?){
             Spacer(Modifier.weight(1f))
         }
         Row (modifier = Modifier.fillMaxWidth()){
-            Text(text = post.content)
+            Text(text = post.content,modifier=Modifier.padding(start = 10.dp))
         }
         LazyRow(
             modifier = Modifier.fillMaxWidth(), // Chiều rộng đầy đủ
@@ -402,10 +432,55 @@ fun SelfPost(post: Post, imageAvatar: Uri?){
                 AsyncImage(
                     model = Uri.parse(uri),
                     contentDescription = "option Icon",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
-        Spacer(Modifier.height(11.dp))
+        Spacer(Modifier.height(20.dp))
+        Row(modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically){
+            Image(
+                painter= painterResource(R.drawable.like1),
+                contentDescription="option",
+                modifier = Modifier.size(16.dp)
+            )
+            Image(
+                painter= painterResource(R.drawable.heart),
+                contentDescription="option",
+                modifier = Modifier.size(16.dp)
+            )
+            //Text(text=userPosts.count.toString()+userPosts.quantity) text hien thi so luong tim va like
+        }
+        Row(modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = {  }, // Đổi trạng thái khi nhấn
+                //Gọi hàm callback: Khi người dùng nhấn nút, hàm callback onLikeChanged sẽ được gọi với trạng thái mới (đã bị đảo ngược), giúp cập nhật trạng thái "liked" trong dữ liệu của bạn.
+                modifier = Modifier.padding(start = 0.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.like),
+                    contentDescription = "option",
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(11.dp))
+                Text(text = "Thích",color=Color.Black, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.weight(1f))
+
+            Button(onClick={showBottomSheet.value = true},modifier = Modifier.padding(end = 5.dp), colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White)) {
+                Image(
+                    painter = painterResource(R.drawable.speechbubble),
+                    contentDescription = "option",
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(11.dp))
+                Text(text = "Bình luận",color=Color.Black, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+    if (showBottomSheet.value) {
+        cmtPart(onDismiss = { showBottomSheet.value = false }, name) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }

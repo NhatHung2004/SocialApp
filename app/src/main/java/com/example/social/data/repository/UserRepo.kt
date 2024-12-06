@@ -19,6 +19,24 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         }
     }
 
+    suspend fun fetchAllUsers(): List<Map<String, Any>>? {
+        return try{
+            firestoreMethod.fetchAllUserInfoData("users")
+        }catch (e: Exception) {
+            println("Error getting user data: $e")
+            null // Trả về null nếu có lỗi
+        }
+    }
+
+    suspend fun getUserFromUserId(userIds:List<String>): List<Map<String, Any>> {
+        return try {
+            firestoreMethod.fetchUserInfoFromUserId(userIds)
+        } catch (e: Exception) {
+            println("Error fetching user info: $e")
+            emptyList() // Trả về danh sách rỗng nếu có lỗi xảy ra
+        }
+    }
+
     fun updateUserInfoToFirestore(firstname: String, lastname: String, email: String) {
         val profileUpdates = userProfileChangeRequest {
             displayName = "$firstname $lastname"

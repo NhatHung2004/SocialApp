@@ -6,12 +6,10 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +32,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -76,9 +76,13 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
 
     val context = LocalContext.current
-    var imageBitmaps by remember { mutableStateOf<List<Bitmap>>(listOf()) }
-    var imagesSelected by remember { mutableStateOf<List<Uri>>(listOf()) } // Lưu trữ URI ảnh đã chọn
+    // ghi nhớ trạng thái chụp ảnh
+    var imageBitmap   by remember { mutableStateOf<Bitmap?>(null) }
+    // ghi nhớ trạng thái chọn ảnh từ thư viện
+    var imagesSelected by remember { mutableStateOf<List<Uri>>(listOf()) }
+    // biến lưu trữ ảnh chọn
     val imageUris = remember { mutableListOf<Uri>() }
+    val imageBitmapSelected = remember { mutableListOf<Bitmap?>() }
     var text by remember { mutableStateOf("") }
     val cameraLauncher= rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -86,8 +90,8 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
             result->
         if(result.resultCode == android.app.Activity.RESULT_OK)
         {
-            val bitmap=result.data?.extras?.get("data") as Bitmap
-            imageBitmaps = imageBitmaps + bitmap
+            imageBitmap = result.data?.extras?.get("data") as Bitmap
+//            Log.i("img", imageBitmapSelected.toString())
             Toast.makeText(context, "Ảnh đã được chụp",Toast.LENGTH_SHORT).show()
         }
         else
@@ -99,117 +103,125 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
         imagesSelected = uris.toMutableList()
     }
     imageUris.addAll(imagesSelected)
+    if (imageBitmap != null)
+        imageBitmapSelected.add(imageBitmap)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize() // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
-            .padding(top = 16.dp), // Căn lên trên
-        verticalArrangement = Arrangement.SpaceBetween // Căn đều giữa các thành phần
-    ) {
-        // Column chứa firstLine2 và textFieldStatus
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground // Màu chữ tự động tương ứng với màu nền
+    ){
         Column(
             modifier = Modifier
-                .fillMaxWidth() // Chiếm toàn bộ chiều rộng
-                .weight(1f), // Chiếm không gian còn lại
-            verticalArrangement = Arrangement.Top, // Căn đều theo chiều dọc
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize() // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
+                .padding(top = 16.dp), // Căn lên trên
+            verticalArrangement = Arrangement.SpaceBetween // Căn đều giữa các thành phần
         ) {
-            FirstLine2(
-                context,
-                imageBitmaps,
-                imageUris,
-                text,
-                postViewModel,
-                posts
-            ) // Đặt firstLine2 ở trên
+            // Column chứa firstLine2 và textFieldStatus
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth() // Chiếm toàn bộ chiều rộng
+                    .weight(1f), // Chiếm không gian còn lại
+                verticalArrangement = Arrangement.Top, // Căn đều theo chiều dọc
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                FirstLine2(
+                    context,
+                    imageBitmapSelected,
+                    imageUris,
+                    text,
+                    postViewModel,
+                    posts
+                ) // Đặt firstLine2 ở trên
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = colorResource(R.color.pink)
+                )
+                Spacer(Modifier.height(15.dp))
+                LazyColumn (modifier = Modifier.fillMaxSize()) {
+                    item{
+                        Row(modifier=Modifier.fillMaxWidth().padding(start = 5.dp)) {
+                            GetHinhDaiDienChinhSua1(imageAvatar)
+                            Spacer(Modifier.width(10.dp))
+                            Spacer(Modifier.height(15.dp))
+                            Text(
+                                text = Firebase.auth.currentUser?.displayName.toString(),
+                                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                            )
+                        }
+                    }
+                    item{
+                        TextFieldStatus(text, context){
+                            text = it
+                        }
+                    }
+                    item{
+                        SetHinh(imageBitmapSelected, imageUris)
+                    }
+                }
+            }
+
             HorizontalDivider(
                 thickness = 1.dp,
                 color = colorResource(R.color.pink)
             )
             Spacer(Modifier.height(15.dp))
 
-            LazyColumn (modifier = Modifier.fillMaxSize()) {
-                item{
-                    Row(modifier=Modifier.fillMaxWidth().padding(start = 5.dp)) {
-                        GetHinhDaiDienChinhSua1(imageAvatar)
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            text = Firebase.auth.currentUser?.displayName.toString(),
-                            color = Color.Black,
-                            style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+
+
+            // Box ở dưới cùng
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth() // Chiếm toàn bộ chiều rộng
+                    .height(60.dp) // Thiết lập chiều cao cho Box mới
+                , contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 10.dp, bottom = 10.dp)){
+                    Button(onClick={},
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        ),
+                    )
+                    {
+                        Image(
+                            painter = painterResource(R.drawable.smile),
+                            contentDescription = "option Icon",
+                            modifier = Modifier
+                                .size(25.dp)
                         )
                     }
-                }
-                item{
-                    TextFieldStatus(text, context){
-                        text=it
+                    Spacer(Modifier.weight(1f))
+                    Button(
+                        onClick={
+                            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                            cameraLauncher.launch(intent)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.background)
+                    )
+                    {
+                        Image(
+                            painter = painterResource(R.drawable.camera),
+                            contentDescription = "option Icon",
+                            modifier = Modifier
+                                .size(29.dp)
+                        )
                     }
-                }
-                item{
-                    SetHinh(imageBitmaps, imageUris)
-                }
-            }
-        }
-
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = colorResource(R.color.pink)
-        )
-        Spacer(Modifier.height(15.dp))
-
-
-
-        // Box ở dưới cùng
-        Box(
-            modifier = Modifier
-                .fillMaxWidth() // Chiếm toàn bộ chiều rộng
-                .height(60.dp) // Thiết lập chiều cao cho Box mới
-                .background(color = Color.White), // Bạn có thể đổi màu theo ý thích
-            contentAlignment = Alignment.Center
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 10.dp, bottom = 10.dp)){
-                Button(onClick={},
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
-                )
-                {
-                    Image(
-                        painter = painterResource(R.drawable.home),
-                        contentDescription = "option Icon",
-                        modifier = Modifier
-                            .size(25.dp)
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                Button(
-                    onClick={
-                        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                        cameraLauncher.launch(intent)
+                    Button(onClick={
+                        multipleGalleryLauncher.launch("image/*")
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                )
-                {
-                    Image(
-                        painter = painterResource(R.drawable.plus),
-                        contentDescription = "option Icon",
-                        modifier = Modifier
-                            .size(29.dp)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.background),
                     )
-                }
-                Button(onClick={
-                    multipleGalleryLauncher.launch("image/*")
-                },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                )
-                {
-                    Image(
-                        painter = painterResource(R.drawable.searching),
-                        contentDescription = "option Icon",
-                        modifier = Modifier
-                            .size(29.dp)
-                    )
+                    {
+                        Image(
+                            painter = painterResource(R.drawable.upload),
+                            contentDescription = "option Icon",
+                            modifier = Modifier
+                                .size(29.dp)
+                        )
+                    }
                 }
             }
         }
@@ -218,7 +230,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
 
 @Composable
 fun FirstLine2(
-    context: Context, imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>, text: String,
+    context: Context, imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>, text: String,
     postViewModel: PostViewModel = viewModel(), posts: Map<String, Any>?){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -229,25 +241,22 @@ fun FirstLine2(
         )
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            if(imageUris.isNotEmpty()) {
-                val postId = "post${posts?.size?.plus(1)}"
-                val savedImagePaths = imageUris.let {
-                    postViewModel.savePostImageToInternalStorage(
-                        it,
-                        context,
-                        "posts", postId)
-                }
-                postViewModel.savePostImagePathToLocal(context, savedImagePaths)
-                postViewModel.updatePostToFirestore("posts", text, savedImagePaths)
+            if (imageUris.isNotEmpty()) {
+                postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imageUris, text)
+                Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
+            }
+            if (imageBitmaps.isNotEmpty()) {
+                val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmaps)
+                postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imgBitmapUris, text)
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
             }
         },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.background
             ),
         ){
             Image(
-                painter = painterResource(R.drawable.searching),
+                painter = painterResource(R.drawable.email),
                 contentDescription = "option Icon",
                 modifier = Modifier
                     .size(29.dp)
@@ -259,11 +268,12 @@ fun FirstLine2(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextFieldStatus(text: String, context: Context, onTextChange: (String) -> Unit){
+    Spacer(Modifier.height(15.dp))
     Row() {
         TextField(
             value = text,
             onValueChange = { newText -> onTextChange(newText) },
-            placeholder = { Text("Bạn đang nghĩ gì ") }, // Sử dụng placeholder
+            placeholder = { Text("Bạn đang nghĩ gì?") }, // Sử dụng placeholder
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Send
@@ -273,14 +283,15 @@ fun TextFieldStatus(text: String, context: Context, onTextChange: (String) -> Un
                     Toast.makeText(context,"Đã gửi", Toast.LENGTH_SHORT).show()
                 }
             ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White),
+            modifier = Modifier.fillMaxWidth()
+                ,
             colors = TextFieldDefaults.textFieldColors(
-                containerColor = Color.White,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                containerColor = MaterialTheme.colorScheme.background,
+                focusedIndicatorColor = MaterialTheme.colorScheme.background,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.background
+            )
         )
     }
 }
@@ -304,7 +315,7 @@ fun GetHinhDaiDienChinhSua1(img : Uri?){
 }
 
 @Composable
-fun SetHinh(imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>){
+fun  SetHinh(imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>){
     LazyRow (modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
@@ -318,13 +329,15 @@ fun SetHinh(imageBitmaps: List<Bitmap>, imageUris: MutableList<Uri>){
                     .border(2.dp, Color.Gray, RoundedCornerShape(0.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Captured Image",
-                    modifier = Modifier.fillMaxSize()
-                        .height(400.dp),
-                    contentScale = ContentScale.Crop
-                )
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Captured Image",
+                        modifier = Modifier.fillMaxSize()
+                            .height(400.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
         items(imageUris.size) { index ->

@@ -29,7 +29,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -86,103 +90,105 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
         }
     )
 
-    Column(){
-        Row(modifier =  Modifier.fillMaxWidth()) {
-            Button(
-                onClick = {
-                    navController.navigate(Routes.PROFILE_SCREEN)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
-                ),
-            ) {
-                Image(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(Modifier.width(6.dp))
-            Text(text="Chỉnh sửa trang cá nhân",modifier=Modifier.offset(y=10.dp),
-                fontSize = 20.sp, fontWeight = FontWeight.ExtraBold
-                ,color= colorResource(R.color.pink)
-            )
 
-        }
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = colorResource(R.color.pink)
-        )
-        Spacer(Modifier.height(10.dp))
-        LazyColumn(modifier=Modifier.fillMaxSize()) {
-            item{
-                ImageEdit(photoPickerLauncherAvatar,
-                    photoPickerLauncherBackground,
-                    imageAvatar,
-                    imageBackground,
-                    selectedImageUriAvatar,
-                    selectedImageUriBackground
+    Surface(
+        modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ màn hình
+        color = MaterialTheme.colorScheme.background, // Màu nền
+        contentColor = MaterialTheme.colorScheme.onBackground // Màu chữ
+    ){
+        Column(){
+            Row(modifier =  Modifier.fillMaxWidth()) {
+                // Nút Back (Icon)
+                IconButton(onClick = {
+                    navController.navigate(Routes.PROFILE_SCREEN)
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "",
+                    )
+                }
+                Spacer(Modifier.width(6.dp))
+                Text(text="Chỉnh sửa trang cá nhân",modifier=Modifier.offset(y=10.dp),
+                    fontSize = 20.sp, fontWeight = FontWeight.ExtraBold
+                    ,color= colorResource(R.color.pink)
                 )
+
             }
-            item{
-                TextFieldHo(firstnameState){
-                    firstnameState = it
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = colorResource(R.color.pink)
+            )
+            Spacer(Modifier.height(10.dp))
+            LazyColumn(modifier=Modifier.fillMaxSize()) {
+                item{
+                    ImageEdit(photoPickerLauncherAvatar,
+                        photoPickerLauncherBackground,
+                        imageAvatar,
+                        imageBackground,
+                        selectedImageUriAvatar,
+                        selectedImageUriBackground
+                    )
                 }
-                Spacer(Modifier.height(20.dp))
-            }
-            item {
-                TextFieldTen(lastnameState){
-                    lastnameState = it
+                item{
+                    TextFieldHo(firstnameState){
+                        firstnameState = it
+                    }
+                    Spacer(Modifier.height(20.dp))
                 }
-                Spacer(Modifier.height(20.dp))
-            }
-            item{
-                TextFieldEmail(emailState){
-                    emailState = it
+                item {
+                    TextFieldTen(lastnameState){
+                        lastnameState = it
+                    }
+                    Spacer(Modifier.height(20.dp))
                 }
-                Spacer(Modifier.height(20.dp))
-            }
-            item{
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 5.dp), // Thêm khoảng cách bên dưới nếu cần
-                    contentAlignment = Alignment.Center // Căn giữa nội dung bên trong Box
-                ) {
-                    Button(
-                        onClick = {
-                            if(selectedImageUriAvatar != null) {
-                                profileViewModel.copyImage(
-                                    selectedImageUriAvatar!!,
-                                    "avatar",
-                                    imageAvatar.toString(),
-                                    context
-                                )
-                                profileViewModel.updateImageAvatarUri("avatar")
-                            }
-                            if(selectedImageUriBackground != null) {
-                                profileViewModel.copyImage(
-                                    selectedImageUriBackground!!,
-                                    "backgroundAvatar",
-                                    imageBackground.toString(),
-                                    context
-                                )
-                                profileViewModel.updateImageBackgroundUri("backgroundAvatar")
-                            }
-                            profileViewModel.updateUserInfo(firstnameState, lastnameState, emailState)
-                            navController.navigate(Routes.PROFILE_SCREEN)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White
-                        ),
+                item{
+                    TextFieldEmail(emailState){
+                        emailState = it
+                    }
+                    Spacer(Modifier.height(20.dp))
+                }
+                item{
+                    Box(
                         modifier = Modifier
-                            .border(
-                                BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                                shape = RoundedCornerShape(15.dp)
-                            )
-                            .size(width = 320.dp, height = 37.dp)
+                            .fillMaxWidth()
+                            .padding(bottom = 5.dp), // Thêm khoảng cách bên dưới nếu cần
+                        contentAlignment = Alignment.Center // Căn giữa nội dung bên trong Box
                     ) {
-                        Text(text = "Lưu thay đổi", color = colorResource(R.color.pink))
+                        Button(
+                            onClick = {
+                                if(selectedImageUriAvatar != null) {
+                                    profileViewModel.copyImage(
+                                        selectedImageUriAvatar!!,
+                                        "avatar",
+                                        imageAvatar.toString(),
+                                        context
+                                    )
+                                    profileViewModel.updateImageAvatarUri("avatar")
+                                }
+                                if(selectedImageUriBackground != null) {
+                                    profileViewModel.copyImage(
+                                        selectedImageUriBackground!!,
+                                        "backgroundAvatar",
+                                        imageBackground.toString(),
+                                        context
+                                    )
+                                    profileViewModel.updateImageBackgroundUri("backgroundAvatar")
+                                }
+                                profileViewModel.updateUserInfo(firstnameState, lastnameState, emailState)
+                                navController.navigate(Routes.PROFILE_SCREEN)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .border(
+                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
+                                    shape = RoundedCornerShape(15.dp)
+                                )
+                                .size(width = 320.dp, height = 37.dp)
+                        ) {
+                            Text(text = "Lưu thay đổi", color = colorResource(R.color.pink))
+                        }
                     }
                 }
             }
