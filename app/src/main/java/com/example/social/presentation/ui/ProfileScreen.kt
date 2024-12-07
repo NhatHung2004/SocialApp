@@ -54,17 +54,19 @@ import com.example.social.db.cmtPart
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
+import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
-
 @Composable
 fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                   authViewModel: AuthViewModel,
                   profileViewModel: ProfileViewModel = viewModel(),
-                  postViewModel: PostViewModel = viewModel()) {
+                  postViewModel: PostViewModel = viewModel(),
+                  commentViewModel: CommentViewModel = viewModel()
+) {
     var isPressed by remember { mutableStateOf(false) }
     val posts = postViewModel.posts.collectAsState().value
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
@@ -111,9 +113,10 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             val imageUris = postData?.get("imageUris") as? List<String>
                             val content = postData?.get("content")
                             val timestamp = postData?.get("timestamp") as Long
-                            val post = imageUris?.let { Post(content.toString(), timestamp, it) }
+                            val id = postData["id"]
+                            val post = imageUris?.let { Post(id.toString(), content.toString(), timestamp, it) }
                             if (post != null) {
-                                SelfPost(post, imageAvatar, "$firstname $lastname")
+                                SelfPost(post, imageAvatar, "$firstname $lastname", commentViewModel)
                             }
                         }
                     }
@@ -389,7 +392,7 @@ fun GetHinhDaiDienProfileFriend(img2: Int) {
 }
 
 @Composable
-fun SelfPost(post: Post, imageAvatar: Uri?,name:String){
+fun SelfPost(post: Post, imageAvatar: Uri?, name: String, commentViewModel: CommentViewModel){
     val showBottomSheet = remember { mutableStateOf(false) }
 
     Column(modifier=Modifier.fillMaxSize()){
@@ -476,6 +479,6 @@ fun SelfPost(post: Post, imageAvatar: Uri?,name:String){
         }
     }
     if (showBottomSheet.value) {
-        cmtPart(onDismiss = { showBottomSheet.value = false }, name) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id, commentViewModel) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }

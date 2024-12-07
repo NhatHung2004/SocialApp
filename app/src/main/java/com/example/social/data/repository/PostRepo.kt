@@ -8,11 +8,14 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
+    private val commentRepo = CommentRepo(firebaseAuth, firestore)
+
     fun createPostDocument() {
         val docRef = firestore.collection("posts").document(Firebase.auth.currentUser!!.uid)
-        // tạo collection posts rỗng khi đăng nhập tài khoản, nếu có rồi thì không tạo nữa
+        // tạo collection posts rỗng khi bình luận, nếu có rồi thì không tạo nữa
         docRef.set(mapOf<String, Any>(), SetOptions.merge())
     }
 
@@ -35,15 +38,17 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         val timeStamp = System.currentTimeMillis()
         val postsRef = firestore.collection("posts").document(Firebase.auth.currentUser!!.uid)
         val posts: Map<String, Any>? = getPost(firebaseAuth.currentUser!!.uid)
-        if (posts != null){
+        if (posts != null) {
             val postsCount = posts.size
-            val newPostId = "post${postsCount.plus(1)}"
+            val newPostId = "${child}${postsCount.plus(1)}"
             val newPostsUri = mutableListOf<String>()
             for ((index, uri) in imageUris.withIndex()) {
                 newPostsUri.add(uri.toString())
             }
-            val postModel = Post(content, timeStamp, newPostsUri)
+            val postId = "${UUID.randomUUID()}_${System.currentTimeMillis()}"
+            val postModel = Post(postId, content, timeStamp, newPostsUri)
             postsRef.update(newPostId, postModel)
+            commentRepo.createCommentDocument(postId)
         }
     }
 }

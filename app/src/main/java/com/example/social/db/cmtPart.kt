@@ -45,11 +45,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.social.R
+import com.example.social.presentation.viewmodel.CommentViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun cmtPart(onDismiss:()->Unit,posterName: String){
-    var openBottomSheet by remember { mutableStateOf(true) }
+fun cmtPart(onDismiss: () -> Unit, posterName: String, postID: String, commentViewModel: CommentViewModel){
+    val openBottomSheet by remember { mutableStateOf(true) }
+
     if(openBottomSheet){
         ModalBottomSheet(
             onDismissRequest = {onDismiss()},
@@ -70,12 +74,12 @@ fun cmtPart(onDismiss:()->Unit,posterName: String){
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
-            listCmt(posterName) // Gọi hàm hiển thị danh sách bình luận
+            listCmt(posterName, postID, commentViewModel) // Gọi hàm hiển thị danh sách bình luận
         }
     }
 }
 @Composable
-fun listCmt(posterName: String){
+fun listCmt(posterName: String, postID: String, commentViewModel: CommentViewModel){
     Column(modifier = Modifier.fillMaxWidth().background(Color.White)) {
         // Đặt LazyColumn để cuộn qua danh sách bình luận
         LazyColumn(modifier = Modifier
@@ -93,7 +97,7 @@ fun listCmt(posterName: String){
         icon()
         Spacer(Modifier.height(4.dp))
         // TextField nằm bên dưới
-        textField(posterName) // Căn giữa dưới
+        textField(posterName, postID, commentViewModel) // Căn giữa dưới
     }
 }
 @Composable
@@ -130,7 +134,7 @@ fun getHinhDaiDienCmt(img2 : Int){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun textField(posterName: String){
+fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel){
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
     Row() {
@@ -138,15 +142,15 @@ fun textField(posterName: String){
         TextField(
             value = text,
             onValueChange = { newText -> text = newText },
-            placeholder = { Text("Bình luận về bài viết của "+posterName) }, // Sử dụng placeholder
+            placeholder = { Text("Bình luận về bài viết của $posterName") }, // Sử dụng placeholder
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Send
             ),
             keyboardActions = KeyboardActions(
                 onSend = {
+                    commentViewModel.updateComment("cmt", text, postID)
                     Toast.makeText(context,"Đã gửi",Toast.LENGTH_SHORT).show()
-                    text=""
                 }
             ),
             modifier = Modifier
