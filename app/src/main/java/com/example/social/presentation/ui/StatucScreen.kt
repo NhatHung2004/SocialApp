@@ -39,6 +39,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -81,8 +83,8 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
     var imagesSelected by remember { mutableStateOf<List<Uri>>(listOf()) }
 
     // biến lưu trữ ảnh chọn
-    val imageUris = remember { mutableListOf<Uri>() }
-    val imageBitmapSelected = remember { mutableListOf<Bitmap?>() }
+    val imageUris = remember { mutableStateListOf<Uri>() }
+    val imageBitmapSelected = remember { mutableStateListOf<Bitmap?>() }
 
     var text by remember { mutableStateOf("") }
     val cameraLauncher= rememberLauncherForActivityResult(
@@ -92,7 +94,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
         if(result.resultCode == android.app.Activity.RESULT_OK)
         {
             imageBitmap = result.data?.extras?.get("data") as Bitmap
-//            Log.i("img", imageBitmapSelected.toString())
+            imageBitmap?.let { imageBitmapSelected.add(it) }
             Toast.makeText(context, "Ảnh đã được chụp",Toast.LENGTH_SHORT).show()
         }
         else
@@ -102,10 +104,12 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
         contract = ActivityResultContracts.GetMultipleContents()
     ){ uris: List<Uri> ->
         imagesSelected = uris.toMutableList()
+//        imageUris.clear()
+        imageUris.addAll(imagesSelected)
     }
-    imageUris.addAll(imagesSelected)
-    if (imageBitmap != null)
-        imageBitmapSelected.add(imageBitmap)
+//    imageUris.addAll(imagesSelected)
+//    if(imageBitmap != null)
+//        imageBitmapSelected.add(imageBitmap)
 
     Column(
         modifier = Modifier
@@ -153,7 +157,9 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
                     }
                 }
                 item{
-                    SetHinh(imageBitmapSelected, imageUris)
+                    key(text) {
+                        SetHinh(imageBitmapSelected, imageUris)
+                    }
                 }
             }
         }
@@ -226,7 +232,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel
 @Composable
 fun FirstLine2(
     context: Context, imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>, text: String,
-    postViewModel: PostViewModel = viewModel(), posts: Map<String, Any>?){
+    postViewModel: PostViewModel, posts: Map<String, Any>?){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -239,11 +245,13 @@ fun FirstLine2(
             if (imageUris.isNotEmpty()) {
                 postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imageUris, text)
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
+                imageUris.clear()
             }
             if (imageBitmaps.isNotEmpty()) {
                 val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmaps)
                 postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imgBitmapUris, text)
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
+                imageBitmaps.clear()
 
             }
 
