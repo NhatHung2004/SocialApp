@@ -177,9 +177,9 @@ fun UserListItems(userPosts: userPosts,//Hiển thị nội dung của một bà
             }
         }
     }
-    if (showBottomSheet.value) {
-        cmtPart(onDismiss = { showBottomSheet.value = false }, posterName =userPosts.name) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
-    }
+//    if (showBottomSheet.value) {
+//        cmtPart(onDismiss = { showBottomSheet.value = false }, posterName = userPosts.name) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+//    }
 }
 
 @Composable
