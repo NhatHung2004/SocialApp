@@ -56,7 +56,7 @@ import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.ProfileViewModel
 
 @Composable
-fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel = viewModel()){
+fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel){
     val context = LocalContext.current
 
     var firstnameState by remember { mutableStateOf("") }

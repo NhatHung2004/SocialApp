@@ -69,7 +69,7 @@ import com.google.firebase.auth.auth
 
 @SuppressLint("MutableCollectionMutableState", "SdCardPath")
 @Composable
-fun StatusScreen(profileViewModel: ProfileViewModel = viewModel(), postViewModel: PostViewModel = viewModel()){
+fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewModel){
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
     profileViewModel.updateImageAvatarUri("avatar")
 

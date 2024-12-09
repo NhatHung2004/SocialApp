@@ -63,9 +63,9 @@ import com.google.firebase.auth.auth
 @Composable
 fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                   authViewModel: AuthViewModel,
-                  profileViewModel: ProfileViewModel = viewModel(),
-                  postViewModel: PostViewModel = viewModel(),
-                  commentViewModel: CommentViewModel = viewModel()
+                  commentViewModel: CommentViewModel,
+                  postViewModel: PostViewModel,
+                  profileViewModel: ProfileViewModel,
 ) {
     var isPressed by remember { mutableStateOf(false) }
     val posts = postViewModel.posts.collectAsState().value
