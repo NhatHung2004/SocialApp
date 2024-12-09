@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,12 +44,19 @@ import androidx.navigation.compose.rememberNavController
 import com.example.social.R
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
+import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.PostViewModel
+import com.example.social.presentation.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
+    val commentViewModel: CommentViewModel = viewModel()
+    val postViewModel: PostViewModel = viewModel()
+    val profileViewModel: ProfileViewModel = viewModel()
+
     val scope = rememberCoroutineScope()//o một coroutine scope để quản lý các coroutine bên trong composable này.
     // Điều này thường được sử dụng để thực hiện các tác vụ bất đồng bộ như thay đổi trang trong HorizontalPager.
     val pagerState = rememberPagerState(pageCount = { HomeTabs.entries.size })//Tạo một trạng thái cho HorizontalPager, số lượng
@@ -162,7 +170,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                             }
                         }
                         HomeTabs.Status -> {
-                            StatusScreen()
+                            StatusScreen(profileViewModel, postViewModel)
                         }
                         HomeTabs.Notification -> NoficationScreen()
                         HomeTabs.Profile -> {
@@ -173,13 +181,14 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     composable(Routes.PROFILE_SCREEN) {
-                                        ProfileScreen(navController, navControllerTab, authViewModel)
+                                        ProfileScreen(navController, navControllerTab, authViewModel,
+                                            commentViewModel, postViewModel, profileViewModel)
                                     }
                                     composable(Routes.ALL_FRIEND) {
                                         AllFriend()
                                     }
                                     composable(Routes.PROFILE_EDIT) {
-                                        ProfileEdit(navControllerTab)
+                                        ProfileEdit(navControllerTab, profileViewModel)
                                     }
                                 }
                             }
