@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,15 +44,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.presentation.viewmodel.CommentViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun cmtPart(onDismiss: () -> Unit, posterName: String, postID: String, commentViewModel: CommentViewModel){
+fun cmtPart(
+    onDismiss: () -> Unit,
+    posterName: String,
+    postID: String,
+    commentViewModel: CommentViewModel,
+    comments: Map<String, Any>?
+){
     val openBottomSheet by remember { mutableStateOf(true) }
+    commentViewModel.getComments(postID)
 
     if(openBottomSheet){
         ModalBottomSheet(
@@ -74,19 +80,24 @@ fun cmtPart(onDismiss: () -> Unit, posterName: String, postID: String, commentVi
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
-            listCmt(posterName, postID, commentViewModel) // Gọi hàm hiển thị danh sách bình luận
+            listCmt(posterName, postID, commentViewModel, comments) // Gọi hàm hiển thị danh sách bình luận
         }
     }
 }
 @Composable
-fun listCmt(posterName: String, postID: String, commentViewModel: CommentViewModel){
+fun listCmt(
+    posterName: String,
+    postID: String,
+    commentViewModel: CommentViewModel,
+    comments: Map<String, Any>?
+){
     Column(modifier = Modifier.fillMaxWidth().background(Color.White)) {
         // Đặt LazyColumn để cuộn qua danh sách bình luận
         LazyColumn(modifier = Modifier
             .weight(1f) // Đảm bảo nó chiếm không gian còn lại
             .background(Color.White).fillMaxWidth()) {
             item {
-                infoCmt()
+                infoCmt(comments, commentViewModel)
             }
         }
         Divider(
@@ -101,30 +112,49 @@ fun listCmt(posterName: String, postID: String, commentViewModel: CommentViewMod
     }
 }
 @Composable
-fun infoCmt(){
+fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel) {
     Spacer(Modifier.height(20.dp))
-    userPostDataProvider.cmtList.forEach {cmt->
-        Row(){
-            getHinhDaiDienCmt(cmt.avtCmt.avatarRes)
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Text(
-                    text = cmt.nameCmt,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(text=cmt.contentCmt)
+    if (comments != null) {
+        for ((index, entry) in comments.entries.withIndex()) {
+            val cmtData = entry.value as? Map<*, *>
+            val contentCmt = cmtData?.get("content") as? String
+            val timestamp = cmtData?.get("timestamp") as Long
+            val uid = cmtData["uid"] as? String
+            var name by remember { mutableStateOf("") }
+            var avatar by remember { mutableStateOf("") }
+            LaunchedEffect(Unit) {
+                if (uid != null) {
+                    val nameResutl = commentViewModel.getName(uid)
+                    name = nameResutl
+                    val avatarResult = commentViewModel.getAvatar(uid).toString()
+                    avatar = avatarResult
+                }
             }
-            Spacer(Modifier.width(5.dp))
-            Text(text = cmt.timeCmt)
+
+            Row(){
+                getHinhDaiDienCmt(avatar)
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = name,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (contentCmt != null) {
+                        Text(text=contentCmt)
+                    }
+                }
+                Spacer(Modifier.width(5.dp))
+                Text(text = timestamp.toString())
+            }
+            Spacer(Modifier.height(41.dp))
         }
-        Spacer(Modifier.height(41.dp))
     }
 
 }
 @Composable
-fun getHinhDaiDienCmt(img2 : Int){
+fun getHinhDaiDienCmt(img2 : String){
     Image(
-        painter= painterResource(img2),
+        painter= rememberAsyncImagePainter(img2),
         contentDescription="avatar",
         contentScale = ContentScale.Crop,
         modifier= Modifier

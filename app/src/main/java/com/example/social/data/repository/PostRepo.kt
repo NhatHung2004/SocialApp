@@ -21,7 +21,6 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
 
     suspend fun getPost(userId: String): Map<String, Any>? {
         val docRef = firestore.collection("posts").document(userId)
-
         return try {
             val document = docRef.get().await()
             if (document.exists()) {
@@ -34,7 +33,7 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         }
     }
 
-    suspend fun updatePost(child: String, content: String, imageUris: List<Uri?>) {
+    suspend fun updatePost(child: String, content: String, imageUris: List<String>) {
         val timeStamp = System.currentTimeMillis()
         val postsRef = firestore.collection("posts").document(Firebase.auth.currentUser!!.uid)
         val posts: Map<String, Any>? = getPost(firebaseAuth.currentUser!!.uid)
@@ -43,7 +42,7 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
             val newPostId = "${child}${postsCount.plus(1)}"
             val newPostsUri = mutableListOf<String>()
             for ((index, uri) in imageUris.withIndex()) {
-                newPostsUri.add(uri.toString())
+                newPostsUri.add(uri)
             }
             val postId = "${UUID.randomUUID()}_${System.currentTimeMillis()}"
             val postModel = Post(postId, content, timeStamp, newPostsUri)

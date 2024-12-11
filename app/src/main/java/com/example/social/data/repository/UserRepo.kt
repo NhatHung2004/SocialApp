@@ -12,7 +12,7 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
 
     suspend fun fetchUserInfo(field: String): String? {
         return try {
-            firestoreMethod.fetchInfoData("users", field)
+            firestoreMethod.fetchInfoData("users", field, firebaseAuth.currentUser!!.uid)
         }catch (e: Exception) {
             println("Error getting user data: $e")
             null // Trả về null nếu có lỗi

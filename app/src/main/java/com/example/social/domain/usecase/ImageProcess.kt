@@ -4,22 +4,78 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.MediaStore
+import android.util.Log
+import com.cloudinary.Cloudinary
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 
-class ImageProcess(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
+class ImageProcess(firebaseAuth: FirebaseAuth, firestore: FirebaseFirestore) {
     private val firestoreMethod = FirestoreMethod(firebaseAuth, firestore)
 
+    suspend fun uploadImageToCloudinary(uri: Uri = Uri.EMPTY, context: Context): String {
+        val cloudinary = Cloudinary(
+            mapOf(
+                "cloud_name" to "dxeinnlqb",
+                "api_key" to "946396877789367",
+                "api_secret" to "Q9QIZn2jrggpWxrNSL3Asb-8-ec"
+            )
+        )
+
+        val filePath = getRealPath(context, uri) // Hàm chuyển URI sang đường dẫn thực
+                ?: throw IllegalArgumentException("File path not found") // Ném ngoại lệ nếu không tìm được đường dẫn
+        Log.i("anhs", filePath)
+
+        return withContext(Dispatchers.IO) {
+            try {
+                val uploadResult = cloudinary.uploader().upload(filePath, mapOf<String, Any>())
+                uploadResult["secure_url"] as String
+            } catch (e: Exception) {
+                throw Exception("Upload failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun getRealPath(context: Context, uri: Uri): String? {
+        var result: String? = null
+        if (DocumentsContract.isDocumentUri(context, uri)) {
+            val docId = DocumentsContract.getDocumentId(uri)
+            val split = docId.split(":")
+            val type = split[0]
+            if ("primary".equals(type, ignoreCase = true)) {
+                result = "${Environment.getExternalStorageDirectory()}/${split[1]}"
+            }
+        } else if ("content".equals(uri.scheme, ignoreCase = true)) {
+            result = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                cursor.moveToFirst()
+                cursor.getString(columnIndex)
+            }
+        } else if ("file".equals(uri.scheme, ignoreCase = true)) {
+            result = uri.path
+        }
+
+        // Kiểm tra thêm nếu URI nằm trong cache của ứng dụng
+        if (result.isNullOrEmpty() && uri.path?.contains(context.cacheDir.toString()) == true) {
+            result = uri.path // Đường dẫn trực tiếp trong cache
+        }
+
+        return result
+    }
 
     // dùng đường dẫn được lưu trên firestore để load ảnh local
     suspend fun getImageFromLocal(field: String): Uri? {
-        return Uri.parse(firestoreMethod.fetchInfoData("users", field))
+        return Uri.parse(firestoreMethod.fetchInfoData("users", field, Firebase.auth.currentUser!!.uid))
     }
 
     // lưu ảnh vào bộ nhớ

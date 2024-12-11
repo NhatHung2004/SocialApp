@@ -44,10 +44,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
 import com.example.social.db.cmtPart
@@ -68,7 +67,11 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                   profileViewModel: ProfileViewModel,
 ) {
     var isPressed by remember { mutableStateOf(false) }
+    postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
+    profileViewModel.getUserInfo()
+
     val posts = postViewModel.posts.collectAsState().value
+    val comments = commentViewModel.comments.collectAsState().value
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
 
     val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
@@ -116,7 +119,8 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             val id = postData["id"]
                             val post = imageUris?.let { Post(id.toString(), content.toString(), timestamp, it) }
                             if (post != null) {
-                                SelfPost(post, imageAvatar, "$firstname $lastname", commentViewModel)
+                                SelfPost(post, imageAvatar, "$firstname $lastname",
+                                    commentViewModel, comments)
                             }
                         }
                     }
@@ -190,8 +194,9 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
 @Composable
 
-fun Firstline5(navController: NavController, imageAvatar: Uri?, imageBackground: Uri?,
-               firstname: String, lastname: String){
+fun Firstline5(
+    navController: NavController, imageAvatar: String?, imageBackground: String?,
+    firstname: String, lastname: String){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
             .fillMaxWidth()
@@ -339,10 +344,10 @@ fun FriendLine(navController: NavController){
     }
 }
 @Composable
-fun GetNenHinhDaiDien(image: Uri?) {
+fun GetNenHinhDaiDien(image: String?) {
     // Ảnh chính
-    AsyncImage(
-        model = image,
+    Image(
+        painter = rememberAsyncImagePainter(image),
         contentDescription = "Main Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -352,7 +357,7 @@ fun GetNenHinhDaiDien(image: Uri?) {
     )
 }
 @Composable
-fun  GetHinhDaiDienProfile(image: Uri?){
+fun  GetHinhDaiDienProfile(image: String?){
     Image(
         painter = rememberAsyncImagePainter(image),
         contentDescription = "Circular Image",
@@ -392,7 +397,13 @@ fun GetHinhDaiDienProfileFriend(img2: Int) {
 }
 
 @Composable
-fun SelfPost(post: Post, imageAvatar: Uri?, name: String, commentViewModel: CommentViewModel){
+fun SelfPost(
+    post: Post,
+    imageAvatar: String?,
+    name: String,
+    commentViewModel: CommentViewModel,
+    comments: Map<String, Any>?
+){
     val showBottomSheet = remember { mutableStateOf(false) }
 
     Column(modifier=Modifier.fillMaxSize()){
@@ -428,9 +439,15 @@ fun SelfPost(post: Post, imageAvatar: Uri?, name: String, commentViewModel: Comm
         ) {
             items(post.imageUris) { uri ->
                 AsyncImage(
-                    model = Uri.parse(uri),
-                    contentDescription = "option Icon",
-                    modifier = Modifier.fillMaxSize()
+                    model = uri,
+                    contentDescription = "Post Image",
+                    modifier = Modifier
+                        .height(400.dp)
+                        .width(385.dp)
+                        .padding(6.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.LightGray),
+                    contentScale = ContentScale.Crop
                 )
             }
         }
@@ -479,6 +496,7 @@ fun SelfPost(post: Post, imageAvatar: Uri?, name: String, commentViewModel: Comm
         }
     }
     if (showBottomSheet.value) {
-        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id, commentViewModel) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,
+            commentViewModel, comments) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }

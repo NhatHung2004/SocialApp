@@ -33,7 +33,8 @@ class CommentRepo(private val firebaseAuth: FirebaseAuth, private val firestore:
 
     suspend fun updateComment(child: String, content: String,
                               postId: String) {
-        val userUID = firestoreMethod.fetchInfoData("users", "uid").toString()
+        val userUID = firestoreMethod.fetchInfoData("users", "uid",
+            firebaseAuth.currentUser!!.uid).toString()
         val timeStamp = System.currentTimeMillis()
         val commentsRef = firestore.collection("comments").document(postId)
         val comments: Map<String, Any>? = getComment(postId)
