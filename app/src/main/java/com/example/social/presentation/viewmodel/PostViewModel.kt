@@ -32,20 +32,15 @@ class PostViewModel: ViewModel() {
         return imageProcess.convertBitmapListToUriList(context, imageBitmaps)
     }
 
-    fun saveAndUpdatePostToLocalAndDb(posts: Map<String, Any>?, context: Context,
-                                      imageUris: MutableList<Uri>, text: String
-    ) {
+    fun updateToFirestore(uris: MutableList<Uri>, text: String, context: Context) {
         viewModelScope.launch {
-            if (imageUris.isNotEmpty()) {
-                val postId = "post${posts?.size?.plus(1)}"
-                val savedImagePaths = imageProcess.saveImageToInternalStorage(
-                    imageUris,
-                    context,
-                    "posts", postId
-                )
-                imageProcess.saveImagePath(context, savedImagePaths)
-                postRepo.updatePost("posts", text, savedImagePaths)
-                imageProcess.clearCacheFiles(context)
+            if (uris.isNotEmpty()) {
+                val imageUris = mutableListOf<String>()
+                for (uri in uris) {
+                    val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
+                    imageUris.add(imagePath)
+                }
+                postRepo.updatePost("posts", text, imageUris)
             }
         }
     }

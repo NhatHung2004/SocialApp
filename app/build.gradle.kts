@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.social"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.social"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -54,10 +54,12 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
-    implementation("io.coil-kt.coil3:coil-compose:3.0.0")
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
-    implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation(libs.cloudinary.android)
+    implementation(libs.io.coil.kt.coil.compose)
+
+
 
 
     implementation(libs.androidx.core.ktx)

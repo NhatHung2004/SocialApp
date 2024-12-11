@@ -8,10 +8,10 @@ import kotlinx.coroutines.tasks.await
 
 class FirestoreMethod(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
 
-    suspend fun fetchInfoData(collectionPath: String, field: String): String? {
+    suspend fun fetchInfoData(collectionPath: String, field: String, uid: String): String? {
         return try {
             val docRef = firestore.collection(collectionPath)
-                .document(firebaseAuth.currentUser!!.uid)
+                .document(uid)
             val documentSnapshot = docRef.get().await()
             if (documentSnapshot.exists()) {
                 documentSnapshot.getString(field)

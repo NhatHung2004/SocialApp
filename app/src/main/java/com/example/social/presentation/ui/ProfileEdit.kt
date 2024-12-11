@@ -2,7 +2,6 @@ package com.example.social.presentation.ui
 
 import android.annotation.SuppressLint
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -47,10 +46,8 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.ProfileViewModel
@@ -62,6 +59,8 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
     var firstnameState by remember { mutableStateOf("") }
     var lastnameState by remember { mutableStateOf("") }
     var emailState by remember { mutableStateOf("") }
+
+    profileViewModel.getUserInfo()
 
     firstnameState = profileViewModel.firstname.collectAsState().value
     lastnameState = profileViewModel.lastname.collectAsState().value
@@ -152,22 +151,28 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
                     Button(
                         onClick = {
                             if(selectedImageUriAvatar != null) {
-                                profileViewModel.copyImage(
+//                                profileViewModel.copyImage(
+//                                    selectedImageUriAvatar!!,
+//                                    "avatar",
+//                                    imageAvatar.toString(),
+//                                    context
+//                                )
+//                                profileViewModel.updateImageAvatarUri("avatar")
+                                profileViewModel.uploadImageToCloudinary(
                                     selectedImageUriAvatar!!,
-                                    "avatar",
-                                    imageAvatar.toString(),
-                                    context
-                                )
-                                profileViewModel.updateImageAvatarUri("avatar")
+                                    context, "avatar")
                             }
                             if(selectedImageUriBackground != null) {
-                                profileViewModel.copyImage(
+//                                profileViewModel.copyImage(
+//                                    selectedImageUriBackground!!,
+//                                    "backgroundAvatar",
+//                                    imageBackground.toString(),
+//                                    context
+//                                )
+//                                profileViewModel.updateImageBackgroundUri("backgroundAvatar")
+                                profileViewModel.uploadImageToCloudinary(
                                     selectedImageUriBackground!!,
-                                    "backgroundAvatar",
-                                    imageBackground.toString(),
-                                    context
-                                )
-                                profileViewModel.updateImageBackgroundUri("backgroundAvatar")
+                                    context, "backgroundAvatar")
                             }
                             profileViewModel.updateUserInfo(firstnameState, lastnameState, emailState)
                             navController.navigate(Routes.PROFILE_SCREEN)
@@ -193,8 +198,8 @@ fun ProfileEdit(navController: NavController, profileViewModel: ProfileViewModel
 @Composable
 fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
               photoPickerLauncherBackground: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
-              imageAvatarUri: Uri?,
-              imageBackgroundUri: Uri?,
+              imageAvatarUri: String?,
+              imageBackgroundUri: String?,
               selectedImageUriAvatar: Uri?,
               selectedImageUriBackground: Uri?
 ){
@@ -232,7 +237,7 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
         if(selectedImageUriAvatar == null) {
             GetHinhDaiDienChinhSua(imageAvatarUri)
         }else {
-            GetHinhDaiDienChinhSua(selectedImageUriAvatar)
+            GetHinhDaiDienChinhSua(selectedImageUriAvatar.toString())
         }
 
         Spacer(Modifier.height(25.dp))
@@ -269,7 +274,7 @@ fun ImageEdit(photoPickerLauncherAvatar: ManagedActivityResultLauncher<PickVisua
         if(selectedImageUriBackground == null) {
             GetHinhBiaChinhSua(imageBackgroundUri)
         }else {
-            GetHinhBiaChinhSua(selectedImageUriBackground)
+            GetHinhBiaChinhSua(selectedImageUriBackground.toString())
         }
     }
     Spacer(Modifier.height(20.dp))
@@ -327,7 +332,7 @@ fun TextFieldEmail(email: String, onEmailChange: (String) ->Unit){
 }
 
 @Composable
-fun GetHinhDaiDienChinhSua(img : Uri?){
+fun GetHinhDaiDienChinhSua(img : String?){
     Box(modifier = Modifier.fillMaxSize() ) {
         Image(
             painter = rememberAsyncImagePainter(img),
@@ -346,9 +351,9 @@ fun GetHinhDaiDienChinhSua(img : Uri?){
 }
 
 @Composable
-fun GetHinhBiaChinhSua(img: Uri?) {
-    AsyncImage(
-        model = img,
+fun GetHinhBiaChinhSua(img: String?) {
+    Image(
+        painter = rememberAsyncImagePainter(img),
         contentDescription = "Main Image",
         contentScale = ContentScale.Crop,
         modifier = Modifier

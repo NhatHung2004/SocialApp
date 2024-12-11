@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,8 +60,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.rememberAsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
@@ -70,11 +70,8 @@ import com.google.firebase.auth.auth
 @SuppressLint("MutableCollectionMutableState", "SdCardPath")
 @Composable
 fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewModel){
+    profileViewModel.getUserInfo()
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
-    profileViewModel.updateImageAvatarUri("avatar")
-
-    val posts = postViewModel.posts.collectAsState().value
-    postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
 
     val context = LocalContext.current
     // ghi nhớ trạng thái chụp ảnh
@@ -93,7 +90,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
             result->
         if(result.resultCode == android.app.Activity.RESULT_OK)
         {
-            imageBitmap = result.data?.extras?.get("data") as Bitmap
+            imageBitmap = result.data?.extras?.get("data") as Bitmap?
             imageBitmap?.let { imageBitmapSelected.add(it) }
             Toast.makeText(context, "Ảnh đã được chụp",Toast.LENGTH_SHORT).show()
         }
@@ -104,12 +101,8 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
         contract = ActivityResultContracts.GetMultipleContents()
     ){ uris: List<Uri> ->
         imagesSelected = uris.toMutableList()
-//        imageUris.clear()
         imageUris.addAll(imagesSelected)
     }
-//    imageUris.addAll(imagesSelected)
-//    if(imageBitmap != null)
-//        imageBitmapSelected.add(imageBitmap)
 
     Column(
         modifier = Modifier
@@ -130,8 +123,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
                 imageBitmapSelected,
                 imageUris,
                 text,
-                postViewModel,
-                posts
+                postViewModel
             ) // Đặt firstLine2 ở trên
             HorizontalDivider(
                 thickness = 1.dp,
@@ -232,7 +224,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
 @Composable
 fun FirstLine2(
     context: Context, imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>, text: String,
-    postViewModel: PostViewModel, posts: Map<String, Any>?){
+    postViewModel: PostViewModel){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -243,16 +235,15 @@ fun FirstLine2(
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
             if (imageUris.isNotEmpty()) {
-                postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imageUris, text)
+                postViewModel.updateToFirestore(imageUris, text, context)
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
                 imageUris.clear()
             }
             if (imageBitmaps.isNotEmpty()) {
                 val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmaps)
-                postViewModel.saveAndUpdatePostToLocalAndDb(posts, context, imgBitmapUris, text)
+                postViewModel.updateToFirestore(imgBitmapUris, text, context)
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
                 imageBitmaps.clear()
-
             }
 
         },
@@ -300,7 +291,7 @@ fun TextFieldStatus(text: String, context: Context, onTextChange: (String) -> Un
 }
 
 @Composable
-fun GetHinhDaiDienChinhSua1(img : Uri?){
+fun GetHinhDaiDienChinhSua1(img : String?){
     Box() {
         Image(
             painter = rememberAsyncImagePainter(img),

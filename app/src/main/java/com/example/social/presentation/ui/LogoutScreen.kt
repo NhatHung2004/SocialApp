@@ -38,7 +38,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
@@ -78,8 +78,8 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                                 ),
                             ) {
                                 Box() {
-                                    AsyncImage(
-                                        model = imageAvatar,
+                                    Image(
+                                        painter = rememberAsyncImagePainter(imageAvatar),
                                         contentDescription = "avatar",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier

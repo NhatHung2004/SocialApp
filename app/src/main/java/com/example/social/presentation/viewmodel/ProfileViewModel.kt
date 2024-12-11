@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.UserRepo
+import com.example.social.domain.usecase.FirestoreMethod
 import com.example.social.domain.usecase.ImageProcess
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -15,49 +16,39 @@ import kotlinx.coroutines.launch
 class ProfileViewModel: ViewModel() {
     private val userRepo = UserRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val imageProcess = ImageProcess(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
-    private val _imageAvatarUri = MutableStateFlow<Uri?>(null)
-    private val _imageBackgroundUri = MutableStateFlow<Uri?>(null)
-    private val _firstname = MutableStateFlow<String>("")
-    private val _lastname = MutableStateFlow<String>("")
-    private val _email = MutableStateFlow<String>("")
+    private val _imageAvatarUri = MutableStateFlow<String?>(null)
+    private val _imageBackgroundUri = MutableStateFlow<String?>(null)
+    private val _firstname = MutableStateFlow("")
+    private val _lastname = MutableStateFlow("")
+    private val _email = MutableStateFlow("")
 
-    val imageAvatarUri: StateFlow<Uri?> get() = _imageAvatarUri
-    val imageBackgroundUri: StateFlow<Uri?> get() = _imageBackgroundUri
+    val imageAvatarUri: StateFlow<String?> get() = _imageAvatarUri
+    val imageBackgroundUri: StateFlow<String?> get() = _imageBackgroundUri
     val firstname: StateFlow<String> get() = _firstname
     val lastname: StateFlow<String> get() = _lastname
     val email: StateFlow<String> get() = _email
 
-
-    init {
-        getUserInfo()
-        updateImageAvatarUri("avatar")
-        updateImageBackgroundUri("backgroundAvatar")
-    }
-
-    private fun getUserInfo() {
+    fun getUserInfo() {
         viewModelScope.launch {
             _firstname.value = userRepo.fetchUserInfo("firstname").toString()
             _lastname.value = userRepo.fetchUserInfo("lastname").toString()
             _email.value = userRepo.fetchUserInfo("email").toString()
+            _imageAvatarUri.value = userRepo.fetchUserInfo("avatar").toString()
+            _imageBackgroundUri.value = userRepo.fetchUserInfo("backgroundAvatar").toString()
         }
     }
 
-    fun updateImageAvatarUri(field: String) {
+    fun uploadImageToCloudinary(uri: Uri, context: Context, field: String) {
         viewModelScope.launch {
-            _imageAvatarUri.value = imageProcess.getImageFromLocal(field)
-        }
-    }
-
-    fun updateImageBackgroundUri(field: String) {
-        viewModelScope.launch {
-            _imageBackgroundUri.value = imageProcess.getImageFromLocal(field)
-        }
-    }
-
-    fun copyImage(selectedUri: Uri, field: String, imagePath: String, context: Context) {
-        viewModelScope.launch {
-            imageProcess.copyImage(selectedUri, field, imagePath, context)
+            val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
+            firestoreMethod.updateData("users", field, imagePath)
+            if (field == "avatar") {
+                _imageAvatarUri.value = imagePath
+            } else if (field == "backgroundAvatar") {
+                _imageBackgroundUri.value = imagePath
+            }
         }
     }
 

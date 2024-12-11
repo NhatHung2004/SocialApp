@@ -27,7 +27,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +42,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.social.R
 import com.example.social.presentation.navigation.Routes
@@ -51,7 +49,7 @@ import com.example.social.presentation.viewmodel.AuthViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LoginScreen(authViewModel: AuthViewModel = viewModel(), navController: NavController) {
+fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
     val currentUser = authViewModel.currentUser.collectAsState().value
 
     var emailInput by remember { mutableStateOf("") }
