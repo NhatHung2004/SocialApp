@@ -72,14 +72,18 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
     val selectedIndex = remember { derivedStateOf { pagerState.currentPage } }//Tạo một state được tính toán dựa trên trang hiện tại của HorizontalPager.
     // Khi trang thay đổi, giá trị này sẽ tự động cập nhật.
     val navControllerTab = rememberNavController()
+    val navControllerHome= rememberNavController()
     //Hai dòng lệnh này đóng vai trò quan trọng trong việc theo dõi màn hình hiện tại trong
     // NavController và xác định liệu bạn đang ở màn hình AllFreindReq hay không
     val navBackStackEntry by navControllerTab.currentBackStackEntryAsState()
-    val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.ALL_FRIEND_REQ,Routes.ALL_FRIEND_SEND,Routes.PROFILE_EDIT,Routes.FRIEND_PROFILE + "/{userId}")
+    val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.ALL_FRIEND_REQ,Routes.ALL_FRIEND_SEND,Routes.PROFILE_EDIT)
+
+    val navBackStackEntryHome by navControllerHome.currentBackStackEntryAsState()
+    val isInAnyHomeScreen = navBackStackEntryHome?.destination?.route in listOf(Routes.FRIEND_PROFILE + "/{userId}")
     Scaffold(//Cau truc xay dung giao dien
         containerColor = Color.White,
         topBar = {//cai nay la top bar chua "TÊN APP"(phần trên cùng)
-            if (selectedIndex.value == HomeTabs.Home.ordinal ) { // Nếu mục Home được chọn thì
+            if (selectedIndex.value == HomeTabs.Home.ordinal  && !isInAnyHomeScreen) { // Nếu mục Home được chọn thì
                 TopAppBar(
                     title = {
                         Text(
@@ -104,7 +108,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                 .padding(top = it.calculateTopPadding())//Đặt kích thước của Column để chiếm toàn bộ không gian
             //có sẵn và thêm padding ở trên để tránh che khuất bởi TopAppBar.
         ) {
-            if (!isInAnyFriendReq && selectedIndex.value!=HomeTabs.Status.ordinal ) {
+            if (!isInAnyFriendReq && selectedIndex.value!=HomeTabs.Status.ordinal && !isInAnyHomeScreen) {
                 TabRow(//Cấu trúc hiển thị các tab
                     selectedTabIndex = selectedIndex.value,//Chỉ định tab nào đang được chọn dựa trên giá trị selectedIndex.
                     modifier = Modifier.fillMaxWidth(),//Đặt kích thước của TabRow để chiếm toàn bộ chiều rộng.
@@ -156,7 +160,6 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                 ) {
                     when(HomeTabs.entries[pageIndex]){
                         HomeTabs.Home -> {
-                            val navControllerHome= rememberNavController()
                             Box(modifier = Modifier.fillMaxSize()) {
                                 NavHost(
                                     navController = navControllerHome,
@@ -221,7 +224,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                                 ) {
                                     composable(Routes.PROFILE_SCREEN) {
                                         ProfileScreen(navController, navControllerTab, authViewModel,
-                                            commentViewModel, postViewModel, profileViewModel)
+                                            commentViewModel, postViewModel, profileViewModel,friendViewModel)
                                     }
                                     composable(Routes.ALL_FRIEND) {
                                         AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)

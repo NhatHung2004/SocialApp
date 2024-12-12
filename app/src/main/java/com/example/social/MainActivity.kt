@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.social.data.repository.UserRepo
 import com.example.social.presentation.navigation.NavigationGraph
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.ui.theme.SocialTheme
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)

@@ -21,7 +21,7 @@ class AuthRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
 
     suspend fun register(email : String, password : String, ho : String, ten : String,
                          gioiTinh : String, date : String, avatar: String,
-                         backgroundAvatar: String
+                         backgroundAvatar: String,status:String
     ): FirebaseUser? {
         return try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
@@ -40,7 +40,8 @@ class AuthRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
                         gioiTinh,
                         date,
                         avatar,
-                        backgroundAvatar
+                        backgroundAvatar,
+                        status,
                     )
                 }
                 if (userModel != null) {

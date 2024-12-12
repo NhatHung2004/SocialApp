@@ -58,4 +58,8 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
 
     }
 
+    fun updateUserStatus(status:String){
+        firestoreMethod.updateData("users","status",status)
+    }
+
 }
