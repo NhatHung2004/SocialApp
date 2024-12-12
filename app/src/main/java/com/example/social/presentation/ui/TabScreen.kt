@@ -43,8 +43,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.social.R
 import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.AllUserViewModel
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.FriendRequestViewModel
+import com.example.social.presentation.viewmodel.FriendSendViewModel
+import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
@@ -56,6 +60,10 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
     val commentViewModel: CommentViewModel = viewModel()
     val postViewModel: PostViewModel = viewModel()
     val profileViewModel: ProfileViewModel = viewModel()
+    val friendViewModel: FriendViewModel = viewModel()
+    val friendRequestViewModel: FriendRequestViewModel = viewModel()
+    val friendSendViewModel: FriendSendViewModel = viewModel()
+    val allUserViewModel: AllUserViewModel = viewModel()
 
     val scope = rememberCoroutineScope()//o một coroutine scope để quản lý các coroutine bên trong composable này.
     // Điều này thường được sử dụng để thực hiện các tác vụ bất đồng bộ như thay đổi trang trong HorizontalPager.
@@ -67,7 +75,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
     //Hai dòng lệnh này đóng vai trò quan trọng trong việc theo dõi màn hình hiện tại trong
     // NavController và xác định liệu bạn đang ở màn hình AllFreindReq hay không
     val navBackStackEntry by navControllerTab.currentBackStackEntryAsState()
-    val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf("AllFriendReq", "AllFriendSend", "AllFriend","ProfileEdit")
+    val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.ALL_FRIEND_REQ,Routes.ALL_FRIEND_SEND,Routes.PROFILE_EDIT,Routes.FRIEND_PROFILE + "/{userId}")
     Scaffold(//Cau truc xay dung giao dien
         containerColor = Color.White,
         topBar = {//cai nay la top bar chua "TÊN APP"(phần trên cùng)
@@ -96,7 +104,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                 .padding(top = it.calculateTopPadding())//Đặt kích thước của Column để chiếm toàn bộ không gian
             //có sẵn và thêm padding ở trên để tránh che khuất bởi TopAppBar.
         ) {
-            if (!isInAnyFriendReq) {
+            if (!isInAnyFriendReq && selectedIndex.value!=HomeTabs.Status.ordinal ) {
                 TabRow(//Cấu trúc hiển thị các tab
                     selectedTabIndex = selectedIndex.value,//Chỉ định tab nào đang được chọn dựa trên giá trị selectedIndex.
                     modifier = Modifier.fillMaxWidth(),//Đặt kích thước của TabRow để chiếm toàn bộ chiều rộng.
@@ -147,8 +155,25 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                     contentAlignment = Alignment.Center
                 ) {
                     when(HomeTabs.entries[pageIndex]){
-                        HomeTabs.Home -> { HomeScreen(navControllerTab)
-                            // Bạn có thể thay thế nó bằng mã cần thiết để hiển thị nội dung Home.
+                        HomeTabs.Home -> {
+                            val navControllerHome= rememberNavController()
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                NavHost(
+                                    navController = navControllerHome,
+                                    startDestination = Routes.HOME,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    composable(Routes.HOME) {
+                                        HomeScreen(navControllerHome,friendViewModel,profileViewModel)
+                                    }
+                                    composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
+                                        val userId = backStackEntry.arguments?.getString("userId")
+                                        if (userId != null) {
+                                            ProfileFriendScreen(navControllerHome, userId, profileViewModel, postViewModel, friendViewModel,commentViewModel)
+                                        }
+                                    }
+                                }
+                            }
                         }
                         HomeTabs.Friend -> {
                             Box(modifier = Modifier.fillMaxSize()) {
@@ -158,19 +183,33 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     composable(Routes.FRIEND) {
-                                        FriendScreen(navControllerTab)
+                                        FriendScreen(navControllerTab,friendViewModel,friendRequestViewModel, friendSendViewModel, profileViewModel, allUserViewModel)
                                     }
                                     composable(Routes.ALL_FRIEND_REQ) {
-                                        AllFriendReq()
+                                        AllFriendReq(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
                                     }
                                     composable(Routes.ALL_FRIEND_SEND) {
-                                        AllFriendSend()
+                                        AllFriendSend(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                    }
+                                    composable(Routes.ALL_FRIEND) {
+                                        AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
                                     }
                                 }
                             }
                         }
                         HomeTabs.Status -> {
-                            StatusScreen(profileViewModel, postViewModel)
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                val navControllerStatus= rememberNavController()
+                                NavHost(
+                                    navController = navControllerStatus,
+                                    startDestination = Routes.STATUS,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    composable(Routes.STATUS) {
+                                        StatusScreen(navControllerStatus,profileViewModel,postViewModel)
+                                    }
+                                }
+                            }
                         }
                         HomeTabs.Notification -> NoficationScreen()
                         HomeTabs.Profile -> {
@@ -185,7 +224,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
                                             commentViewModel, postViewModel, profileViewModel)
                                     }
                                     composable(Routes.ALL_FRIEND) {
-                                        AllFriend()
+                                        AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
                                     }
                                     composable(Routes.PROFILE_EDIT) {
                                         ProfileEdit(navControllerTab, profileViewModel)

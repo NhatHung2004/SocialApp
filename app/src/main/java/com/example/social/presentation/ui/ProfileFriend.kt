@@ -1,5 +1,7 @@
 package com.example.social.presentation.ui
 
+
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,29 +50,25 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
-import com.example.social.db.userPostDataProvider
-import com.example.social.presentation.navigation.Routes
-import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
 @Composable
-fun ProfileScreen(navController: NavController, navControllerTab: NavController,
-                  authViewModel: AuthViewModel,
-                  commentViewModel: CommentViewModel,
-                  postViewModel: PostViewModel,
-                  profileViewModel: ProfileViewModel,
+fun ProfileFriendScreen(navController: NavController, uid:String, profileViewModel: ProfileViewModel,
+                        postViewModel: PostViewModel, friendViewModel: FriendViewModel,commentViewModel: CommentViewModel
 ) {
     var isPressed by remember { mutableStateOf(false) }
-    postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
-    profileViewModel.getUserInfo()
+    val comments = commentViewModel.comments.collectAsState().value
 
     val posts = postViewModel.posts.collectAsState().value
-    val comments = commentViewModel.comments.collectAsState().value
-    postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
+    postViewModel.getPosts(uid)
+
+
+    profileViewModel.getUserInfoFromId(uid)
 
     val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
@@ -78,7 +76,10 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
     val firstname = profileViewModel.firstname.collectAsState().value
     val lastname = profileViewModel.lastname.collectAsState().value
 
+
     val showBottomSheet = remember { mutableStateOf(false) }
+
+
 
     Column(
         modifier = Modifier
@@ -91,11 +92,12 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                 .weight(1f),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
-        ){
+        ) {
             LazyColumn() {
                 item {
                     //, imageAvatar, imageBackground
-                    Firstline5(navControllerTab,
+                    FirstlineFriend5(
+                        navController,
                         imageAvatar,
                         imageBackground,
                         firstname,
@@ -104,7 +106,70 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
-                    FriendLine(navControllerTab)
+                    Row(modifier= Modifier
+                        .fillMaxWidth()
+                        .padding(start = 15.dp, end = 15.dp)){
+                        Text(text="Bạn bè", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
+                            color= Color.Gray,
+                            modifier = Modifier.alpha(0.5f)
+                        )
+                        Spacer(Modifier.width(155.dp))
+                        Button(
+                            onClick = {},
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .width(165.dp)
+                                .offset(y = (-4).dp)
+                                .height(30.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ không gian của Button
+                                contentAlignment = Alignment.CenterEnd // Căn trái nội dung
+                            ) {
+                                Text(
+                                    text = "Tìm bạn bè",
+                                    color = colorResource(R.color.pinkBlur),
+                                    fontSize = 12.sp,
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+//                    val userInfoList = friendViewModel.userInfo.collectAsState().value
+//                    if (userInfoList.isEmpty() && userIds.isNotEmpty()) {
+//                        friendViewModel.getFriendInfo(userIds)
+//                    }
+//                    Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
+//                        userInfoList.chunked(3).forEach { chunk ->
+//                            Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
+//                                chunk.forEachIndexed { index, userInfo ->
+//                                    val userId = userIds.getOrNull(index)
+//                                    if (userId != null) {
+//                                        FriendLine1(navController, userInfo)
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Button(
+                            onClick = {},
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorResource(R.color.white)
+                            ),
+                            modifier = Modifier
+                                // Đặt kích thước cho nút
+                                .border(
+                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .size(width = 335.dp, height = 32.dp)
+                        ) {
+                            Text(text = "Xem tất cả", color = colorResource(R.color.pink))
+                        }
+                    }
                 }
                 item {
                     Spacer(Modifier.height(10.dp))
@@ -117,8 +182,7 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             val id = postData["id"]
                             val post = imageUris?.let { Post(id.toString(), content.toString(), timestamp, it) }
                             if (post != null) {
-                                SelfPost(post, imageAvatar, "$firstname $lastname",
-                                    commentViewModel, comments)
+                                FriendPost(post, imageAvatar, "$firstname $lastname", commentViewModel,comments)
                             }
                         }
                     }
@@ -137,8 +201,10 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                 .background(color = Color.White), // Bạn có thể đổi màu theo ý thích
             contentAlignment = Alignment.CenterStart
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)
+            ) {
                 Button(
                     onClick = {
                         isPressed = !isPressed
@@ -149,8 +215,12 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                     ),
                 )
                 {
-                    Row(){
-                        Text(text= "$firstname $lastname",color= colorResource(R.color.pink), fontSize = 20.sp)
+                    Row() {
+                        Text(
+                            text = "$firstname $lastname",
+                            color = colorResource(R.color.pink),
+                            fontSize = 20.sp
+                        )
                         Spacer(Modifier.width(10.dp))
                         if (isPressed) {
                             Image(
@@ -185,43 +255,45 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
             }
         }
     }
-    if (showBottomSheet.value) {
-        SignOutPart(navController, profileViewModel, authViewModel, onDismiss = {showBottomSheet.value=false})
-    }
 }
 
 @Composable
 
-fun Firstline5(
+fun FirstlineFriend5(
     navController: NavController, imageAvatar: String?, imageBackground: String?,
-    firstname: String, lastname: String){
-    Column(modifier= Modifier.fillMaxWidth()){
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .height(195.dp)) {
-            GetNenHinhDaiDien(imageBackground)
-            Box(modifier = Modifier
+    firstname: String, lastname: String
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 25.dp)
-                .align(Alignment.BottomStart)
-                .offset(y = 1.dp)) {
-                Row( verticalAlignment = Alignment.CenterVertically) {
+                .height(195.dp)
+        ) {
+            GetNenHinhDaiDien(imageBackground)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 25.dp)
+                    .align(Alignment.BottomStart)
+                    .offset(y = 1.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     GetHinhDaiDienProfile(imageAvatar)
                     Spacer(Modifier.width(15.dp))
-                    Box(modifier=Modifier.offset(y=25.dp)){
+                    Box(modifier = Modifier.offset(y = 25.dp)) {
                         Row() {
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                Text(text = "0", modifier = Modifier.padding(start = 25.dp))
                                 Text(text = "Bài viết")
                             }
                             Spacer(Modifier.width(20.dp))
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                Text(text = "0", modifier = Modifier.padding(start = 25.dp))
                                 Text(text = "Bạn bè")
                             }
                             Spacer(Modifier.width(20.dp))
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                Text(text = "0", modifier = Modifier.padding(start = 25.dp))
                                 Text(text = "Theo dõi")
                             }
                         }
@@ -230,178 +302,45 @@ fun Firstline5(
             }
         }
         Spacer(Modifier.height(10.dp))
-        Row(modifier = Modifier.fillMaxWidth()){
+        Row(modifier = Modifier.fillMaxWidth()) {
             Spacer(Modifier.height(10.dp))
-            Text(text= "$firstname $lastname", modifier=Modifier.padding(start = 15 .dp),
+            Text(
+                text = "$firstname $lastname", modifier = Modifier.padding(start = 15.dp),
                 fontWeight = FontWeight.ExtraBold, fontSize = 20.sp
             )
             Spacer(Modifier.weight(1f))
-            Button(
-                onClick = {navController.navigate(Routes.PROFILE_EDIT)},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
-                ),
-                modifier = Modifier
-                    // Đặt kích thước cho nút
-                    .border(
-                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                        shape = RoundedCornerShape(15.dp)
-                    )
-                    .size(width = 200.dp, height = 32.dp)
-            ) {
-                // Sử dụng Box để căn giữa nội dung
-                Box(
-                    // Chiếm toàn bộ không gian của nút
-                    contentAlignment = Alignment.Center // Căn giữa nội dung
-                ) {
-                    Text(
-                        text = "Chỉnh sửa trang cá nhân",
-                        color = colorResource(R.color.pink),
-                        fontSize = 12.sp,
-                        modifier= Modifier
-                            .padding(start = 11.dp)
-                            .offset(y = (-1).dp)
-                    )
-                }
-            }
         }
     }
 }
+
 @Composable
-fun FriendLine(navController: NavController){
-    Column(){
-        Row(modifier= Modifier
-            .fillMaxWidth()
-            .padding(start = 15.dp, end = 15.dp)){
-            Text(text="Bạn bè", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
-                color=Color.Gray,
-                modifier = Modifier.alpha(0.5f)
+fun FriendLine1(navController: NavController, friend: Map<String, Any>) {
+    val name = "${friend["firstname"]} ${friend["lastname"]}"
+    val avatarUri = Uri.parse(friend["avatar"].toString())
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally // Căn giữa các phần tử trong cột
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(modifier = Modifier.height(8.dp)) // Thêm spacer ở đây để đẩy hình ảnh xuống
+            Image(
+                painter = rememberAsyncImagePainter(avatarUri),
+                contentDescription = "avatar",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(width = 92.dp, height = 51.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .border(1.dp, Color.Black, RoundedCornerShape(2.dp))
             )
-            Spacer(Modifier.width(155.dp))
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
-                ),
-                modifier = Modifier
-                    .width(165.dp)
-                    .offset(y = (-4).dp)
-                    .height(30.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ không gian của Button
-                    contentAlignment = Alignment.CenterEnd // Căn trái nội dung
-                ) {
-                    Text(
-                        text = "Tìm bạn bè",
-                        color = colorResource(R.color.pinkBlur),
-                        fontSize = 12.sp,
-                    )
-                }
-            }
         }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 15.dp, end = 15.dp),
-        ) {
-            // Chia danh sách thành các hàng 3 phần tử
-            userPostDataProvider.friendList.chunked(3).forEach { friendRow ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    friendRow.forEach { friend ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally // Căn giữa các phần tử trong cột
-                        ) {
-                            GetHinhDaiDienProfileFriend(friend.avtFriend.avatarRes)
-                            Text(text = friend.nameFriend)
-                        }
-                    }
-                }
-            }
-        }
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Button(
-                onClick = {navController.navigate(Routes.ALL_FRIEND)},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.white)
-                ),
-                modifier = Modifier
-                    // Đặt kích thước cho nút
-                    .border(
-                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    .size(width = 335.dp, height = 32.dp)
-            ) {
-                Text(text = "Xem tất cả", color = colorResource(R.color.pink))
-            }
-        }
-    }
-}
-@Composable
-fun GetNenHinhDaiDien(image: String?) {
-    // Ảnh chính
-    Image(
-        painter = rememberAsyncImagePainter(image),
-        contentDescription = "Main Image",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp)
-            .border(5.dp, colorResource(R.color.pinkBlur)) // Viền ảnh chính
-    )
-}
-@Composable
-fun  GetHinhDaiDienProfile(image: String?){
-    Image(
-        painter = rememberAsyncImagePainter(image),
-        contentDescription = "Circular Image",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(90.dp) // Kích thước ảnh tròn
-            .clip(CircleShape) // Cắt ảnh thành hình tròn
-            .border(1.dp, colorResource(R.color.pinkBlur), CircleShape)
-    )
-}
-@Composable
-fun  GetHinhDaiDienPost1(image: String?){
-    Image(
-        painter = rememberAsyncImagePainter(image),
-        contentDescription = "Circular Image",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(41.dp) // Kích thước ảnh tròn
-            .clip(CircleShape) // Cắt ảnh thành hình tròn
-            .border(1.dp, colorResource(R.color.pinkBlur), CircleShape)
-    )
-}
-
-@Composable
-fun GetHinhDaiDienProfileFriend(img2: Int) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(modifier = Modifier.height(8.dp)) // Thêm spacer ở đây để đẩy hình ảnh xuống
-        Image(
-            painter = painterResource(img2),
-            contentDescription = "avatar",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(width = 92.dp, height = 51.dp)
-                .clip(RoundedCornerShape(2.dp))
-        )
+        Text(text = name)
     }
 }
 
 @Composable
-fun SelfPost(
-    post: Post,
-    imageAvatar: String?,
-    name: String,
+fun FriendPost(
+    post: Post, imageAvatar: String?, name: String,
     commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?
-){
+    comments: Map<String, Any>?) {
     val showBottomSheet = remember { mutableStateOf(false) }
 
     Column(modifier=Modifier.fillMaxSize()){
@@ -419,7 +358,7 @@ fun SelfPost(
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(
-                    text = Firebase.auth.currentUser?.displayName.toString(),
+                    text = name,
                     color = Color.Black,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
@@ -498,3 +437,4 @@ fun SelfPost(
             commentViewModel, comments) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }
+

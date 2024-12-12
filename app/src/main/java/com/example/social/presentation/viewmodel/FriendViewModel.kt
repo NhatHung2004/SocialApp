@@ -1,0 +1,48 @@
+package com.example.social.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.social.data.repository.FriendRepo
+import com.example.social.data.repository.UserRepo
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class FriendViewModel: ViewModel() {
+    private val friendRepo = FriendRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val userRepo = UserRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+
+    private val _friends= MutableStateFlow<Map<String, Any>?>(null)
+    private val _userInfos = MutableStateFlow<List<Map<String, Any>>>(emptyList())
+
+    val friends: StateFlow<Map<String, Any>?> get() = _friends
+    val userInfo : StateFlow<List<Map<String, Any>>> get() = _userInfos
+
+    fun getFriends(userID: String) {
+        viewModelScope.launch {
+            _friends.value = friendRepo.getFriend(userID,"friends")
+        }
+    }
+
+    fun updateFriendToFirestore( userId1:String,userId2:String) {
+        viewModelScope.launch {
+            friendRepo.updateFriend("friends",userId1,userId2)
+        }
+    }
+
+    fun  deleteFriend(userId1:String,userId2:String){
+        viewModelScope.launch {
+            friendRepo.deleteFriend("friends",userId1,userId2)
+        }
+    }
+
+    fun getFriendInfo(userId: List<String>) {
+        viewModelScope.launch {
+            val friendInfoList = userRepo.getUsersFromUserId(userId)
+            _userInfos.value = friendInfoList
+        }
+    }
+
+}

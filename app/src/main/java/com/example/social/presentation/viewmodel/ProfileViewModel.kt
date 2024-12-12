@@ -40,6 +40,16 @@ class ProfileViewModel: ViewModel() {
         }
     }
 
+    fun getUserInfoFromId(userId:String) {
+        viewModelScope.launch {
+            _firstname.value = userRepo.fetchUserInfoFromUid("firstname",userId).toString()
+            _lastname.value = userRepo.fetchUserInfoFromUid("lastname",userId).toString()
+            _email.value = userRepo.fetchUserInfoFromUid("email",userId).toString()
+            _imageAvatarUri.value = userRepo.fetchUserInfoFromUid("avatar",userId).toString()
+            _imageBackgroundUri.value = userRepo.fetchUserInfoFromUid("backgroundAvatar",userId).toString()
+        }
+    }
+
     fun uploadImageToCloudinary(uri: Uri, context: Context, field: String) {
         viewModelScope.launch {
             val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
