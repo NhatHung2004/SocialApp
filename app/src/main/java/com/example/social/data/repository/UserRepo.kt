@@ -12,7 +12,34 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
 
     suspend fun fetchUserInfo(field: String): String? {
         return try {
-            firestoreMethod.fetchInfoData("users", field, firebaseAuth.currentUser!!.uid)
+            firestoreMethod.fetchInfoData("users", field)
+        }catch (e: Exception) {
+            println("Error getting user data: $e")
+            null // Trả về null nếu có lỗi
+        }
+    }
+
+    suspend fun fetchUserInfoFromUid(field:String,uid:String): String? {
+        return try {
+            firestoreMethod.fetchInfoData("users", field,uid)
+        }catch (e: Exception) {
+            println("Error getting user data: $e")
+            null // Trả về null nếu có lỗi
+        }
+    }
+
+    suspend fun getUsersFromUserId(userIds:List<String>): List<Map<String, Any>> {
+        return try {
+            firestoreMethod.fetchUserInfoFromUserId(userIds)
+        } catch (e: Exception) {
+            println("Error fetching user info: $e")
+            emptyList() // Trả về danh sách rỗng nếu có lỗi xảy ra
+        }
+    }
+
+    suspend fun fetchAllUsers(): List<Map<String, Any>>? {
+        return try{
+            firestoreMethod.fetchAllUserInfoData("users")
         }catch (e: Exception) {
             println("Error getting user data: $e")
             null // Trả về null nếu có lỗi
@@ -30,4 +57,5 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         firestoreMethod.updateData("users", "email", email)
 
     }
+
 }

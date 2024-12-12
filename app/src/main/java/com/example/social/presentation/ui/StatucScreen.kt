@@ -60,8 +60,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
+import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
@@ -69,7 +71,7 @@ import com.google.firebase.auth.auth
 
 @SuppressLint("MutableCollectionMutableState", "SdCardPath")
 @Composable
-fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewModel){
+fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel, postViewModel: PostViewModel){
     profileViewModel.getUserInfo()
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
 
@@ -123,7 +125,8 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
                 imageBitmapSelected,
                 imageUris,
                 text,
-                postViewModel
+                postViewModel,
+                navController
             ) // Đặt firstLine2 ở trên
             HorizontalDivider(
                 thickness = 1.dp,
@@ -224,7 +227,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
 @Composable
 fun FirstLine2(
     context: Context, imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>, text: String,
-    postViewModel: PostViewModel){
+    postViewModel: PostViewModel,navController: NavController){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -245,7 +248,6 @@ fun FirstLine2(
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
                 imageBitmaps.clear()
             }
-
         },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White

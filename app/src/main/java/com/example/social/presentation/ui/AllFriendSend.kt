@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -30,11 +31,37 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.social.R
 import com.example.social.db.userPostDataProvider
+import com.example.social.presentation.viewmodel.FriendRequestViewModel
+import com.example.social.presentation.viewmodel.FriendSendViewModel
+import com.example.social.presentation.viewmodel.FriendViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
-fun AllFriendSend(){
+fun AllFriendSend(navController: NavController, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel){
+
+    val context = LocalContext.current
+
+    val friendSends=friendSendViewModel.friendSends.collectAsState().value
+    friendSendViewModel.getFriendSends(Firebase.auth.currentUser!!.uid)
+
+    val userInfoList = friendSendViewModel.userInfo.collectAsState().value
+    val userIdSends = mutableListOf<String>()
+
+    if(friendSends!=null) {
+        for ((index, entry) in friendSends.entries.withIndex()) {
+            val friendSendData = entry.value as? Map<*, *>
+            val userId = friendSendData?.get("uid") as? String
+            val timestamp = friendSendData?.get("timestamp") as Long
+            if (userId != null) {
+                userIdSends.add(userId)
+            }
+        }
+    }
+
     Column(modifier= Modifier.fillMaxSize()){
         Row(modifier =  Modifier.fillMaxWidth()) {
             Button(
@@ -65,7 +92,7 @@ fun AllFriendSend(){
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = "100", fontSize = 20.sp,
+                text = userIdSends.size.toString(), fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color= colorResource(R.color.pink)
             )
@@ -73,49 +100,11 @@ fun AllFriendSend(){
         Spacer(Modifier.height(20.dp))
         LazyColumn (modifier=Modifier.fillMaxSize().padding(start=6.dp)){
             item {
-                ListSend()
-            }
-        }
-    }
-}
-@Composable
-fun ListSend(){
-    Column (
-        modifier=Modifier.fillMaxWidth(),
-    ) {
-        userPostDataProvider.friendList.forEach { friend->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                GetHinhDaiDienFriend(friend.avtFriend.avatarRes)
-                Spacer(Modifier.width(10.dp))
-                Column {
-
-                    Row(){
-                        Text(text = friend.nameFriend)
-                        Spacer(Modifier.weight(1f))
-                        Text(text = friend.timeFriend,modifier=Modifier.padding(end = 10.dp))
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Row(){
-                        val context = LocalContext.current
-                        Button(onClick={Toast.makeText(context,"Đã hủy lời mời kết bạn với " + friend.nameFriend,Toast.LENGTH_SHORT).show()},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.white)
-                            ),
-                            modifier = Modifier
-                                // Đặt kích thước cho nút
-                                .border(
-                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                                .fillMaxWidth().height(37.dp)
-
-                        ){
-                            Text(text="Hủy",color= colorResource(R.color.pink))
-                        }
-                    }
+                friendSendViewModel.getFriendInfo(userIdSends)
+                userInfoList.forEach{userInfo->
+                    FriendSendDisplay(userInfo,userIdSends, navController , context ,friendViewModel,friendRequestViewModel,friendSendViewModel)
                 }
             }
-            Spacer(Modifier.height(20.dp))
         }
     }
 }
