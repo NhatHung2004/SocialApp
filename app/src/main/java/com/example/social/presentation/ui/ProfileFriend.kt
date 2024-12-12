@@ -50,6 +50,7 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
+import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
@@ -67,6 +68,10 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
     val posts = postViewModel.posts.collectAsState().value
     postViewModel.getPosts(uid)
 
+    val userInfoList = friendViewModel.userInfo.collectAsState().value
+    val friends=friendViewModel.friends.collectAsState().value
+    friendViewModel.getFriends(uid)
+
 
     profileViewModel.getUserInfoFromId(uid)
 
@@ -79,7 +84,17 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
 
     val showBottomSheet = remember { mutableStateOf(false) }
 
-
+    val userIds = mutableListOf<String>()
+    if(friends!=null) {
+        for ((index, entry) in friends.entries.withIndex()) {
+            val friendData = entry.value as? Map<*, *>
+            val userId = friendData?.get("uid") as? String
+            val timestamp = friendData?.get("timestamp") as Long
+            if (userId != null) {
+                userIds.add(userId)
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -106,56 +121,21 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
-                    Row(modifier= Modifier
-                        .fillMaxWidth()
-                        .padding(start = 15.dp, end = 15.dp)){
-                        Text(text="Bạn bè", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
-                            color= Color.Gray,
-                            modifier = Modifier.alpha(0.5f)
-                        )
-                        Spacer(Modifier.width(155.dp))
-                        Button(
-                            onClick = {},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White
-                            ),
-                            modifier = Modifier
-                                .width(165.dp)
-                                .offset(y = (-4).dp)
-                                .height(30.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ không gian của Button
-                                contentAlignment = Alignment.CenterEnd // Căn trái nội dung
-                            ) {
-                                Text(
-                                    text = "Tìm bạn bè",
-                                    color = colorResource(R.color.pinkBlur),
-                                    fontSize = 12.sp,
-                                )
+                    friendViewModel.getFriendInfo(userIds)
+                    Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
+                        userInfoList.chunked(3).forEach { chunk ->
+                            Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
+                                chunk.forEach{userInfo ->
+                                    FriendLine(navController, userInfo)
+                                }
                             }
                         }
                     }
-                    Spacer(Modifier.height(10.dp))
-//                    val userInfoList = friendViewModel.userInfo.collectAsState().value
-//                    if (userInfoList.isEmpty() && userIds.isNotEmpty()) {
-//                        friendViewModel.getFriendInfo(userIds)
-//                    }
-//                    Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
-//                        userInfoList.chunked(3).forEach { chunk ->
-//                            Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
-//                                chunk.forEachIndexed { index, userInfo ->
-//                                    val userId = userIds.getOrNull(index)
-//                                    if (userId != null) {
-//                                        FriendLine1(navController, userInfo)
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
+                }
+                item{
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Button(
-                            onClick = {},
+                            onClick = {navController.navigate(Routes.ALL_FRIEND)},
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorResource(R.color.white)
                             ),

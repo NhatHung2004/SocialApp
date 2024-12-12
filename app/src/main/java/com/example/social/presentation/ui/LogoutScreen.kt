@@ -110,6 +110,7 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                                 onClick = {
                                     if (currentUser != null) {
                                         authViewModel.logout()
+                                        authViewModel.setLogOutStatus()
                                         navController.navigate(Routes.LOGIN)
                                     }
                                 },

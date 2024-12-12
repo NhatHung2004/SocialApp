@@ -9,4 +9,5 @@ data class User(
     val date: String,
     val avatar: String,
     val backgroundAvatar: String,
+    val status:String,
 )

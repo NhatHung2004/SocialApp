@@ -1,5 +1,6 @@
 package com.example.social.presentation.ui
 
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,6 +53,7 @@ import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
@@ -63,14 +65,20 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                   commentViewModel: CommentViewModel,
                   postViewModel: PostViewModel,
                   profileViewModel: ProfileViewModel,
+                  friendViewModel: FriendViewModel
 ) {
     var isPressed by remember { mutableStateOf(false) }
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
     profileViewModel.getUserInfo()
 
+    val userInfoList = friendViewModel.userInfo.collectAsState().value
+
     val posts = postViewModel.posts.collectAsState().value
     val comments = commentViewModel.comments.collectAsState().value
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
+
+    val friends=friendViewModel.friends.collectAsState().value
+    friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
 
     val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
@@ -79,6 +87,18 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
     val lastname = profileViewModel.lastname.collectAsState().value
 
     val showBottomSheet = remember { mutableStateOf(false) }
+
+    val userIds = mutableListOf<String>()
+    if(friends!=null) {
+        for ((index, entry) in friends.entries.withIndex()) {
+            val friendData = entry.value as? Map<*, *>
+            val userId = friendData?.get("uid") as? String
+            val timestamp = friendData?.get("timestamp") as Long
+            if (userId != null) {
+                userIds.add(userId)
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -104,8 +124,37 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
-                    FriendLine(navControllerTab)
+                    friendViewModel.getFriendInfo(userIds)
+                    Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
+                        userInfoList.chunked(3).take(2).forEach { chunk ->
+                            Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
+                                chunk.forEach{userInfo ->
+                                    FriendLine(navController, userInfo)
+                                }
+                            }
+                        }
+                    }
                 }
+                item{
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Button(
+                            onClick = {navControllerTab.navigate(Routes.ALL_FRIEND)},
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorResource(R.color.white)
+                            ),
+                            modifier = Modifier
+                                // Đặt kích thước cho nút
+                                .border(
+                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .size(width = 335.dp, height = 32.dp)
+                        ) {
+                            Text(text = "Xem tất cả", color = colorResource(R.color.pink))
+                        }
+                    }
+                }
+
                 item {
                     Spacer(Modifier.height(10.dp))
                     if (posts != null) {
@@ -268,77 +317,25 @@ fun Firstline5(
     }
 }
 @Composable
-fun FriendLine(navController: NavController){
-    Column(){
-        Row(modifier= Modifier
-            .fillMaxWidth()
-            .padding(start = 15.dp, end = 15.dp)){
-            Text(text="Bạn bè", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
-                color=Color.Gray,
-                modifier = Modifier.alpha(0.5f)
+fun FriendLine(navController: NavController,friend: Map<String,Any>){
+    val name = "${friend["firstname"]} ${friend["lastname"]}"
+    val avatarUri = Uri.parse(friend["avatar"].toString())
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally // Căn giữa các phần tử trong cột
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(modifier = Modifier.height(8.dp)) // Thêm spacer ở đây để đẩy hình ảnh xuống
+            Image(
+                painter = rememberAsyncImagePainter(avatarUri),
+                contentDescription = "avatar",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(width = 92.dp, height = 51.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .border(1.dp, Color.Black, RoundedCornerShape(2.dp))
             )
-            Spacer(Modifier.width(155.dp))
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
-                ),
-                modifier = Modifier
-                    .width(165.dp)
-                    .offset(y = (-4).dp)
-                    .height(30.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ không gian của Button
-                    contentAlignment = Alignment.CenterEnd // Căn trái nội dung
-                ) {
-                    Text(
-                        text = "Tìm bạn bè",
-                        color = colorResource(R.color.pinkBlur),
-                        fontSize = 12.sp,
-                    )
-                }
-            }
         }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 15.dp, end = 15.dp),
-        ) {
-            // Chia danh sách thành các hàng 3 phần tử
-            userPostDataProvider.friendList.chunked(3).forEach { friendRow ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    friendRow.forEach { friend ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally // Căn giữa các phần tử trong cột
-                        ) {
-                            GetHinhDaiDienProfileFriend(friend.avtFriend.avatarRes)
-                            Text(text = friend.nameFriend)
-                        }
-                    }
-                }
-            }
-        }
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Button(
-                onClick = {navController.navigate(Routes.ALL_FRIEND)},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.white)
-                ),
-                modifier = Modifier
-                    // Đặt kích thước cho nút
-                    .border(
-                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    .size(width = 335.dp, height = 32.dp)
-            ) {
-                Text(text = "Xem tất cả", color = colorResource(R.color.pink))
-            }
-        }
+        Text(text = name)
     }
 }
 @Composable

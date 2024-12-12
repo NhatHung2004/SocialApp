@@ -10,6 +10,7 @@ object Routes {
     const val ALL_FRIEND_SEND = "all_friend_send"
     const val PROFILE_SCREEN = "profile_screen"
     const val ALL_FRIEND = "all_friend"
+    const val ALL_FRIEND_PROFILE = "all_friend_profile"
     const val PROFILE_EDIT = "profile_edit"
     const val  FRIEND_PROFILE= "friend_profile"
     const val STATUS="status"
