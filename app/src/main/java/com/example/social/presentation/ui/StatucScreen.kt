@@ -34,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -141,7 +142,7 @@ fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel
                         Spacer(Modifier.width(10.dp))
                         Text(
                             text = Firebase.auth.currentUser?.displayName.toString(),
-                            color = Color.Black,
+                            color = MaterialTheme.colorScheme.onBackground,
                             style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                         )
                     }
@@ -172,14 +173,14 @@ fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel
             modifier = Modifier
                 .fillMaxWidth() // Chiếm toàn bộ chiều rộng
                 .height(60.dp) // Thiết lập chiều cao cho Box mới
-                .background(color = Color.White), // Bạn có thể đổi màu theo ý thích
+                .background(color = MaterialTheme.colorScheme.background), // Bạn có thể đổi màu theo ý thích
             contentAlignment = Alignment.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(start = 10.dp, bottom = 10.dp)){
                 Button(onClick={},
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.background
                     ),
                 )
                 {
@@ -196,7 +197,8 @@ fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel
                         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
                         cameraLauncher.launch(intent)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =MaterialTheme.colorScheme.background)
                 )
                 {
                     Image(
@@ -209,7 +211,8 @@ fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel
                 Button(onClick={
                     multipleGalleryLauncher.launch("image/*")
                 },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.background),
                 )
                 {
                     Image(
@@ -250,7 +253,7 @@ fun FirstLine2(
             }
         },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.background
             ),
         ){
             Image(
@@ -282,9 +285,9 @@ fun TextFieldStatus(text: String, context: Context, onTextChange: (String) -> Un
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White),
+                .background(MaterialTheme.colorScheme.background),
             colors = TextFieldDefaults.textFieldColors(
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.background,
                 unfocusedIndicatorColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent
             ),

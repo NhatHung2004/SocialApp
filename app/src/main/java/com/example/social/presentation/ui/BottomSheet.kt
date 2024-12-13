@@ -73,10 +73,10 @@ fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {onDismiss()},
-            modifier=Modifier.fillMaxWidth().height(80.dp),
+            modifier=Modifier.fillMaxWidth().height(80.dp).background(MaterialTheme.colorScheme.background),
             dragHandle = {
                 Column(
-                    modifier=Modifier.fillMaxWidth().background(Color.White),
+                    modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ){}
@@ -84,13 +84,13 @@ fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
         ) {
             Button(onClick = {navController.navigate(Routes.ALL_FRIEND_SEND)},modifier=Modifier.fillMaxSize().padding(start = 0.dp)
                 ,colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.background
                 )){
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxSize()){
                     Box(
                         modifier = Modifier
                             .size(32.dp) // Kích thước của hình tròn
-                            .background(Color.Gray, shape = CircleShape)
+                            .background(MaterialTheme.colorScheme.background, shape = CircleShape)
                         , contentAlignment = Alignment.Center
                     ){
                         Image(
@@ -100,7 +100,7 @@ fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
                         )
                     }
                     Spacer(Modifier.width(10.dp))
-                    Text(text="Lời mời đã gửi",color=Color.Black,fontSize = 16.sp)
+                    Text(text="Lời mời đã gửi" ,fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
@@ -119,16 +119,16 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {onDismiss()},
-            modifier=Modifier.fillMaxWidth().height(150.dp),
+            modifier=Modifier.fillMaxWidth().height(150.dp).background(MaterialTheme.colorScheme.background),
             dragHandle = {
                 Column(
-                    modifier=Modifier.fillMaxWidth().background(Color.White),
+                    modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ){
                     Button(onClick = { },
                         modifier = Modifier.fillMaxWidth().padding(start = 0.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.background
                         )){
                         Row(modifier = Modifier.fillMaxWidth().padding(start = 2.dp)){
                             Image(
@@ -151,7 +151,7 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
                 }
             }
         ) {
-            Column(modifier=Modifier.fillMaxWidth().background(Color.White)) {
+            Column(modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
                 Spacer(Modifier.height(2.dp))
                 Divider(
                     color = colorResource(R.color.lightGrey),
@@ -169,7 +169,7 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
                     },
                     modifier = Modifier.fillMaxWidth().padding(start = 0.dp).height(120.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.background
                     )
                 ) {
                     Row(
@@ -241,7 +241,7 @@ fun listCmt(
     commentViewModel: CommentViewModel,
     comments: Map<String, Any>?
 ){
-    Column(modifier = Modifier.fillMaxWidth().background(Color.White)) {
+    Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
         // Đặt LazyColumn để cuộn qua danh sách bình luận
         LazyColumn(modifier = Modifier
             .weight(1f) // Đảm bảo nó chiếm không gian còn lại
