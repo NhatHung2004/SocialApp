@@ -29,6 +29,7 @@ import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
+import com.example.social.presentation.viewmodel.ThemeViewModel
 
 @Composable
 fun NavigationTab(startDestination:String
@@ -40,7 +41,8 @@ fun NavigationTab(startDestination:String
                   ,commentViewModel: CommentViewModel,
                   allUserViewModel: AllUserViewModel,
                   authViewModel: AuthViewModel,
-                  navControllerAll: NavController
+                  navControllerAll: NavController,
+                  themeViewModel: ThemeViewModel
 ){
     val navController = rememberNavController()
 
@@ -72,7 +74,8 @@ fun NavigationTab(startDestination:String
         }
         composable(Routes.PROFILE_SCREEN) {
             ProfileScreen(navControllerAll, navController, authViewModel,
-                commentViewModel, postViewModel, profileViewModel,friendViewModel)
+                commentViewModel, postViewModel, profileViewModel,
+                friendViewModel, themeViewModel)
         }
         composable(Routes.ALL_FRIEND) {
             AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)

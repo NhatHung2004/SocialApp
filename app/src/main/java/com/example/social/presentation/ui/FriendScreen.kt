@@ -359,7 +359,7 @@ fun FriendSendDisplay(friend: Map<String,Any>, userIds:List<String>, navControll
                             friendSendViewModel.getFriendInfo(userIds)
                             ispressed=true},
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = colorResource(R.color.white)
+                            containerColor = MaterialTheme.colorScheme.background
                         ),
                         modifier = Modifier
                             // Đặt kích thước cho nút
@@ -448,7 +448,7 @@ fun FriendReqDisplay(friend: Map<String,Any>, userIds:List<String>, navControlle
                                 friendSendViewModel.deleteFriendSend(uid, Firebase.auth.currentUser!!.uid)
                                 actionTaken = "Đã từ chối kết bạn với $name" },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.background
                             ),
                             modifier = Modifier
                                 // Đặt kích thước cho nút

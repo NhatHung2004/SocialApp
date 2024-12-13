@@ -51,12 +51,14 @@ import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
+import com.example.social.presentation.viewmodel.ThemeViewModel
+import com.example.social.ui.theme.SocialTheme
 import kotlinx.coroutines.launch
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
+fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeViewModel: ThemeViewModel){
     val commentViewModel: CommentViewModel = viewModel()
     val postViewModel: PostViewModel = viewModel()
     val profileViewModel: ProfileViewModel = viewModel()
@@ -80,157 +82,162 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel){
 
     val navBackStackEntryHome by navControllerHome.currentBackStackEntryAsState()
     val isInAnyHomeScreen = navBackStackEntryHome?.destination?.route in listOf(Routes.FRIEND_PROFILE + "/{userId}")
-    Scaffold(//Cau truc xay dung giao dien
-        containerColor = Color.White,
-        topBar = {//cai nay la top bar chua "TÊN APP"(phần trên cùng)
-            if (selectedIndex.value == HomeTabs.Home.ordinal  && !isInAnyHomeScreen) { // Nếu mục Home được chọn thì
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "TÊN APP",
-                            color = Color(0xFFFF4081), // Màu chữ hồng
-                            fontFamily = FontFamily.Cursive,
-                            fontWeight = FontWeight.ExtraBold
 
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState(initial = false)
+    //bien check che do sang toi
+    SocialTheme(darkTheme = isDarkTheme) {
+        Scaffold(//Cau truc xay dung giao dien
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = {//cai nay la top bar chua "TÊN APP"(phần trên cùng)
+                if (selectedIndex.value == HomeTabs.Home.ordinal  && !isInAnyHomeScreen) { // Nếu mục Home được chọn thì
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "TÊN APP",
+                                color = Color(0xFFFF4081), // Màu chữ hồng
+                                fontFamily = FontFamily.Cursive,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        },
+                        colors = topAppBarColors(
+                            // Thiết lập màu cho TopAppBar
+                            containerColor = MaterialTheme.colorScheme.background
                         )
-                    },
-                    colors = topAppBarColors(
-                        // Thiết lập màu cho TopAppBar
-                        containerColor = Color.White
-                    )
-                ) // -> TOPBAR mới xuất hiện
-            }
-        }
-    ) {
-        Column(//dùng để sắp các thành phần theo chiều dọc
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = it.calculateTopPadding())//Đặt kích thước của Column để chiếm toàn bộ không gian
-            //có sẵn và thêm padding ở trên để tránh che khuất bởi TopAppBar.
-        ) {
-            if (!isInAnyFriendReq && selectedIndex.value!=HomeTabs.Status.ordinal && !isInAnyHomeScreen) {
-                TabRow(//Cấu trúc hiển thị các tab
-                    selectedTabIndex = selectedIndex.value,//Chỉ định tab nào đang được chọn dựa trên giá trị selectedIndex.
-                    modifier = Modifier.fillMaxWidth(),//Đặt kích thước của TabRow để chiếm toàn bộ chiều rộng.
-                    containerColor = Color.White,
-                    indicator = { tabPositions ->//Thiết lập cách hiển thị chỉ báo cho tab được chọn.(cai ngang mau hong o duoi icon)
-                        Box(
-                            Modifier
-                                .tabIndicatorOffset(tabPositions[selectedIndex.value])//Đặt vị trí chỉ báo để nó nằm dưới tab được chọn.
-                                .height(4.dp)
-                                .background(Color(0xFFFF4081)) // Pink indicator
-                        )
-                    }
-                ) {
-                    HomeTabs.entries.forEachIndexed { index, currentTab ->//Duyệt qua tất cả các tab trong enum HomeTabs và lấy cả chỉ số và giá trị của mỗi tab.
-                        Tab(//Cấu trúc để tạo mỗi tab.
-                            selected = selectedIndex.value == index,//Xác định xem tab hiện tại có được chọn hay không.
-                            selectedContentColor = Color(0xFFFF4081),
-                            unselectedContentColor = MaterialTheme.colorScheme.outline,
-                            onClick = {//Hành động khi tab được nhấn. Trong hàm này, nó sử dụng coroutine để cuộn đến trang tương ứng với tab được chọn.
-                                scope.launch {
-                                    pagerState.animateScrollToPage(currentTab.ordinal)
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (selectedIndex.value == index)
-                                            currentTab.selectedIcon else currentTab.unSelectedIcon
-                                    ),
-                                    contentDescription = "Tab icon",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        )
-                    }
+                    ) // -> TOPBAR mới xuất hiện
                 }
             }
-
-            // HorizontalPager chiếm phần còn lại của màn hình
-            HorizontalPager(//Cấu trúc cho phép người dùng vuốt để chuyển đổi giữa các trang (tabs).
-                state = pagerState,
+        ) {
+            Column(//dùng để sắp các thành phần theo chiều dọc
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(1f) // Sử dụng weight để chiếm không gian còn lại
-            ) {pageIndex->
-                Box(//Chứa nội dung của trang, với nội dung được căn giữa.
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    when(HomeTabs.entries[pageIndex]){
-                        HomeTabs.Home -> {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                NavHost(
-                                    navController = navControllerHome,
-                                    startDestination = Routes.HOME,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    composable(Routes.HOME) {
-                                        HomeScreen(navControllerHome,friendViewModel,profileViewModel)
+                    .padding(top = it.calculateTopPadding())//Đặt kích thước của Column để chiếm toàn bộ không gian
+                //có sẵn và thêm padding ở trên để tránh che khuất bởi TopAppBar.
+            ) {
+                if (!isInAnyFriendReq && selectedIndex.value!=HomeTabs.Status.ordinal && !isInAnyHomeScreen) {
+                    TabRow(//Cấu trúc hiển thị các tab
+                        selectedTabIndex = selectedIndex.value,//Chỉ định tab nào đang được chọn dựa trên giá trị selectedIndex.
+                        modifier = Modifier.fillMaxWidth(),//Đặt kích thước của TabRow để chiếm toàn bộ chiều rộng.
+                        containerColor = MaterialTheme.colorScheme.background,
+                        indicator = { tabPositions ->//Thiết lập cách hiển thị chỉ báo cho tab được chọn.(cai ngang mau hong o duoi icon)
+                            Box(
+                                Modifier
+                                    .tabIndicatorOffset(tabPositions[selectedIndex.value])//Đặt vị trí chỉ báo để nó nằm dưới tab được chọn.
+                                    .height(4.dp)
+                                    .background(Color(0xFFFF4081)) // Pink indicator
+                            )
+                        }
+                    ) {
+                        HomeTabs.entries.forEachIndexed { index, currentTab ->//Duyệt qua tất cả các tab trong enum HomeTabs và lấy cả chỉ số và giá trị của mỗi tab.
+                            Tab(//Cấu trúc để tạo mỗi tab.
+                                selected = selectedIndex.value == index,//Xác định xem tab hiện tại có được chọn hay không.
+                                selectedContentColor = Color(0xFFFF4081),
+                                unselectedContentColor = MaterialTheme.colorScheme.outline,
+                                onClick = {//Hành động khi tab được nhấn. Trong hàm này, nó sử dụng coroutine để cuộn đến trang tương ứng với tab được chọn.
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(currentTab.ordinal)
                                     }
-                                    composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
-                                        val userId = backStackEntry.arguments?.getString("userId")
-                                        if (userId != null) {
-                                            ProfileFriendScreen(navControllerHome, userId, profileViewModel, postViewModel, friendViewModel,commentViewModel)
+                                },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (selectedIndex.value == index)
+                                                currentTab.selectedIcon else currentTab.unSelectedIcon
+                                        ),
+                                        contentDescription = "Tab icon",
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // HorizontalPager chiếm phần còn lại của màn hình
+                HorizontalPager(//Cấu trúc cho phép người dùng vuốt để chuyển đổi giữa các trang (tabs).
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f) // Sử dụng weight để chiếm không gian còn lại
+                ) {pageIndex->
+                    Box(//Chứa nội dung của trang, với nội dung được căn giữa.
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when(HomeTabs.entries[pageIndex]){
+                            HomeTabs.Home -> {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    NavHost(
+                                        navController = navControllerHome,
+                                        startDestination = Routes.HOME,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        composable(Routes.HOME) {
+                                            HomeScreen(navControllerHome,friendViewModel,profileViewModel)
+                                        }
+                                        composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
+                                            val userId = backStackEntry.arguments?.getString("userId")
+                                            if (userId != null) {
+                                                ProfileFriendScreen(navControllerHome, userId, profileViewModel, postViewModel, friendViewModel,commentViewModel)
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                        HomeTabs.Friend -> {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                NavHost(
-                                    navController = navControllerTab,
-                                    startDestination = Routes.FRIEND,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    composable(Routes.FRIEND) {
-                                        FriendScreen(navControllerTab,friendViewModel,friendRequestViewModel, friendSendViewModel, profileViewModel, allUserViewModel)
-                                    }
-                                    composable(Routes.ALL_FRIEND_REQ) {
-                                        AllFriendReq(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
-                                    }
-                                    composable(Routes.ALL_FRIEND_SEND) {
-                                        AllFriendSend(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
-                                    }
-                                    composable(Routes.ALL_FRIEND) {
-                                        AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
-                                    }
-                                }
-                            }
-                        }
-                        HomeTabs.Status -> {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                val navControllerStatus= rememberNavController()
-                                NavHost(
-                                    navController = navControllerStatus,
-                                    startDestination = Routes.STATUS,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    composable(Routes.STATUS) {
-                                        StatusScreen(navControllerStatus,profileViewModel,postViewModel)
+                            HomeTabs.Friend -> {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    NavHost(
+                                        navController = navControllerTab,
+                                        startDestination = Routes.FRIEND,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        composable(Routes.FRIEND) {
+                                            FriendScreen(navControllerTab,friendViewModel,friendRequestViewModel, friendSendViewModel, profileViewModel, allUserViewModel)
+                                        }
+                                        composable(Routes.ALL_FRIEND_REQ) {
+                                            AllFriendReq(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                        }
+                                        composable(Routes.ALL_FRIEND_SEND) {
+                                            AllFriendSend(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                        }
+                                        composable(Routes.ALL_FRIEND) {
+                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                        }
                                     }
                                 }
                             }
-                        }
-                        HomeTabs.Notification -> NoficationScreen()
-                        HomeTabs.Profile -> {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                NavHost(
-                                    navController = navControllerTab,
-                                    startDestination = Routes.PROFILE_SCREEN,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    composable(Routes.PROFILE_SCREEN) {
-                                        ProfileScreen(navController, navControllerTab, authViewModel,
-                                            commentViewModel, postViewModel, profileViewModel,friendViewModel)
+                            HomeTabs.Status -> {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    val navControllerStatus= rememberNavController()
+                                    NavHost(
+                                        navController = navControllerStatus,
+                                        startDestination = Routes.STATUS,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        composable(Routes.STATUS) {
+                                            StatusScreen(navControllerStatus,profileViewModel,postViewModel)
+                                        }
                                     }
-                                    composable(Routes.ALL_FRIEND) {
-                                        AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
-                                    }
-                                    composable(Routes.PROFILE_EDIT) {
-                                        ProfileEdit(navControllerTab, profileViewModel)
+                                }
+                            }
+                            HomeTabs.Notification -> NoficationScreen()
+                            HomeTabs.Profile -> {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    NavHost(
+                                        navController = navControllerTab,
+                                        startDestination = Routes.PROFILE_SCREEN,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        composable(Routes.PROFILE_SCREEN) {
+                                            ProfileScreen(navController, navControllerTab, authViewModel,
+                                                commentViewModel, postViewModel, profileViewModel,
+                                                friendViewModel, themeViewModel)
+                                        }
+                                        composable(Routes.ALL_FRIEND) {
+                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                        }
+                                        composable(Routes.PROFILE_EDIT) {
+                                            ProfileEdit(navControllerTab, profileViewModel)
+                                        }
                                     }
                                 }
                             }

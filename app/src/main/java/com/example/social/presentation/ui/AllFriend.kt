@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -114,13 +115,14 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
             Button(
                 onClick = {},
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.background
                 ),
             ) {
                 Image(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
                 )
             }
             Spacer(Modifier.width(6.dp))
@@ -140,7 +142,8 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
                     BorderStroke(1.dp, color = colorResource(R.color.pink)),
                     shape = RoundedCornerShape(15.dp)
                 )
-                .fillMaxWidth().height(52.dp),
+                .fillMaxWidth().height(52.dp)
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             TextFieldFriendSearch(text=text){

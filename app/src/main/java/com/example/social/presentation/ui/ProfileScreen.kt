@@ -25,8 +25,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +60,7 @@ import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
+import com.example.social.presentation.viewmodel.ThemeViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
@@ -65,7 +70,8 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                   commentViewModel: CommentViewModel,
                   postViewModel: PostViewModel,
                   profileViewModel: ProfileViewModel,
-                  friendViewModel: FriendViewModel
+                  friendViewModel: FriendViewModel,
+                  themeViewModel: ThemeViewModel
 ) {
     var isPressed by remember { mutableStateOf(false) }
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
@@ -88,6 +94,14 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
     val showBottomSheet = remember { mutableStateOf(false) }
 
+    // Theo dõi trạng thái sáng/tối từ ViewModel
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState(initial = false)
+
+    // Lắng nghe sự thay đổi từ Switch
+    LaunchedEffect(isDarkTheme) {
+        themeViewModel.toggleTheme(isDarkTheme)
+    }
+
     val userIds = mutableListOf<String>()
     if(friends!=null) {
         for ((index, entry) in friends.entries.withIndex()) {
@@ -100,143 +114,149 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize(), // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
-        verticalArrangement = Arrangement.SpaceBetween // Căn đều giữa các thành phần
-    ) {
+    Surface(
+        modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ màn hình
+        color = MaterialTheme.colorScheme.background, // Màu nền
+        contentColor = MaterialTheme.colorScheme.onBackground // Màu chữ
+    ){
+
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            LazyColumn() {
-                item {
-                    //, imageAvatar, imageBackground
-                    Firstline5(navControllerTab,
-                        imageAvatar,
-                        imageBackground,
-                        firstname,
-                        lastname
-                    )
-                }
-                item {
-                    Spacer(Modifier.height(15.dp))
-                    friendViewModel.getFriendInfo(userIds)
-                    Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
-                        userInfoList.chunked(3).take(2).forEach { chunk ->
-                            Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
-                                chunk.forEach{userInfo ->
-                                    FriendLine(navController, userInfo)
+                .fillMaxSize(), // Đảm bảo Column chiếm toàn bộ kích thước có sẵn
+            verticalArrangement = Arrangement.SpaceBetween // Căn đều giữa các thành phần
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                LazyColumn() {
+                    item {
+                        //, imageAvatar, imageBackground
+                        Firstline5(navControllerTab,
+                            imageAvatar,
+                            imageBackground,
+                            firstname,
+                            lastname
+                        )
+                    }
+                    item {
+                        Spacer(Modifier.height(15.dp))
+                        friendViewModel.getFriendInfo(userIds)
+                        Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
+                            userInfoList.chunked(3).take(2).forEach { chunk ->
+                                Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
+                                    chunk.forEach{userInfo ->
+                                        FriendLine(navController, userInfo)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    item{
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Button(
+                                onClick = {navControllerTab.navigate(Routes.ALL_FRIEND)},
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colorResource(R.color.white)
+                                ),
+                                modifier = Modifier
+                                    // Đặt kích thước cho nút
+                                    .border(
+                                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
+                                    .size(width = 335.dp, height = 32.dp)
+                            ) {
+                                Text(text = "Xem tất cả", color = colorResource(R.color.pink))
+                            }
+                        }
+                    }
+
+                    item {
+                        Spacer(Modifier.height(10.dp))
+                        if (posts != null) {
+                            for ((index, entry) in posts.entries.withIndex()) {
+                                val postData = entry.value as? Map<*, *>
+                                val imageUris = postData?.get("imageUris") as? List<String>
+                                val content = postData?.get("content")
+                                val timestamp = postData?.get("timestamp") as Long
+                                val id = postData["id"]
+                                val post = imageUris?.let { Post(id.toString(), content.toString(), timestamp, it) }
+                                if (post != null) {
+                                    SelfPost(post, imageAvatar, "$firstname $lastname",
+                                        commentViewModel, comments)
                                 }
                             }
                         }
                     }
                 }
-                item{
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Button(
-                            onClick = {navControllerTab.navigate(Routes.ALL_FRIEND)},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.white)
-                            ),
-                            modifier = Modifier
-                                // Đặt kích thước cho nút
-                                .border(
-                                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                                    shape = RoundedCornerShape(10.dp)
+            }
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = colorResource(R.color.pink)
+            )
+            // Box ở dưới cùng
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth() // Chiếm toàn bộ chiều rộng
+                    .height(52.dp) // Thiết lập chiều cao cho Box mới
+                    .background(color = MaterialTheme.colorScheme.background), // Bạn có thể đổi màu theo ý thích
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
+                    Button(
+                        onClick = {
+                            isPressed = !isPressed
+                            showBottomSheet.value = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        ),
+                    )
+                    {
+                        Row(){
+                            Text(text= "$firstname $lastname",color= colorResource(R.color.pink), fontSize = 20.sp)
+                            Spacer(Modifier.width(10.dp))
+                            if (isPressed) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.uparrow), // Thay đổi thành icon khi bấm
+                                    contentDescription = "Icon Pressed",
+                                    modifier = Modifier.size(20.dp) // Kích thước của icon
                                 )
-                                .size(width = 335.dp, height = 32.dp)
-                        ) {
-                            Text(text = "Xem tất cả", color = colorResource(R.color.pink))
-                        }
-                    }
-                }
-
-                item {
-                    Spacer(Modifier.height(10.dp))
-                    if (posts != null) {
-                        for ((index, entry) in posts.entries.withIndex()) {
-                            val postData = entry.value as? Map<*, *>
-                            val imageUris = postData?.get("imageUris") as? List<String>
-                            val content = postData?.get("content")
-                            val timestamp = postData?.get("timestamp") as Long
-                            val id = postData["id"]
-                            val post = imageUris?.let { Post(id.toString(), content.toString(), timestamp, it) }
-                            if (post != null) {
-                                SelfPost(post, imageAvatar, "$firstname $lastname",
-                                    commentViewModel, comments)
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.down), // Icon mặc định
+                                    contentDescription = "Default Icon",
+                                    modifier = Modifier.size(20.dp) // Kích thước của icon
+                                )
                             }
                         }
                     }
-                }
-            }
-        }
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = colorResource(R.color.pink)
-        )
-        // Box ở dưới cùng
-        Box(
-            modifier = Modifier
-                .fillMaxWidth() // Chiếm toàn bộ chiều rộng
-                .height(52.dp) // Thiết lập chiều cao cho Box mới
-                .background(color = Color.White), // Bạn có thể đổi màu theo ý thích
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)){
-                Button(
-                    onClick = {
-                        isPressed = !isPressed
-                        showBottomSheet.value = true
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
-                )
-                {
-                    Row(){
-                        Text(text= "$firstname $lastname",color= colorResource(R.color.pink), fontSize = 20.sp)
-                        Spacer(Modifier.width(10.dp))
-                        if (isPressed) {
-                            Image(
-                                painter = painterResource(id = R.drawable.uparrow), // Thay đổi thành icon khi bấm
-                                contentDescription = "Icon Pressed",
-                                modifier = Modifier.size(20.dp) // Kích thước của icon
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.down), // Icon mặc định
-                                contentDescription = "Default Icon",
-                                modifier = Modifier.size(20.dp) // Kích thước của icon
-                            )
-                        }
+                    Spacer(Modifier.width(95.dp))
+                    Row{
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Switch(
+                            checked = isDarkTheme,
+                            onCheckedChange = { isChecked ->
+                                // Chỉ thay đổi nếu giá trị khác
+                                if (isChecked != isDarkTheme) {
+                                    themeViewModel.toggleTheme(isChecked)
+                                }
+                            }
+                        )
                     }
                 }
-                Spacer(Modifier.width(95.dp))
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
-                )
-                {
-                    Image(
-                        painter = painterResource(R.drawable.menubar),
-                        contentDescription = "option Icon",
-                        modifier = Modifier
-                            .size(29.dp)
-                    )
-                }
             }
         }
+        if (showBottomSheet.value) {
+            SignOutPart(navController, profileViewModel, authViewModel, onDismiss = {showBottomSheet.value=false})
+        }
     }
-    if (showBottomSheet.value) {
-        SignOutPart(navController, profileViewModel, authViewModel, onDismiss = {showBottomSheet.value=false})
-    }
+
 }
 
 @Composable

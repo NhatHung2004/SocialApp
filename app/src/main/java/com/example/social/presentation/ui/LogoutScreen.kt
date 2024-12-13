@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -58,12 +60,13 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { onDismiss() },
-            modifier=Modifier.height(200.dp),
+            modifier=Modifier.height(200.dp).background(MaterialTheme.colorScheme.background),
         ) {
-            Column(modifier = Modifier.fillMaxSize().background(color=Color.White)) {
+            Column(modifier = Modifier.fillMaxSize().
+            background(color=MaterialTheme.colorScheme.background)) {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(10.dp).height(125.dp)
-                        .background(Color.White).border(
+                        .background(MaterialTheme.colorScheme.background).border(
                             BorderStroke(1.dp, color = colorResource(R.color.pink)),
                             shape = RoundedCornerShape(15.dp)
                         )
@@ -74,7 +77,7 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                             Button(
                                 onClick = {},
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorResource(R.color.white)
+                                    containerColor = MaterialTheme.colorScheme.background
                                 ),
                             ) {
                                 Box() {
@@ -86,20 +89,22 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                                             .size(42.dp)
                                             .clip(RoundedCornerShape(20.dp))
                                             .border(
-                                                width = 1.dp, color = Color.White,
+                                                width = 1.dp, color = MaterialTheme.colorScheme.background,
                                                 shape = RoundedCornerShape(20.dp)
                                             )
                                     )
                                 }
                                 Spacer(Modifier.width(10.dp))
-                                Text(text = "$firstname $lastname"
-                                    ,color=Color.Black, style= TextStyle(fontSize = 20.sp)
+                                Text(text = "$firstname $lastname",
+                                    style= TextStyle(fontSize = 20.sp,
+                                        color = MaterialTheme.colorScheme.onBackground)
                                 )
                                 Spacer(Modifier.weight(1f))
                                 Image(
                                     painter=painterResource(R.drawable.check),
                                     contentDescription = "avatar",
-                                    modifier = Modifier.size(15.dp)
+                                    modifier = Modifier.size(15.dp),
+                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background)
                                 )
                             }
                         }
@@ -115,13 +120,13 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                                     }
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorResource(R.color.white)
+                                    containerColor = MaterialTheme.colorScheme.background
                                 ),
                             ) {
                                 Box( modifier = Modifier
                                     .height(75.dp).width(50.dp)
                                     .clip(RoundedCornerShape(50.dp))
-                                    .background(colorResource(R.color.lightGrey)) ) {
+                                    .background(MaterialTheme.colorScheme.background) ) {
                                     Image(
                                         painter = painterResource(R.drawable.exit),
                                         contentDescription = "avatar",
@@ -129,8 +134,7 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                                     )
                                 }
                                 Spacer(Modifier.width(10.dp))
-                                Text(text = "Đăng xuất",
-                                    color=Color.Black, style= TextStyle(fontSize = 20.sp)
+                                Text(text = "Đăng xuất", style= TextStyle(fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground)
                                 )
                             }
                         }
