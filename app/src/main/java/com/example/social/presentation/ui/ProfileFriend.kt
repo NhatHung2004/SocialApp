@@ -156,14 +156,15 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                     if (posts != null) {
                         for ((index, entry) in posts.entries.withIndex()) {
                             val postData = entry.value as? Map<*, *>
-                            val imageUris = postData?.get("imageUris") as? List<String>
-                            val content = postData?.get("content")
-                            val timestamp = postData?.get("timestamp") as Long
+                            val imageUris = postData?.get("imageUris") as List<String>
+                            val liked = postData["liked"] as List<String>
+                            val content = postData["content"]
+                            val timestamp = postData["timestamp"] as Long
                             val id = postData["id"]
-                            val post = imageUris?.let { Post(id.toString(), content.toString(), timestamp, it) }
-                            if (post != null) {
-                                FriendPost(post, imageAvatar, "$firstname $lastname", commentViewModel,comments)
-                            }
+                            val userID = postData["userID"]
+                            val post = Post(id.toString(), userID.toString(), content.toString(),
+                                timestamp, imageUris, liked)
+                            FriendPost(post, imageAvatar, "$firstname $lastname", commentViewModel,comments)
                         }
                     }
                 }

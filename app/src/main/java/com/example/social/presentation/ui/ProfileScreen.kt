@@ -180,15 +180,16 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                         if (posts != null) {
                             for ((index, entry) in posts.entries.withIndex()) {
                                 val postData = entry.value as? Map<*, *>
-                                val imageUris = postData?.get("imageUris") as? List<String>
-                                val content = postData?.get("content")
-                                val timestamp = postData?.get("timestamp") as Long
+                                val imageUris = postData?.get("imageUris") as List<String>
+                                val liked = postData["liked"] as List<String>
+                                val content = postData["content"]
+                                val timestamp = postData["timestamp"] as Long
                                 val id = postData["id"]
-                                val post = imageUris?.let { Post(id.toString(), content.toString(), timestamp, it) }
-                                if (post != null) {
-                                    SelfPost(post, imageAvatar, "$firstname $lastname",
-                                        commentViewModel, comments)
-                                }
+                                val userID = postData["userID"]
+                                val post = Post(id.toString(), userID.toString(), content.toString(),
+                                    timestamp, imageUris, liked)
+                                SelfPost(post, imageAvatar, "$firstname $lastname",
+                                    commentViewModel, postViewModel, comments)
                             }
                         }
                     }
@@ -417,9 +418,12 @@ fun SelfPost(
     imageAvatar: String?,
     name: String,
     commentViewModel: CommentViewModel,
+    postViewModel: PostViewModel,
     comments: Map<String, Any>?
 ){
     val showBottomSheet = remember { mutableStateOf(false) }
+    val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
+    var isToggled by remember { mutableStateOf(like) }
 
     Column(modifier=Modifier.fillMaxSize()){
         Row(modifier= Modifier
@@ -483,10 +487,16 @@ fun SelfPost(
         }
         Row(modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = {  }, // Đổi trạng thái khi nhấn
-                //Gọi hàm callback: Khi người dùng nhấn nút, hàm callback onLikeChanged sẽ được gọi với trạng thái mới (đã bị đảo ngược), giúp cập nhật trạng thái "liked" trong dữ liệu của bạn.
+            Button(onClick = {
+                isToggled = !isToggled
+                postViewModel.updateLiked(post.id, post.userID, Firebase.auth.currentUser!!.uid)
+            },
                 modifier = Modifier.padding(start = 0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                colors = if (isToggled){
+                    ButtonDefaults.buttonColors(containerColor = colorResource(R.color.pink))
+                } else {
+                    ButtonDefaults.buttonColors(containerColor = Color.White)
+                }
             ) {
                 Image(
                     painter = painterResource(R.drawable.like),

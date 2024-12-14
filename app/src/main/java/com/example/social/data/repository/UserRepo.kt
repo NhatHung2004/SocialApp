@@ -1,6 +1,6 @@
 package com.example.social.data.repository
 
-import com.example.social.domain.usecase.FirestoreMethod
+import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore

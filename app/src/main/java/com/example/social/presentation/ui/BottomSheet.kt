@@ -68,8 +68,7 @@ import com.google.firebase.auth.auth
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
-    var openBottomSheet by remember { mutableStateOf(true) }
-    val showBottomSheet = remember { mutableStateOf(false) }
+    val openBottomSheet by remember { mutableStateOf(true) }
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {onDismiss()},
@@ -114,8 +113,7 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
     val avatarUri = Uri.parse(friend["avatar"].toString())
     val userId=friend["uid"]
 
-    var openBottomSheet by remember { mutableStateOf(true) }
-    val showBottomSheet = remember { mutableStateOf(false) }
+    val openBottomSheet by remember { mutableStateOf(true) }
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {onDismiss()},
