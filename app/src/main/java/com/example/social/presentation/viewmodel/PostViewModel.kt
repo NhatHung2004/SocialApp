@@ -3,11 +3,10 @@ package com.example.social.presentation.viewmodel
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.PostRepo
-import com.example.social.domain.usecase.ImageProcess
+import com.example.social.domain.utils.ImageProcess
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,9 +39,14 @@ class PostViewModel: ViewModel() {
                     val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
                     imageUris.add(imagePath)
                 }
-                postRepo.updatePost("posts", text, imageUris)
+                postRepo.updatePost("post", text, imageUris)
             }
         }
     }
 
+    fun updateLiked(postID: String, uid: String, uidLike: String) {
+        viewModelScope.launch {
+            postRepo.updateLiked(postID, uid, uidLike)
+        }
+    }
 }

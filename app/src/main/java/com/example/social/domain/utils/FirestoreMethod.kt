@@ -1,4 +1,4 @@
-package com.example.social.domain.usecase
+package com.example.social.domain.utils
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth

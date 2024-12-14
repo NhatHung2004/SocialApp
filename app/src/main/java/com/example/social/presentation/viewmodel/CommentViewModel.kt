@@ -3,7 +3,7 @@ package com.example.social.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.CommentRepo
-import com.example.social.domain.usecase.FirestoreMethod
+import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow

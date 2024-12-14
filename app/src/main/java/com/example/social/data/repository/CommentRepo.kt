@@ -1,7 +1,7 @@
 package com.example.social.data.repository
 
 import com.example.social.data.model.Comment
-import com.example.social.domain.usecase.FirestoreMethod
+import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions

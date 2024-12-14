@@ -1,4 +1,4 @@
-package com.example.social.domain.usecase
+package com.example.social.domain.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
