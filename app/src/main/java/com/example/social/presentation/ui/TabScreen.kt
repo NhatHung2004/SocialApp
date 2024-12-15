@@ -172,7 +172,8 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                         modifier = Modifier.fillMaxSize()
                                     ) {
                                         composable(Routes.HOME) {
-                                            HomeScreen(navControllerHome,friendViewModel,profileViewModel)
+                                            HomeScreen(navControllerHome, friendViewModel,
+                                                profileViewModel, postViewModel, commentViewModel)
                                         }
                                         composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
                                             val userId = backStackEntry.arguments?.getString("userId")

@@ -2,6 +2,7 @@ package com.example.social.data.repository
 
 import android.net.Uri
 import com.example.social.data.model.Post
+import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -13,6 +14,7 @@ import java.util.UUID
 
 class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
     private val commentRepo = CommentRepo(firebaseAuth, firestore)
+    private val firestoreMethod = FirestoreMethod(firebaseAuth, firestore)
 
     fun createPostDocument() {
         val docRef = firestore.collection("posts").document(Firebase.auth.currentUser!!.uid)
@@ -32,6 +34,10 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         } catch (e: Exception) {
             throw e
         }
+    }
+
+    suspend fun getAllPost(): List<Map<String, Any>>? {
+        return firestoreMethod.fetchAllInfoData("posts")
     }
 
     suspend fun updatePost(child: String, content: String, imageUris: List<String>) {

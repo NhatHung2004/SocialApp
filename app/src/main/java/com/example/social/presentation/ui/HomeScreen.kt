@@ -1,6 +1,9 @@
 package com.example.social.presentation.ui
 
 import android.net.Uri
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,10 +32,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,19 +50,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.social.data.model.Post
 import com.example.social.db.userAvatars
 import com.example.social.db.userPostDataProvider
 import com.example.social.db.userPosts
 import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel, profileViewModel: ProfileViewModel){
-    val friends=friendViewModel.friends.collectAsState().value
+fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
+               profileViewModel: ProfileViewModel, postViewModel: PostViewModel,
+               commentViewModel: CommentViewModel
+){
+    val friends = friendViewModel.friends.collectAsState().value
     friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
+    postViewModel.getAllPosts()
+    val allPosts = postViewModel.allPosts.collectAsState().value
+    val comments = commentViewModel.comments.collectAsState().value
 
     profileViewModel.getUserInfo()
 
@@ -66,7 +86,7 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel, p
     val userInfoList = friendViewModel.userInfo.collectAsState().value
     val userIds = mutableListOf<String>()
 
-    if(friends!=null) {
+    if(friends != null) {
         for ((index, entry) in friends.entries.withIndex()) {
             val friendData= entry.value as? Map<*, *>
             val userId = friendData?.get("uid") as? String
@@ -135,6 +155,45 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel, p
                 }
             }
         }
+        item {
+            Spacer(Modifier.height(10.dp))
+            if (allPosts != null) {
+                for (posts in allPosts.reversed()) {
+                    for ((index, entry) in posts.entries.withIndex()) {
+                        val postData = entry.value as? Map<*, *>
+                        val imageUris = postData?.get("imageUris") as List<String>
+                        val liked = postData["liked"] as List<String>
+                        val content = postData["content"]
+                        val timestamp = postData["timestamp"] as Long
+                        val time = LocalDateTime.ofInstant(
+                            Instant.ofEpochMilli(timestamp),
+                            ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+                        val id = postData["id"]
+                        val userIDPost = postData["userID"]
+                        var first by remember { mutableStateOf("") }
+                        var last by remember { mutableStateOf("") }
+                        var avatar by remember { mutableStateOf("") }
+                        LaunchedEffect(Unit) {
+                            val firstnameResult = postViewModel.getFirstname(userIDPost.toString())
+                            if (firstnameResult != null)
+                                first = firstnameResult
+                            val lastnameResult = postViewModel.getLastname(userIDPost.toString())
+                            if (lastnameResult != null)
+                                last = lastnameResult
+                            val avatarResult = postViewModel.getAvatar(userIDPost.toString())
+                            if (avatarResult != null) {
+                                avatar = avatarResult
+                            }
+                        }
+                        val post = Post(id.toString(), userIDPost.toString(), content.toString(),
+                            timestamp, imageUris, liked)
+                        SelfPost(post, avatar, "$first $last", time,
+                            commentViewModel, postViewModel, comments)
+                        Spacer(Modifier.height(10.dp))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -179,9 +238,3 @@ fun FriendList(friend: Map<String,Any>,navController: NavController
     }
     Spacer(Modifier.width(16.dp))
 }
-
-
-
-
-
-

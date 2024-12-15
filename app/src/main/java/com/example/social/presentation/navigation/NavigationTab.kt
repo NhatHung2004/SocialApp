@@ -1,10 +1,6 @@
 package com.example.social.presentation.navigation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,13 +10,10 @@ import com.example.social.presentation.ui.AllFriendReq
 import com.example.social.presentation.ui.AllFriendSend
 import com.example.social.presentation.ui.FriendScreen
 import com.example.social.presentation.ui.HomeScreen
-import com.example.social.presentation.ui.LoginScreen
 import com.example.social.presentation.ui.ProfileEdit
 import com.example.social.presentation.ui.ProfileFriendScreen
 import com.example.social.presentation.ui.ProfileScreen
-import com.example.social.presentation.ui.RegisterScreen
 import com.example.social.presentation.ui.StatusScreen
-import com.example.social.presentation.ui.TabScreen
 import com.example.social.presentation.viewmodel.AllUserViewModel
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
@@ -49,7 +42,7 @@ fun NavigationTab(startDestination:String
     // Điều hướng dựa trên trạng thái người dùng (đã đăng nhập hay chưa)
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Routes.HOME) {
-            HomeScreen(navController,friendViewModel,profileViewModel)
+            HomeScreen(navController,friendViewModel, profileViewModel, postViewModel, commentViewModel)
         }
         composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")
