@@ -8,7 +8,7 @@ import kotlinx.coroutines.tasks.await
 
 class FirestoreMethod(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
 
-    suspend fun fetchInfoData(collectionPath: String, field: String,uid: String? = null): String? {
+    suspend fun fetchInfoData(collectionPath: String, field: String, uid: String? = null): String? {
         return try {
             val docRef = if (uid != null) {
                 firestore.collection(collectionPath).document(uid)
@@ -41,7 +41,7 @@ class FirestoreMethod(private val firebaseAuth: FirebaseAuth, private val firest
         }
     }
 
-    suspend fun fetchAllUserInfoData(collectionPath: String): List<Map<String, Any>>? {
+    suspend fun fetchAllInfoData(collectionPath: String): List<Map<String, Any>>? {
         return try{
             val result = firestore.collection(collectionPath).get().await()
             result.documents.map { it.data ?: emptyMap<String, Any>() }

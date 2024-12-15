@@ -1,6 +1,9 @@
 package com.example.social.presentation.ui
 
 import android.net.Uri
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -53,7 +55,6 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
-import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
@@ -63,7 +64,12 @@ import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                   authViewModel: AuthViewModel,
@@ -139,7 +145,8 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             imageAvatar,
                             imageBackground,
                             firstname,
-                            lastname
+                            lastname,
+                            posts
                         )
                     }
                     item {
@@ -184,11 +191,13 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                                 val liked = postData["liked"] as List<String>
                                 val content = postData["content"]
                                 val timestamp = postData["timestamp"] as Long
+                                val time = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp),
+                                    ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                                 val id = postData["id"]
                                 val userID = postData["userID"]
                                 val post = Post(id.toString(), userID.toString(), content.toString(),
                                     timestamp, imageUris, liked)
-                                SelfPost(post, imageAvatar, "$firstname $lastname",
+                                SelfPost(post, imageAvatar, "$firstname $lastname", time,
                                     commentViewModel, postViewModel, comments)
                             }
                         }
@@ -264,7 +273,8 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
 fun Firstline5(
     navController: NavController, imageAvatar: String?, imageBackground: String?,
-    firstname: String, lastname: String){
+    firstname: String, lastname: String, posts: Map<String, Any>?
+){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
             .fillMaxWidth()
@@ -281,7 +291,9 @@ fun Firstline5(
                     Box(modifier=Modifier.offset(y=25.dp)){
                         Row() {
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                if (posts != null) {
+                                    Text(text = posts.size.toString(),modifier=Modifier.padding(start = 25.dp))
+                                }
                                 Text(text = "Bài viết")
                             }
                             Spacer(Modifier.width(20.dp))
@@ -417,6 +429,7 @@ fun SelfPost(
     post: Post,
     imageAvatar: String?,
     name: String,
+    time: String,
     commentViewModel: CommentViewModel,
     postViewModel: PostViewModel,
     comments: Map<String, Any>?
@@ -440,13 +453,12 @@ fun SelfPost(
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(
-                    text = Firebase.auth.currentUser?.displayName.toString(),
+                    text = name,
                     color = Color.Black,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
-                Text(text = post.timestamp.toString())
+                Text(text = time)
             }
-            //Spacer(Modifier.weight(1f))
         }
         Row (modifier = Modifier.fillMaxWidth()){
             Text(text = post.content, modifier = Modifier.padding(start = 10.dp))

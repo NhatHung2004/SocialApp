@@ -2,7 +2,9 @@ package com.example.social.presentation.ui
 
 
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +66,10 @@ import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,6 +202,7 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun cmtPart(
@@ -232,6 +239,7 @@ fun cmtPart(
         }
     }
 }
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun listCmt(
     posterName: String,
@@ -259,6 +267,7 @@ fun listCmt(
         textField(posterName, postID, commentViewModel) // Căn giữa dưới
     }
 }
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel) {
     Spacer(Modifier.height(20.dp))
@@ -267,6 +276,9 @@ fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel) {
             val cmtData = entry.value as? Map<*, *>
             val contentCmt = cmtData?.get("content") as? String
             val timestamp = cmtData?.get("timestamp") as Long
+            val time = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(timestamp),
+                ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
             val uid = cmtData["uid"] as? String
             var name by remember { mutableStateOf("") }
             var avatar by remember { mutableStateOf("") }
@@ -292,7 +304,7 @@ fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel) {
                     }
                 }
                 Spacer(Modifier.width(5.dp))
-                Text(text = timestamp.toString())
+                Text(text = time)
             }
             Spacer(Modifier.height(41.dp))
         }
