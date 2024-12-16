@@ -3,6 +3,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.AuthRepo
 import com.example.social.data.repository.FriendRepo
+import com.example.social.data.repository.NotificationRepo
 import com.example.social.data.repository.PostRepo
 import com.example.social.data.repository.UserRepo
 import com.google.firebase.auth.FirebaseAuth
@@ -17,6 +18,7 @@ class AuthViewModel: ViewModel() {
     private val postRepo = PostRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val friendRepo = FriendRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val userRepo = UserRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val notificationRepo= NotificationRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     private val _currentUser = MutableStateFlow<FirebaseUser?>(null)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser
@@ -30,6 +32,7 @@ class AuthViewModel: ViewModel() {
             if (user != null) {
                 _currentUser.value = user
                 userRepo.updateUserStatus("online")
+                notificationRepo.createNotificationDocument("notifications")
             }
         }
     }

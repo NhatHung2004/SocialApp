@@ -1,6 +1,8 @@
 package com.example.social.presentation.ui
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -38,31 +40,40 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AllFriendReq(navController: NavController, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel){
+fun AllFriendReq(navController: NavController, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel
+                 ,notificationViewModel: NotificationViewModel
+){
 
     val showBottomSheet = remember { mutableStateOf(false) }
-
     val context= LocalContext.current
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+    val userInfoList=friendRequestViewModel.userInfo.collectAsState().value
+
     friendRequestViewModel.getFriendRequests(Firebase.auth.currentUser!!.uid)
     val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
 
-    val userInfoList = friendRequestViewModel.userInfo.collectAsState().value
-    val userIdRequests = mutableListOf<String>()
+    val friendModelRequests = mutableListOf<Friend>()
     if(friendRequests!=null) {
         for ((index, entry) in friendRequests.entries.withIndex()) {
             val friendRequestData = entry.value as? Map<*, *>
             val userId = friendRequestData?.get("uid") as? String
             val timestamp = friendRequestData?.get("timestamp") as Long
             if (userId != null) {
-                userIdRequests.add(userId)
+                friendModelRequests.add(Friend(userId,timestamp))
             }
         }
     }
@@ -110,7 +121,7 @@ fun AllFriendReq(navController: NavController, friendViewModel: FriendViewModel,
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = userIdRequests.size.toString(), fontSize = 20.sp,
+                text = friendModelRequests.size.toString(), fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color= colorResource(R.color.pink)
             )
@@ -118,9 +129,14 @@ fun AllFriendReq(navController: NavController, friendViewModel: FriendViewModel,
         Spacer(Modifier.height(20.dp))
         LazyColumn (modifier=Modifier.fillMaxSize().padding(start=6.dp)){
             item{
-                friendRequestViewModel.getFriendInfo(userIdRequests)
-                userInfoList.forEach{userInfo->
-                    FriendReqDisplay(userInfo,userIdRequests,navController,context,friendViewModel,friendRequestViewModel,friendSendViewModel)
+                friendRequestViewModel.getFriendInfo(friendModelRequests.map { it.uid })
+                userInfoList.forEachIndexed{index,userInfo->
+                    val currentDate = Instant.ofEpochMilli(friendModelRequests[index].timestamp)
+                        .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
+                        .toLocalDate()
+                    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    val formattedDate = currentDate.format(formatter)
+                    FriendReqDisplay(userInfo, formattedDate,friendViewModel,friendRequestViewModel,friendSendViewModel,notificationViewModel,notificationContents)
                 }
             }
         }

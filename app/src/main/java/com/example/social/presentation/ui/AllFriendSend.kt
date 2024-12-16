@@ -1,6 +1,8 @@
 package com.example.social.presentation.ui
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -35,13 +37,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AllFriendSend(navController: NavController, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel){
 
@@ -51,7 +58,7 @@ fun AllFriendSend(navController: NavController, friendViewModel: FriendViewModel
     friendSendViewModel.getFriendSends(Firebase.auth.currentUser!!.uid)
 
     val userInfoList = friendSendViewModel.userInfo.collectAsState().value
-    val userIdSends = mutableListOf<String>()
+    val friendModelSends = mutableListOf<Friend>()
 
     if(friendSends!=null) {
         for ((index, entry) in friendSends.entries.withIndex()) {
@@ -59,7 +66,7 @@ fun AllFriendSend(navController: NavController, friendViewModel: FriendViewModel
             val userId = friendSendData?.get("uid") as? String
             val timestamp = friendSendData?.get("timestamp") as Long
             if (userId != null) {
-                userIdSends.add(userId)
+                friendModelSends.add(Friend(userId,timestamp))
             }
         }
     }
@@ -95,7 +102,7 @@ fun AllFriendSend(navController: NavController, friendViewModel: FriendViewModel
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = userIdSends.size.toString(), fontSize = 20.sp,
+                text = friendModelSends.size.toString(), fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color= colorResource(R.color.pink)
             )
@@ -103,9 +110,15 @@ fun AllFriendSend(navController: NavController, friendViewModel: FriendViewModel
         Spacer(Modifier.height(20.dp))
         LazyColumn (modifier=Modifier.fillMaxSize().padding(start=6.dp)){
             item {
-                friendSendViewModel.getFriendInfo(userIdSends)
-                userInfoList.forEach{userInfo->
-                    FriendSendDisplay(userInfo,userIdSends, navController , context ,friendViewModel,friendRequestViewModel,friendSendViewModel)
+                friendSendViewModel.getFriendInfo(friendModelSends.map {it.uid})
+                userInfoList.forEachIndexed{index,userInfo->
+                    val currentDate = Instant.ofEpochMilli(friendModelSends[index].timestamp)
+                        .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
+                        .toLocalDate()
+                    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    val formattedDate = currentDate.format(formatter)
+                    FriendSendDisplay(userInfo,
+                        formattedDate, navController , context ,friendViewModel,friendRequestViewModel,friendSendViewModel)
                 }
             }
         }

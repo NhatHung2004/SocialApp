@@ -1,6 +1,8 @@
 package com.example.social.presentation.ui
 
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,30 +54,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel){
     var text by remember { mutableStateOf("") }
     val context= LocalContext.current
+
     val friends=friendViewModel.friends.collectAsState().value
+    val userInfoList = friendViewModel.userInfo.collectAsState().value
+
     val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
     val friendSends=friendSendViewModel.friendSends.collectAsState().value
-
-    val userInfoList = friendViewModel.userInfo.collectAsState().value
 
     friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
     friendRequestViewModel.getFriendRequests(Firebase.auth.currentUser!!.uid)
     friendSendViewModel.getFriendSends(Firebase.auth.currentUser!!.uid)
 
-    val userIds = mutableListOf<String>()
-    val userIdRequests = mutableListOf<String>()
-    val userIdSends = mutableListOf<String>()
+    val friendModels = mutableListOf<Friend>()
 
     if(friends!=null) {
         for ((index, entry) in friends.entries.withIndex()) {
@@ -83,29 +89,7 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
             val userId = friendData?.get("uid") as? String
             val timestamp = friendData?.get("timestamp") as Long
             if (userId != null) {
-                userIds.add(userId)
-            }
-        }
-    }
-
-    if(friendRequests!=null) {
-        for ((index, entry) in friendRequests.entries.withIndex()) {
-            val friendRequestData = entry.value as? Map<*, *>
-            val userId = friendRequestData?.get("uid") as? String
-            val timestamp = friendRequestData?.get("timestamp") as Long
-            if (userId != null) {
-                userIdRequests.add(userId)
-            }
-        }
-    }
-
-    if(friendSends!=null) {
-        for ((index, entry) in friendSends.entries.withIndex()) {
-            val friendSendData = entry.value as? Map<*, *>
-            val userId = friendSendData?.get("uid") as? String
-            val timestamp = friendSendData?.get("timestamp") as Long
-            if (userId != null) {
-                userIdSends.add(userId)
+                friendModels.add(Friend(userId,timestamp))
             }
         }
     }
@@ -153,7 +137,7 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
         Spacer(Modifier.height(20.dp))
         Row(modifier=Modifier.padding(start=6.dp)) {
             Text(
-                text = userIds.size.toString(), fontSize = 20.sp,
+                text = friendModels.size.toString(), fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color= colorResource(R.color.pink)
             )
@@ -166,14 +150,18 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
         Spacer(Modifier.height(20.dp))
         LazyColumn (modifier=Modifier.fillMaxSize().padding(start=6.dp)){
             item {
-                friendViewModel.getFriendInfo(userIds)
+                friendViewModel.getFriendInfo(friendModels.map { it.uid })
                 if(text==null) {
-                    userInfoList.forEach { userInfo ->
+                    userInfoList.forEachIndexed{index,userInfo ->
+                        val currentDate = Instant.ofEpochMilli(friendModels[index].timestamp)
+                            .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
+                            .toLocalDate()
+                        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        val formattedDate = currentDate.format(formatter)
                         ListFriend(
                             userInfo,
-                            userIds,
-                            userIdRequests,
-                            userIdSends,
+                            formattedDate,
+                            friendModels.map { it.uid },
                             friendViewModel,
                             friendRequestViewModel,
                             friendSendViewModel
@@ -181,13 +169,18 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
                     }
                 }
                 else{
-                    userInfoList.forEach { userInfo ->
-                        if ((userInfo["lastname"] as? String)?.lowercase()?.contains(text.lowercase()) == true) {
+                    userInfoList.forEachIndexed() { index,userInfo ->
+                        val name=listOfNotNull(userInfo["firstname"], userInfo["lastname"]).joinToString(" ")
+                        if ((name as? String)?.lowercase()?.contains(text.lowercase()) == true) {
+                            val currentDate = Instant.ofEpochMilli(friendModels[index].timestamp)
+                                .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
+                                .toLocalDate()
+                            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                            val formattedDate = currentDate.format(formatter)
                             ListFriend(
                                 userInfo,
-                                userIds,
-                                userIdRequests,
-                                userIdSends,
+                                formattedDate,
+                                friendModels.map { it.uid },
                                 friendViewModel,
                                 friendRequestViewModel,
                                 friendSendViewModel
@@ -200,7 +193,7 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
     }
 }
 @Composable
-fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests:List<String>,userIdSends:List<String>,friendViewModel: FriendViewModel
+fun ListFriend(friend: Map<String,Any>,time:String?=null,userIdFriends:List<String>,friendViewModel: FriendViewModel
                ,friendRequestViewModel: FriendRequestViewModel
                ,friendSendViewModel: FriendSendViewModel
 ) {
@@ -270,13 +263,9 @@ fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests
                                     friendRequestViewModel.deleteFriendReq(
                                         friend["uid"].toString(), Firebase.auth.currentUser!!.uid
                                     )
-                                    friendRequestViewModel.getFriendRequests(friend["uid"].toString())
-                                    friendRequestViewModel.getFriendInfo(userIdRequests)
                                     friendSendViewModel.deleteFriendSend(
                                         Firebase.auth.currentUser!!.uid, friend["uid"].toString()
                                     )
-                                    friendSendViewModel.getFriendSends(Firebase.auth.currentUser!!.uid)
-                                    friendSendViewModel.getFriendInfo(userIdSends)
                                     buttonBottomSheetState = true
                                 },
                                 colors = ButtonDefaults.buttonColors(
@@ -316,12 +305,24 @@ fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests
         Spacer(Modifier.height(20.dp))
     }
     if (showBottomSheet.value) {
-        FriendBottomSheet(
-            friend,
-            userIdFriends,
-            isPressed,
-            friendViewModel,
-            onDismiss = { showBottomSheet.value = false })
+        if (time != null) {
+            FriendBottomSheet(
+                friend,
+                time,
+                userIdFriends,
+                isPressed,
+                friendViewModel,
+                onDismiss = { showBottomSheet.value = false })
+        }
+        else{
+            FriendBottomSheet(
+                friend,
+                null,
+                userIdFriends,
+                isPressed,
+                friendViewModel,
+                onDismiss = { showBottomSheet.value = false })
+        }
     }
 }
 

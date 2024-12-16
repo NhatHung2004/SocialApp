@@ -44,12 +44,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
 import com.example.social.db.userAvatars
 import com.example.social.db.userPostDataProvider
@@ -57,6 +59,7 @@ import com.example.social.db.userPosts
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
@@ -70,8 +73,9 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                profileViewModel: ProfileViewModel, postViewModel: PostViewModel,
-               commentViewModel: CommentViewModel
+               commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel
 ){
+    val context= LocalContext.current
     val friends = friendViewModel.friends.collectAsState().value
     friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
     postViewModel.getAllPosts()
@@ -84,7 +88,7 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
     val lastname = profileViewModel.lastname.collectAsState().value
 
     val userInfoList = friendViewModel.userInfo.collectAsState().value
-    val userIds = mutableListOf<String>()
+    val userIds = mutableListOf<Friend>()
 
     if(friends != null) {
         for ((index, entry) in friends.entries.withIndex()) {
@@ -92,7 +96,7 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
             val userId = friendData?.get("uid") as? String
             val timestamp = friendData?.get("timestamp") as Long
             if (userId != null) {
-                userIds.add(userId)
+                userIds.add(Friend(userId,timestamp))
             }
         }
     }
@@ -148,7 +152,7 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                     Spacer(Modifier.width(16.dp))
                 }
                 item {
-                    friendViewModel.getFriendInfo(userIds)
+                    friendViewModel.getFriendInfo(userIds.map { it.uid })
                     userInfoList.forEach { userInfo ->
                         FriendList(userInfo,navController)
                     }
@@ -165,9 +169,6 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                         val liked = postData["liked"] as List<String>
                         val content = postData["content"]
                         val timestamp = postData["timestamp"] as Long
-                        val time = LocalDateTime.ofInstant(
-                            Instant.ofEpochMilli(timestamp),
-                            ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                         val id = postData["id"]
                         val userIDPost = postData["userID"]
                         var first by remember { mutableStateOf("") }
@@ -187,8 +188,22 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                         }
                         val post = Post(id.toString(), userIDPost.toString(), content.toString(),
                             timestamp, imageUris, liked)
-                        SelfPost(post, avatar, "$first $last", time,
-                            commentViewModel, postViewModel, comments)
+                        val currentDate = Instant.ofEpochMilli(post.timestamp)
+                            .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
+                            .toLocalDate()
+                        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        val formattedDate = currentDate.format(formatter)
+                            SelfPost(
+                                post,
+                                avatar,
+                                "$first $last",
+                                formattedDate,
+                                commentViewModel,
+                                postViewModel,
+                                notificationViewModel,
+                                context,
+                                comments
+                            )
                         Spacer(Modifier.height(10.dp))
                     }
                 }

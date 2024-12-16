@@ -3,10 +3,12 @@ package com.example.social.presentation.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import com.example.social.R
 import com.example.social.db.userPostDataProvider
 
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -55,24 +57,34 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.social.data.model.Friend
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AllUserViewModel
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
                  , friendRequestViewModel: FriendRequestViewModel
-                 , friendSendViewModel: FriendSendViewModel, profileViewModel: ProfileViewModel, allUserViewModel: AllUserViewModel
+                 , friendSendViewModel: FriendSendViewModel, profileViewModel: ProfileViewModel
+                 , allUserViewModel: AllUserViewModel
+                 , notificationViewModel: NotificationViewModel
 ) {
 
     val context= LocalContext.current
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+
     val users = allUserViewModel.allUsers.collectAsState().value
 
     val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
@@ -83,9 +95,9 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
 
     val friends=friendViewModel.friends.collectAsState().value
     val friendSends=friendSendViewModel.friendSends.collectAsState().value
-    val userIdRequests = mutableListOf<String>()
-    val userIdSends = mutableListOf<String>()
-    val userIds = mutableListOf<String>()
+    val friendModelRequests = mutableListOf<Friend>()
+    val friendModelSends = mutableListOf<Friend>()
+    val friendModels = mutableListOf<Friend>()
 
     if(friendRequests!=null) {
         for ((index, entry) in friendRequests.entries.withIndex()) {
@@ -93,7 +105,7 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
             val userId = friendRequestData?.get("uid") as? String
             val timestamp = friendRequestData?.get("timestamp") as Long
             if (userId != null) {
-                userIdRequests.add(userId)
+                friendModelRequests.add(Friend(userId,timestamp))
             }
         }
     }
@@ -104,7 +116,7 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
             val userId = friendSendData?.get("uid") as? String
             val timestamp = friendSendData?.get("timestamp") as Long
             if (userId != null) {
-                userIdSends.add(userId)
+                friendModelSends.add(Friend(userId,timestamp))
             }
         }
     }
@@ -115,7 +127,7 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
             val userId = friendData?.get("uid") as? String
             val timestamp = friendData?.get("timestamp") as Long
             if (userId != null) {
-                userIds.add(userId)
+                friendModels.add(Friend(userId,timestamp))
             }
         }
     }
@@ -131,9 +143,14 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
                 ,modifier=Modifier.padding(start = 10.dp))
             Spacer(Modifier.height(5.dp))
 
-            friendRequestViewModel.getFriendInfo(userIdRequests)
-            userInfoList.forEach{userInfo->
-                FriendReqDisplay(userInfo,userIdRequests,navController,context,friendViewModel,friendRequestViewModel,friendSendViewModel)
+            friendRequestViewModel.getFriendInfo(friendModelRequests.map { it.uid })
+            userInfoList.forEachIndexed{index,userInfo->
+                val currentDate = Instant.ofEpochMilli(friendModelRequests[index].timestamp)
+                    .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
+                    .toLocalDate()
+                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                val formattedDate = currentDate.format(formatter)
+                FriendReqDisplay(userInfo, formattedDate,friendViewModel,friendRequestViewModel,friendSendViewModel,notificationViewModel,notificationContents)
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -174,15 +191,17 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
         }
         items(users){user->
             if(user["uid"]!= Firebase.auth.currentUser!!.uid
-                && user["uid"] !in userIdRequests
-                && user["uid"] !in userIdSends
-                && user["uid"] !in userIds ) {
+                && user["uid"] !in friendModelRequests.map { it.uid }
+                && user["uid"] !in friendModelSends.map { it.uid }
+                && user["uid"] !in friendModels.map { it.uid } ) {
                 RecommendFriendTab(
                     user,
                     context,
                     friendViewModel,
                     friendRequestViewModel,
-                    friendSendViewModel
+                    friendSendViewModel,
+                    notificationViewModel,
+                    notificationContents
                 )
             }
         }
@@ -226,7 +245,10 @@ fun FirstLine(navController: NavController){
 @Composable
 fun RecommendFriendTab(user: Map<String, Any>, context: Context
                        , friendViewModel: FriendViewModel
-                       , friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel
+                       , friendRequestViewModel: FriendRequestViewModel
+                       , friendSendViewModel: FriendSendViewModel
+                       , notificationViewModel: NotificationViewModel
+                       , notificationContents: Array<String>
 ) {
 
     var ispressed by remember { mutableStateOf<Boolean?>(false) }
@@ -260,6 +282,8 @@ fun RecommendFriendTab(user: Map<String, Any>, context: Context
                             friendRequestViewModel.updateFriendRequestToFirestore(user["uid"].toString(),
                                 Firebase.auth.currentUser!!.uid)
                             friendSendViewModel.updateFriendSendToFirestore(Firebase.auth.currentUser!!.uid,user["uid"].toString())
+                            notificationViewModel.updateNotificationToFireStore(
+                                Firebase.auth.currentUser!!.uid,"",notificationContents[0],"notRead",user["uid"].toString())
                             ispressed=true
                             Toast.makeText(
                                 context,
@@ -320,7 +344,7 @@ fun RecommendFriendTab(user: Map<String, Any>, context: Context
     }
 }
 @Composable
-fun FriendSendDisplay(friend: Map<String,Any>, userIds:List<String>, navController: NavController, context: Context, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel
+fun FriendSendDisplay(friend: Map<String,Any>,time:String, navController: NavController, context: Context, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel
                       , friendSendViewModel: FriendSendViewModel
 ) {
     var ispressed by remember { mutableStateOf<Boolean?>(false) }
@@ -346,6 +370,7 @@ fun FriendSendDisplay(friend: Map<String,Any>, userIds:List<String>, navControll
             Row() {
                 Text(text = name)
                 Spacer(Modifier.weight(1f))
+                Text(text=time.toString())
             }
             Spacer(Modifier.height(10.dp))
             Row() {
@@ -353,10 +378,7 @@ fun FriendSendDisplay(friend: Map<String,Any>, userIds:List<String>, navControll
                     Button(
                         onClick = {
                             friendSendViewModel.deleteFriendSend(Firebase.auth.currentUser!!.uid,uid)
-                            friendSendViewModel.getFriendSends(Firebase.auth.currentUser!!.uid)
                             friendRequestViewModel.deleteFriendReq(uid, Firebase.auth.currentUser!!.uid)
-                            friendRequestViewModel.getFriendRequests(uid)
-                            friendSendViewModel.getFriendInfo(userIds)
                             ispressed=true},
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.background
@@ -388,8 +410,8 @@ fun FriendSendDisplay(friend: Map<String,Any>, userIds:List<String>, navControll
 
 
 @Composable
-fun FriendReqDisplay(friend: Map<String,Any>, userIds:List<String>, navController: NavController, context: Context, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel
-                     , friendSendViewModel: FriendSendViewModel
+fun FriendReqDisplay(friend: Map<String,Any>,time:String?=null, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel
+                     , friendSendViewModel: FriendSendViewModel,notificationViewModel: NotificationViewModel,notificationContents: Array<String>
 ) {
     var actionTaken by remember { mutableStateOf<String?>(null) }
 
@@ -415,6 +437,10 @@ fun FriendReqDisplay(friend: Map<String,Any>, userIds:List<String>, navControlle
                 Text(text = name)
                 Spacer(Modifier.weight(1f))
             }
+            Spacer(Modifier.height(2.dp))
+            if(time!=null) {
+                Text(text = time.toString())
+            }
             Spacer(Modifier.height(10.dp))
             Row() {
                 Row() {
@@ -426,6 +452,11 @@ fun FriendReqDisplay(friend: Map<String,Any>, userIds:List<String>, navControlle
                                 friendSendViewModel.deleteFriendSend(uid, Firebase.auth.currentUser!!.uid)
                                 friendViewModel.updateFriendToFirestore(Firebase.auth.currentUser!!.uid,uid)
                                 friendViewModel.updateFriendToFirestore(uid, Firebase.auth.currentUser!!.uid)
+                                notificationViewModel.updateNotificationToFireStore(Firebase.auth.currentUser!!.uid,
+                                    "",
+                                    notificationContents[1],
+                                    "notRead",
+                                    uid)
                                 actionTaken = "Đã chấp nhận kết bạn với $name" },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorResource(R.color.pink)

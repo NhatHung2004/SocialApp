@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.FriendRepo
 import com.example.social.data.repository.UserRepo
+import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 class FriendSendViewModel : ViewModel() {
     private val friendRepo = FriendRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val userRepo = UserRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     private val _friendSends= MutableStateFlow<Map<String, Any>?>(null)
     private val _userInfos = MutableStateFlow<List<Map<String, Any>>>(emptyList())
@@ -43,5 +45,17 @@ class FriendSendViewModel : ViewModel() {
             val friendInfoList = userRepo.getUsersFromUserId(userId)
             _userInfos.value = friendInfoList
         }
+    }
+
+    suspend fun getFirstname(uid: String): String? {
+        return firestoreMethod.fetchInfoData("users", "firstname", uid)
+    }
+
+    suspend fun getLastname(uid: String): String? {
+        return firestoreMethod.fetchInfoData("users", "lastname", uid)
+    }
+
+    suspend fun getAvatar(uid: String): String? {
+        return firestoreMethod.fetchInfoData("users", "avatar", uid)
     }
 }

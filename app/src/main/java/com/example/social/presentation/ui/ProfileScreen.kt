@@ -1,5 +1,6 @@
 package com.example.social.presentation.ui
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -44,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -54,11 +56,14 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
@@ -77,8 +82,13 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                   postViewModel: PostViewModel,
                   profileViewModel: ProfileViewModel,
                   friendViewModel: FriendViewModel,
+                  notificationViewModel: NotificationViewModel,
+                  friendRequestViewModel: FriendRequestViewModel,
                   themeViewModel: ThemeViewModel
 ) {
+
+    val context= LocalContext.current
+
     var isPressed by remember { mutableStateOf(false) }
     postViewModel.getPosts(Firebase.auth.currentUser!!.uid)
     profileViewModel.getUserInfo()
@@ -91,6 +101,9 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
     val friends=friendViewModel.friends.collectAsState().value
     friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
+
+    val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
+    friendRequestViewModel.getFriendRequests(Firebase.auth.currentUser!!.uid)
 
     val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
@@ -108,14 +121,26 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
         themeViewModel.toggleTheme(isDarkTheme)
     }
 
-    val userIds = mutableListOf<String>()
+    val friendModels = mutableListOf<Friend>()
     if(friends!=null) {
         for ((index, entry) in friends.entries.withIndex()) {
             val friendData = entry.value as? Map<*, *>
             val userId = friendData?.get("uid") as? String
             val timestamp = friendData?.get("timestamp") as Long
             if (userId != null) {
-                userIds.add(userId)
+                friendModels.add(Friend(userId,timestamp))
+            }
+        }
+    }
+
+    val friendRequestModels = mutableListOf<Friend>()
+    if(friendRequests!=null) {
+        for ((index, entry) in friendRequests.entries.withIndex()) {
+            val friendData = entry.value as? Map<*, *>
+            val userId = friendData?.get("uid") as? String
+            val timestamp = friendData?.get("timestamp") as Long
+            if (userId != null) {
+                friendRequestModels.add(Friend(userId,timestamp))
             }
         }
     }
@@ -146,12 +171,14 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             imageBackground,
                             firstname,
                             lastname,
-                            posts
+                            posts,
+                            friendModels.map { it.uid },
+                            friendRequestModels.map { it.uid }
                         )
                     }
                     item {
                         Spacer(Modifier.height(15.dp))
-                        friendViewModel.getFriendInfo(userIds)
+                        friendViewModel.getFriendInfo(friendModels.map { it.uid })
                         Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
                             userInfoList.chunked(3).take(2).forEach { chunk ->
                                 Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
@@ -191,14 +218,17 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                                 val liked = postData["liked"] as List<String>
                                 val content = postData["content"]
                                 val timestamp = postData["timestamp"] as Long
-                                val time = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp),
-                                    ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                                 val id = postData["id"]
                                 val userID = postData["userID"]
                                 val post = Post(id.toString(), userID.toString(), content.toString(),
                                     timestamp, imageUris, liked)
-                                SelfPost(post, imageAvatar, "$firstname $lastname", time,
-                                    commentViewModel, postViewModel, comments)
+                                val currentDate = Instant.ofEpochMilli(post.timestamp)
+                                    .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
+                                    .toLocalDate()
+                                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                                val formattedDate = currentDate.format(formatter)
+                                SelfPost(post, imageAvatar, "$firstname $lastname", formattedDate,
+                                    commentViewModel, postViewModel, notificationViewModel, context, comments)
                             }
                         }
                     }
@@ -273,7 +303,7 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
 fun Firstline5(
     navController: NavController, imageAvatar: String?, imageBackground: String?,
-    firstname: String, lastname: String, posts: Map<String, Any>?
+    firstname: String, lastname: String, posts: Map<String, Any>?,friend:List<String>,friendRequest:List<String>
 ){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
@@ -298,12 +328,12 @@ fun Firstline5(
                             }
                             Spacer(Modifier.width(20.dp))
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                Text(text = friend.size.toString(),modifier=Modifier.padding(start = 25.dp))
                                 Text(text = "Bạn bè")
                             }
                             Spacer(Modifier.width(20.dp))
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                Text(text = friendRequest.size.toString(),modifier=Modifier.padding(start = 25.dp))
                                 Text(text = "Theo dõi")
                             }
                         }
@@ -424,6 +454,7 @@ fun GetHinhDaiDienProfileFriend(img2: Int) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SelfPost(
     post: Post,
@@ -432,11 +463,15 @@ fun SelfPost(
     time: String,
     commentViewModel: CommentViewModel,
     postViewModel: PostViewModel,
+    notificationViewModel: NotificationViewModel,
+    context: Context,
     comments: Map<String, Any>?
 ){
     val showBottomSheet = remember { mutableStateOf(false) }
     val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
     var isToggled by remember { mutableStateOf(like) }
+
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
 
     Column(modifier=Modifier.fillMaxSize()){
         Row(modifier= Modifier
@@ -454,7 +489,7 @@ fun SelfPost(
             Column {
                 Text(
                     text = name,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
                 Text(text = time)
@@ -502,38 +537,57 @@ fun SelfPost(
             Button(onClick = {
                 isToggled = !isToggled
                 postViewModel.updateLiked(post.id, post.userID, Firebase.auth.currentUser!!.uid)
+                if(post.userID!=Firebase.auth.currentUser!!.uid) {
+                    notificationViewModel.updateNotificationToFireStore(
+                        Firebase.auth.currentUser!!.uid,
+                        post.id,
+                        notificationContents[2],
+                        "notRead",
+                        post.userID
+                    )
+                }
             },
                 modifier = Modifier.padding(start = 0.dp),
-                colors = if (isToggled){
-                    ButtonDefaults.buttonColors(containerColor = colorResource(R.color.pink))
-                } else {
-                    ButtonDefaults.buttonColors(containerColor = Color.White)
-                }
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
             ) {
-                Image(
-                    painter = painterResource(R.drawable.like),
-                    contentDescription = "option",
-                    modifier = Modifier.size(16.dp)
-                )
+                if(isToggled) {
+                    Image(
+                        painter = painterResource(R.drawable.like1),
+                        contentDescription = "option",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                else{
+                    Image(
+                        painter = painterResource(R.drawable.like),
+                        contentDescription = "option",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 Spacer(Modifier.width(11.dp))
-                Text(text = "Thích",color=Color.Black, fontWeight = FontWeight.Bold)
+                if(isToggled){
+                    Text(text = "Thích",color=Color.Blue, fontWeight = FontWeight.Bold)
+                }
+                else{
+                    Text(text = "Thích",color=MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+                }
             }
             Spacer(Modifier.weight(1f))
 
             Button(onClick={showBottomSheet.value = true},modifier = Modifier.padding(end = 5.dp), colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White)) {
+                containerColor = MaterialTheme.colorScheme.background)) {
                 Image(
                     painter = painterResource(R.drawable.speechbubble),
                     contentDescription = "option",
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(11.dp))
-                Text(text = "Bình luận",color=Color.Black, fontWeight = FontWeight.Bold)
+                Text(text = "Bình luận",color=MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
             }
         }
     }
     if (showBottomSheet.value) {
-        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,
-            commentViewModel, comments) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,
+            commentViewModel, comments,notificationViewModel) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }

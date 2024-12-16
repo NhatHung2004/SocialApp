@@ -1,7 +1,9 @@
 package com.example.social.presentation.ui
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,12 +51,16 @@ import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
+import com.example.social.presentation.viewmodel.PostFocusViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
+import com.example.social.presentation.viewmodel.ProfileOfFriendViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
 import com.example.social.ui.theme.SocialTheme
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +72,9 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
     val friendRequestViewModel: FriendRequestViewModel = viewModel()
     val friendSendViewModel: FriendSendViewModel = viewModel()
     val allUserViewModel: AllUserViewModel = viewModel()
+    val notificationViewModel:NotificationViewModel= viewModel()
+    val profileOfFriendViewModel:ProfileOfFriendViewModel= viewModel()
+    val postFocusViewModel:PostFocusViewModel= viewModel()
 
     val scope = rememberCoroutineScope()//o một coroutine scope để quản lý các coroutine bên trong composable này.
     // Điều này thường được sử dụng để thực hiện các tác vụ bất đồng bộ như thay đổi trang trong HorizontalPager.
@@ -73,15 +82,25 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
     // trang được xác định bởi số lượng mục trong enum HomeTabs.
     val selectedIndex = remember { derivedStateOf { pagerState.currentPage } }//Tạo một state được tính toán dựa trên trang hiện tại của HorizontalPager.
     // Khi trang thay đổi, giá trị này sẽ tự động cập nhật.
-    val navControllerTab = rememberNavController()
     val navControllerHome= rememberNavController()
+    val navControllerNotification= rememberNavController()
+    val navControllerFriend= rememberNavController()
+    val navControllerProfile= rememberNavController()
     //Hai dòng lệnh này đóng vai trò quan trọng trong việc theo dõi màn hình hiện tại trong
     // NavController và xác định liệu bạn đang ở màn hình AllFreindReq hay không
-    val navBackStackEntry by navControllerTab.currentBackStackEntryAsState()
-    val isInAnyFriendReq = navBackStackEntry?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.ALL_FRIEND_REQ,Routes.ALL_FRIEND_SEND,Routes.PROFILE_EDIT)
 
     val navBackStackEntryHome by navControllerHome.currentBackStackEntryAsState()
-    val isInAnyHomeScreen = navBackStackEntryHome?.destination?.route in listOf(Routes.FRIEND_PROFILE + "/{userId}")
+    val isInAnyHomeScreen = navBackStackEntryHome?.destination?.route in listOf(Routes.FRIEND_PROFILE + "/{userId}",Routes.ALL_FRIEND_OF_FRIEND + "/{userId}")
+
+    val navBackStackEntryFriend by navControllerFriend.currentBackStackEntryAsState()
+    val isInAnyFriendScreen = navBackStackEntryFriend?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.ALL_FRIEND_REQ,Routes.ALL_FRIEND_SEND)
+
+    val navBackStackEntryNotification by navControllerNotification.currentBackStackEntryAsState()
+    val isInAnyNotificationScreen = navBackStackEntryNotification?.destination?.route in listOf(Routes.POST_FOCUS + "/{userId}/{postId}",Routes.ALL_FRIEND,Routes.ALL_FRIEND_REQ)
+
+    val navBackStackEntryProfile by navControllerProfile.currentBackStackEntryAsState()
+    val isInAnyProfileScreen = navBackStackEntryProfile?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.PROFILE_EDIT)
+
 
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState(initial = false)
     //bien check che do sang toi
@@ -113,7 +132,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                     .padding(top = it.calculateTopPadding())//Đặt kích thước của Column để chiếm toàn bộ không gian
                 //có sẵn và thêm padding ở trên để tránh che khuất bởi TopAppBar.
             ) {
-                if (!isInAnyFriendReq && selectedIndex.value!=HomeTabs.Status.ordinal && !isInAnyHomeScreen) {
+                if (!isInAnyHomeScreen && !isInAnyFriendScreen&& !isInAnyNotificationScreen&& !isInAnyProfileScreen && selectedIndex.value!=HomeTabs.Status.ordinal && !isInAnyHomeScreen) {
                     TabRow(//Cấu trúc hiển thị các tab
                         selectedTabIndex = selectedIndex.value,//Chỉ định tab nào đang được chọn dựa trên giá trị selectedIndex.
                         modifier = Modifier.fillMaxWidth(),//Đặt kích thước của TabRow để chiếm toàn bộ chiều rộng.
@@ -173,12 +192,18 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                     ) {
                                         composable(Routes.HOME) {
                                             HomeScreen(navControllerHome, friendViewModel,
-                                                profileViewModel, postViewModel, commentViewModel)
+                                                profileViewModel, postViewModel, commentViewModel,notificationViewModel)
                                         }
                                         composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
                                             val userId = backStackEntry.arguments?.getString("userId")
                                             if (userId != null) {
-                                                ProfileFriendScreen(navControllerHome, userId, profileViewModel, postViewModel, friendViewModel,commentViewModel)
+                                                ProfileFriendScreen(navControllerHome, userId,profileOfFriendViewModel, postViewModel, friendViewModel,commentViewModel,notificationViewModel)
+                                            }
+                                        }
+                                        composable(Routes.ALL_FRIEND_OF_FRIEND + "/{userId}") { backStackEntry ->
+                                            val userId = backStackEntry.arguments?.getString("userId")
+                                            if (userId != null) {
+                                                AllFriendOfFriend(userId,friendViewModel,friendRequestViewModel,friendSendViewModel,profileOfFriendViewModel,notificationViewModel)
                                             }
                                         }
                                     }
@@ -187,18 +212,18 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                             HomeTabs.Friend -> {
                                 Box(modifier = Modifier.fillMaxSize()) {
                                     NavHost(
-                                        navController = navControllerTab,
+                                        navController = navControllerFriend,
                                         startDestination = Routes.FRIEND,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
                                         composable(Routes.FRIEND) {
-                                            FriendScreen(navControllerTab,friendViewModel,friendRequestViewModel, friendSendViewModel, profileViewModel, allUserViewModel)
+                                            FriendScreen(navControllerFriend,friendViewModel,friendRequestViewModel, friendSendViewModel, profileViewModel, allUserViewModel,notificationViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND_REQ) {
-                                            AllFriendReq(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                            AllFriendReq(navControllerFriend,friendViewModel, friendRequestViewModel, friendSendViewModel,notificationViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND_SEND) {
-                                            AllFriendSend(navControllerTab,friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                            AllFriendSend(navControllerFriend,friendViewModel, friendRequestViewModel, friendSendViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND) {
                                             AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
@@ -207,37 +232,51 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                 }
                             }
                             HomeTabs.Status -> {
+                                StatusScreen(profileViewModel,postViewModel,friendViewModel,notificationViewModel)
+                            }
+                            HomeTabs.Notification -> {
                                 Box(modifier = Modifier.fillMaxSize()) {
-                                    val navControllerStatus= rememberNavController()
                                     NavHost(
-                                        navController = navControllerStatus,
-                                        startDestination = Routes.STATUS,
+                                        navController = navControllerNotification,
+                                        startDestination = Routes.NOTIFICATION,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
-                                        composable(Routes.STATUS) {
-                                            StatusScreen(navControllerStatus,profileViewModel,postViewModel)
+                                        composable(Routes.NOTIFICATION) {
+                                            NotificationScreen(notificationViewModel,navControllerNotification)
+                                        }
+                                        composable(Routes.ALL_FRIEND_REQ) {
+                                            AllFriendReq(navControllerNotification,friendViewModel, friendRequestViewModel, friendSendViewModel,notificationViewModel)
+                                        }
+                                        composable(Routes.ALL_FRIEND) {
+                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                        }
+                                        composable(Routes.POST_FOCUS + "/{userId}/{postId}") { backStackEntry ->
+                                            val userId = backStackEntry.arguments?.getString("userId")
+                                            val postId= backStackEntry.arguments?.getString("postId")
+                                            if (userId != null && postId != null) {
+                                                    PostFocus(postFocusViewModel,postId,userId,profileViewModel,commentViewModel,notificationViewModel)
+                                            }
                                         }
                                     }
                                 }
                             }
-                            HomeTabs.Notification -> NoficationScreen()
                             HomeTabs.Profile -> {
                                 Box(modifier = Modifier.fillMaxSize()) {
                                     NavHost(
-                                        navController = navControllerTab,
+                                        navController = navControllerProfile,
                                         startDestination = Routes.PROFILE_SCREEN,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
                                         composable(Routes.PROFILE_SCREEN) {
-                                            ProfileScreen(navController, navControllerTab, authViewModel,
+                                            ProfileScreen(navController, navControllerProfile, authViewModel,
                                                 commentViewModel, postViewModel, profileViewModel,
-                                                friendViewModel, themeViewModel)
+                                                friendViewModel, notificationViewModel,friendRequestViewModel,themeViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND) {
                                             AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
                                         }
                                         composable(Routes.PROFILE_EDIT) {
-                                            ProfileEdit(navControllerTab, profileViewModel)
+                                            ProfileEdit(navControllerProfile, profileViewModel)
                                         }
                                     }
                                 }

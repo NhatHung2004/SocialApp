@@ -2,6 +2,8 @@ package com.example.social.presentation.ui
 
 
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,6 +41,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -49,49 +52,58 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
+import com.example.social.presentation.viewmodel.ProfileOfFriendViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import kotlin.coroutines.coroutineContext
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ProfileFriendScreen(navController: NavController, uid:String, profileViewModel: ProfileViewModel,
-                        postViewModel: PostViewModel, friendViewModel: FriendViewModel,commentViewModel: CommentViewModel
+fun ProfileFriendScreen(navController: NavController, uid:String, profileOfFriendViewModel: ProfileOfFriendViewModel,
+                        postViewModel: PostViewModel, friendViewModel: FriendViewModel, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel
 ) {
+    val context= LocalContext.current
     var isPressed by remember { mutableStateOf(false) }
     val comments = commentViewModel.comments.collectAsState().value
 
     val posts = postViewModel.posts.collectAsState().value
     postViewModel.getPosts(uid)
 
-    val userInfoList = friendViewModel.userInfo.collectAsState().value
-    val friends=friendViewModel.friends.collectAsState().value
-    friendViewModel.getFriends(uid)
+    val userInfoList = profileOfFriendViewModel.userInfo.collectAsState().value
+    val friends=profileOfFriendViewModel.friends.collectAsState().value
+    profileOfFriendViewModel.getFriendOfFriend(uid)
 
+    profileOfFriendViewModel.getUserInfoFromId(uid)
 
-    profileViewModel.getUserInfoFromId(uid)
+    val imageBackground = profileOfFriendViewModel.imageBackgroundUri.collectAsState().value
+    val imageAvatar = profileOfFriendViewModel.imageAvatarUri.collectAsState().value
 
-    val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
-    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
-
-    val firstname = profileViewModel.firstname.collectAsState().value
-    val lastname = profileViewModel.lastname.collectAsState().value
+    val firstname = profileOfFriendViewModel.firstname.collectAsState().value
+    val lastname = profileOfFriendViewModel.lastname.collectAsState().value
 
 
     val showBottomSheet = remember { mutableStateOf(false) }
 
-    val userIds = mutableListOf<String>()
+    val friendModels = mutableListOf<Friend>()
     if(friends!=null) {
         for ((index, entry) in friends.entries.withIndex()) {
             val friendData = entry.value as? Map<*, *>
             val userId = friendData?.get("uid") as? String
             val timestamp = friendData?.get("timestamp") as Long
             if (userId != null) {
-                userIds.add(userId)
+                friendModels.add(Friend(userId,timestamp))
             }
         }
     }
@@ -121,7 +133,7 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
-                    friendViewModel.getFriendInfo(userIds)
+                    profileOfFriendViewModel.getFriendOfFriendInfo(friendModels.map { it.uid })
                     Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
                         userInfoList.chunked(3).forEach { chunk ->
                             Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
@@ -135,7 +147,7 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                 item{
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Button(
-                            onClick = {navController.navigate(Routes.ALL_FRIEND)},
+                            onClick = {navController.navigate("${Routes.ALL_FRIEND_OF_FRIEND}/$uid")},
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorResource(R.color.white)
                             ),
@@ -160,78 +172,17 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                             val liked = postData["liked"] as List<String>
                             val content = postData["content"]
                             val timestamp = postData["timestamp"] as Long
+                            val time = LocalDateTime.ofInstant(
+                                Instant.ofEpochMilli(timestamp),
+                                ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                             val id = postData["id"]
                             val userID = postData["userID"]
                             val post = Post(id.toString(), userID.toString(), content.toString(),
                                 timestamp, imageUris, liked)
-                            FriendPost(post, imageAvatar, "$firstname $lastname", commentViewModel,comments)
+                            SelfPost(post, imageAvatar, "$firstname $lastname", time,
+                                commentViewModel, postViewModel, notificationViewModel, context, comments)
                         }
                     }
-                }
-            }
-        }
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = colorResource(R.color.pink)
-        )
-        // Box ở dưới cùng
-        Box(
-            modifier = Modifier
-                .fillMaxWidth() // Chiếm toàn bộ chiều rộng
-                .height(52.dp) // Thiết lập chiều cao cho Box mới
-                .background(color = Color.White), // Bạn có thể đổi màu theo ý thích
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)
-            ) {
-                Button(
-                    onClick = {
-                        isPressed = !isPressed
-                        showBottomSheet.value = true
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
-                )
-                {
-                    Row() {
-                        Text(
-                            text = "$firstname $lastname",
-                            color = colorResource(R.color.pink),
-                            fontSize = 20.sp
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        if (isPressed) {
-                            Image(
-                                painter = painterResource(id = R.drawable.uparrow), // Thay đổi thành icon khi bấm
-                                contentDescription = "Icon Pressed",
-                                modifier = Modifier.size(20.dp) // Kích thước của icon
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.down), // Icon mặc định
-                                contentDescription = "Default Icon",
-                                modifier = Modifier.size(20.dp) // Kích thước của icon
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.width(95.dp))
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
-                )
-                {
-                    Image(
-                        painter = painterResource(R.drawable.menubar),
-                        contentDescription = "option Icon",
-                        modifier = Modifier
-                            .size(29.dp)
-                    )
                 }
             }
         }
@@ -317,11 +268,12 @@ fun FriendLine1(navController: NavController, friend: Map<String, Any>) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun FriendPost(
     post: Post, imageAvatar: String?, name: String,
     commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?) {
+    comments: Map<String, Any>?,notificationViewModel: NotificationViewModel) {
     val showBottomSheet = remember { mutableStateOf(false) }
 
     Column(modifier=Modifier.fillMaxSize()){
@@ -414,8 +366,8 @@ fun FriendPost(
         }
     }
     if (showBottomSheet.value) {
-        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,
-            commentViewModel, comments) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,
+            commentViewModel, comments, notificationViewModel ) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }
 

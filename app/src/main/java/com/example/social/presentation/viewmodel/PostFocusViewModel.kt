@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class PostViewModel: ViewModel() {
+class PostFocusViewModel: ViewModel() {
     private val imageProcess = ImageProcess(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val postRepo = PostRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())

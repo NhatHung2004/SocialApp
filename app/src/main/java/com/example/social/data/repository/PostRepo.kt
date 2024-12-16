@@ -40,7 +40,7 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         return firestoreMethod.fetchAllInfoData("posts")
     }
 
-    suspend fun updatePost(child: String, content: String, imageUris: List<String>) {
+    suspend fun updatePost(child: String, content: String, imageUris: List<String>) :String?{
         val timeStamp = System.currentTimeMillis()
         val userID = Firebase.auth.currentUser!!.uid
         val postsRef = firestore.collection("posts").document(userID)
@@ -57,7 +57,9 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
             val postModel = Post(postId, userID, content, timeStamp, newPostsUri, liked)
             postsRef.update(newPostId, postModel)
             commentRepo.createCommentDocument(postId)
+            return postId
         }
+        return null
     }
 
     suspend fun updateLiked(postID: String, uid: String, uidLike: String) {
@@ -72,12 +74,12 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
                         val liked = postData["liked"] as List<String>
                         if(liked.contains(uidLike)) {
                             postsRef.update(
-                                "post" + index.plus(1) + ".liked",
+                                "posts" + index.plus(1) + ".liked",
                                 FieldValue.arrayRemove(uidLike)
                             )
                         } else {
                             postsRef.update(
-                                "post" + index.plus(1) + ".liked",
+                                "posts" + index.plus(1) + ".liked",
                                 FieldValue.arrayUnion(uidLike)
                             )
                         }

@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,6 +65,7 @@ import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import java.time.Instant
@@ -114,7 +116,7 @@ fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: MutableState<Boolean>, friendViewModel: FriendViewModel, onDismiss:()->Unit){
+fun FriendBottomSheet(friend:Map<String,Any>,time:String?=null,userIds:List<String>, isPressed: MutableState<Boolean>, friendViewModel: FriendViewModel, onDismiss:()->Unit){
     val name = "${friend["firstname"]} ${friend["lastname"]}"
     val avatarUri = Uri.parse(friend["avatar"].toString())
     val userId=friend["uid"]
@@ -125,30 +127,39 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
             onDismissRequest = {onDismiss()},
             modifier=Modifier.fillMaxWidth().height(150.dp).background(MaterialTheme.colorScheme.background),
             dragHandle = {
-                Column(
-                    modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ){
-                    Button(onClick = { },
-                        modifier = Modifier.fillMaxWidth().padding(start = 0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.background
-                        )){
-                        Row(modifier = Modifier.fillMaxWidth().padding(start = 2.dp)){
-                            Image(
-                                painter= rememberAsyncImagePainter(avatarUri),
-                                contentDescription="avatar",
-                                contentScale = ContentScale.Crop,
-                                modifier= Modifier
-                                    .size(45.dp)
-                                    .clip(RoundedCornerShape(35.dp))
+                if(time!=null) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(
+                            onClick = { },
+                            modifier = Modifier.fillMaxWidth().padding(start = 0.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.background
                             )
-                            Spacer(Modifier.width(10.dp))
-                            Column(){
-                                Text(text=name
-                                    , color = Color.Black
-                                    , fontSize = 19.sp
-                                    ,modifier=Modifier.padding(top=2.dp))
+                        ) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(start = 2.dp)) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(avatarUri),
+                                    contentDescription = "avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(45.dp)
+                                        .clip(RoundedCornerShape(35.dp))
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column() {
+                                    Text(
+                                        text = name,
+                                        color = Color.Black,
+                                        fontSize = 19.sp,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                    Spacer(Modifier.height(5.dp))
+                                    Text(text = time.toString(), color = Color.Black)
+                                }
                             }
                         }
                     }
@@ -209,8 +220,10 @@ fun cmtPart(
     onDismiss: () -> Unit,
     posterName: String,
     postID: String,
+    userId:String,
     commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?
+    comments: Map<String, Any>?,
+    notificationViewModel: NotificationViewModel
 ){
     val openBottomSheet by remember { mutableStateOf(true) }
     commentViewModel.getComments(postID)
@@ -235,7 +248,7 @@ fun cmtPart(
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
-            listCmt(posterName, postID, commentViewModel, comments) // Gọi hàm hiển thị danh sách bình luận
+            listCmt(posterName, postID,userId , commentViewModel, comments, notificationViewModel ) // Gọi hàm hiển thị danh sách bình luận
         }
     }
 }
@@ -244,16 +257,21 @@ fun cmtPart(
 fun listCmt(
     posterName: String,
     postID: String,
+    userId:String,
     commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?
+    comments: Map<String, Any>?,
+    notificationViewModel: NotificationViewModel
 ){
+    var selectedUid by remember { mutableStateOf("") }
     Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
         // Đặt LazyColumn để cuộn qua danh sách bình luận
         LazyColumn(modifier = Modifier
             .weight(1f) // Đảm bảo nó chiếm không gian còn lại
             .background(Color.White).fillMaxWidth()) {
             item {
-                infoCmt(comments, commentViewModel)
+                infoCmt(comments, commentViewModel){uid->
+                    selectedUid=uid
+                }
             }
         }
         Divider(
@@ -264,12 +282,12 @@ fun listCmt(
         icon()
         Spacer(Modifier.height(4.dp))
         // TextField nằm bên dưới
-        textField(posterName, postID, commentViewModel) // Căn giữa dưới
+        textField(posterName, postID, commentViewModel, notificationViewModel,userId) // Căn giữa dưới
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel) {
+fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel,onUidSelected: (String) -> Unit) {
     Spacer(Modifier.height(20.dp))
     if (comments != null) {
         for ((index, entry) in comments.entries.withIndex()) {
@@ -324,9 +342,10 @@ fun getHinhDaiDienCmt(img2 : String){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel){
+fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel,uid:String){
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
     Row() {
         getHinhDaiDienCmt5(R.drawable.avt2)
         TextField(
@@ -340,6 +359,15 @@ fun textField(posterName: String, postID: String, commentViewModel: CommentViewM
             keyboardActions = KeyboardActions(
                 onSend = {
                     commentViewModel.updateComment("cmt", text, postID)
+                    if(uid!=Firebase.auth.currentUser!!.uid) {
+                        notificationViewModel.updateNotificationToFireStore(
+                            Firebase.auth.currentUser!!.uid,
+                            postID,
+                            notificationContents[3],
+                            "notRead",
+                            uid
+                        )
+                    }
                     Toast.makeText(context,"Đã gửi",Toast.LENGTH_SHORT).show()
                 }
             ),
