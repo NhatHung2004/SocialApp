@@ -197,8 +197,15 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                                 val userID = postData["userID"]
                                 val post = Post(id.toString(), userID.toString(), content.toString(),
                                     timestamp, imageUris, liked)
-                                SelfPost(post, imageAvatar, "$firstname $lastname", time,
-                                    commentViewModel, postViewModel, comments)
+                                val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
+                                if(like) {
+                                    SelfPost(post, imageAvatar, "$firstname $lastname", time,
+                                        commentViewModel, postViewModel, comments, true)
+                                } else {
+                                    SelfPost(post, imageAvatar, "$firstname $lastname", time,
+                                        commentViewModel, postViewModel, comments, false)
+                                }
+
                             }
                         }
                     }
@@ -424,6 +431,7 @@ fun GetHinhDaiDienProfileFriend(img2: Int) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SelfPost(
     post: Post,
@@ -432,10 +440,10 @@ fun SelfPost(
     time: String,
     commentViewModel: CommentViewModel,
     postViewModel: PostViewModel,
-    comments: Map<String, Any>?
+    comments: Map<String, Any>?,
+    like: Boolean
 ){
     val showBottomSheet = remember { mutableStateOf(false) }
-    val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
     var isToggled by remember { mutableStateOf(like) }
 
     Column(modifier=Modifier.fillMaxSize()){

@@ -1,6 +1,5 @@
 package com.example.social.data.repository
 
-import android.net.Uri
 import com.example.social.data.model.Post
 import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.Firebase
@@ -40,14 +39,12 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         return firestoreMethod.fetchAllInfoData("posts")
     }
 
-    suspend fun updatePost(child: String, content: String, imageUris: List<String>) {
+    suspend fun updatePost(content: String, imageUris: List<String>) {
         val timeStamp = System.currentTimeMillis()
         val userID = Firebase.auth.currentUser!!.uid
         val postsRef = firestore.collection("posts").document(userID)
         val posts: Map<String, Any>? = getPost(firebaseAuth.currentUser!!.uid)
         if (posts != null) {
-            val postsCount = posts.size
-            val newPostId = "${child}${postsCount.plus(1)}"
             val newPostsUri = mutableListOf<String>()
             val liked = listOf<String>()
             for ((index, uri) in imageUris.withIndex()) {
@@ -55,7 +52,7 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
             }
             val postId = "${UUID.randomUUID()}_${System.currentTimeMillis()}"
             val postModel = Post(postId, userID, content, timeStamp, newPostsUri, liked)
-            postsRef.update(newPostId, postModel)
+            postsRef.update(postId, postModel)
             commentRepo.createCommentDocument(postId)
         }
     }
@@ -64,26 +61,18 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         val posts: Map<String, Any>? = getPost(uid)
         val postsRef = firestore.collection("posts").document(uid)
         if (posts != null) {
-            for ((index, entry) in posts.entries.withIndex()) {
-                val postData = entry.value as? Map<*, *>
-                if (postData != null) {
-                    val postId = postData["id"] as String
-                    if (postId == postID) {
-                        val liked = postData["liked"] as List<String>
-                        if(liked.contains(uidLike)) {
-                            postsRef.update(
-                                "post" + index.plus(1) + ".liked",
-                                FieldValue.arrayRemove(uidLike)
-                            )
-                        } else {
-                            postsRef.update(
-                                "post" + index.plus(1) + ".liked",
-                                FieldValue.arrayUnion(uidLike)
-                            )
-                        }
-                        return
-                    }
-                }
+            val post = posts[postID] as? Map<String, Any>
+            val liked = post?.get("liked") as List<String>
+            if(liked.contains(uidLike)) {
+                postsRef.update(
+                    "$postID.liked",
+                    FieldValue.arrayRemove(uidLike)
+                )
+            }else {
+                postsRef.update(
+                    "$postID.liked",
+                    FieldValue.arrayUnion(uidLike)
+                )
             }
         }
     }

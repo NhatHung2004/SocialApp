@@ -55,7 +55,7 @@ class PostViewModel: ViewModel() {
                     val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
                     imageUris.add(imagePath)
                 }
-                postRepo.updatePost("post", text, imageUris)
+                postRepo.updatePost(text, imageUris)
             }
         }
     }

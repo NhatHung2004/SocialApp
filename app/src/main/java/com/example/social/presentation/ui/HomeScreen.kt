@@ -187,8 +187,15 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                         }
                         val post = Post(id.toString(), userIDPost.toString(), content.toString(),
                             timestamp, imageUris, liked)
-                        SelfPost(post, avatar, "$first $last", time,
-                            commentViewModel, postViewModel, comments)
+                        val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
+                        if(like) {
+                            SelfPost(post, avatar, "$first $last", time,
+                                commentViewModel, postViewModel, comments, true)
+                        } else {
+                            SelfPost(post, avatar, "$first $last", time,
+                                commentViewModel, postViewModel, comments, false)
+                        }
+
                         Spacer(Modifier.height(10.dp))
                     }
                 }
