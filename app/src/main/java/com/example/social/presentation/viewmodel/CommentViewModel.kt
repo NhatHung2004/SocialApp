@@ -23,6 +23,10 @@ class CommentViewModel: ViewModel() {
         }
     }
 
+    fun getComment(): Map<String, Any>? {
+        return _comments.value
+    }
+
     suspend fun getAvatar(uid: String): String? {
         return firestoreMethod.fetchInfoData("users", "avatar", uid)
     }
@@ -30,7 +34,7 @@ class CommentViewModel: ViewModel() {
     suspend fun getName(uid: String): String {
         val firstname = firestoreMethod.fetchInfoData("users", "firstname", uid)
         val lastname = firestoreMethod.fetchInfoData("users", "lastname", uid)
-        return firstname + lastname
+        return "$firstname $lastname"
     }
 
     fun updateComment(child: String, content: String, postId: String) {

@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -66,7 +67,9 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun PostFocus(postFocusViewModel: PostFocusViewModel, postId:String, userId:String, profileViewModel: ProfileViewModel, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
     val posts = postFocusViewModel.posts.collectAsState().value
+    commentViewModel.getComments(postId)
     val comments = commentViewModel.comments.collectAsState().value
+    val context= LocalContext.current
     commentViewModel.getComments(userId)
     var name by remember { mutableStateOf("") }
     var avatar by remember { mutableStateOf("") }
@@ -127,7 +130,7 @@ fun PostFocus(postFocusViewModel: PostFocusViewModel, postId:String, userId:Stri
                                 formattedDate,
                                 commentViewModel,
                                 postFocusViewModel,
-                                notificationViewModel,
+                                notificationViewModel, context,
                                 comments,
                                 true
                             )
@@ -141,6 +144,7 @@ fun PostFocus(postFocusViewModel: PostFocusViewModel, postId:String, userId:Stri
                                 commentViewModel,
                                 postFocusViewModel,
                                 notificationViewModel,
+                                context,
                                 comments,
                                 false
                             )
@@ -166,11 +170,13 @@ fun FocusPost(
     commentViewModel: CommentViewModel,
     postFocusViewModel: PostFocusViewModel,
     notificationViewModel: NotificationViewModel,
+    context: Context,
     comments: Map<String, Any>?,
     like: Boolean
 ){
     val showBottomSheet = remember { mutableStateOf(false) }
     var isToggled by remember { mutableStateOf(like) }
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
 
     Column(modifier=Modifier.fillMaxSize()){
         Row(modifier= Modifier
@@ -188,14 +194,14 @@ fun FocusPost(
             Column {
                 Text(
                     text = name,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
                 Text(text = time)
             }
         }
         Row (modifier = Modifier.fillMaxWidth()){
-            Text(text = post.content, modifier = Modifier.padding(start = 10.dp))
+            Text(text = post.content, modifier = Modifier.padding(start = 10.dp),color = MaterialTheme.colorScheme.onBackground)
         }
         // ảnh post
         LazyRow(
@@ -236,6 +242,15 @@ fun FocusPost(
             Button(onClick = {
                 isToggled = !isToggled
                 postFocusViewModel.updateLiked(post.id, post.userID, Firebase.auth.currentUser!!.uid)
+                if(post.userID!=Firebase.auth.currentUser!!.uid) {
+                    notificationViewModel.updateNotificationToFireStore(
+                        Firebase.auth.currentUser!!.uid,
+                        post.id,
+                        notificationContents[2],
+                        "notRead",
+                        post.userID
+                    )
+                }
             },
                 modifier = Modifier.padding(start = 0.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
@@ -251,6 +266,7 @@ fun FocusPost(
                     Image(
                         painter = painterResource(R.drawable.like),
                         contentDescription = "option",
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -269,15 +285,16 @@ fun FocusPost(
                 Image(
                     painter = painterResource(R.drawable.speechbubble),
                     contentDescription = "option",
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(11.dp))
-                Text(text = "Bình luận",color= MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+                Text(text = "Bình luận",color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold,)
             }
         }
     }
     if (showBottomSheet.value) {
         cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,
-            commentViewModel, comments, notificationViewModel ) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+            commentViewModel, comments,notificationViewModel) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }
