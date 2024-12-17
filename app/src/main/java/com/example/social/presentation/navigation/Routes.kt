@@ -14,4 +14,8 @@ object Routes {
     const val PROFILE_EDIT = "profile_edit"
     const val  FRIEND_PROFILE= "friend_profile"
     const val STATUS="status"
+    const val ALL_FRIEND_OF_FRIEND="all_friend_of_friend"
+    const val NOTIFICATION="notification"
+    const val POST_FOCUS="post_focus"
+    const val SETTING="setting"
 }

@@ -1,6 +1,7 @@
 package com.example.social.presentation.ui
 
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
@@ -61,9 +62,11 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.db.icons
 import com.example.social.db.userPostDataProvider
+import com.example.social.domain.utils.convertToTime
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import java.time.Instant
@@ -78,7 +81,7 @@ fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {onDismiss()},
-            modifier=Modifier.fillMaxWidth().height(80.dp).background(MaterialTheme.colorScheme.background),
+            modifier=Modifier.fillMaxWidth().height(80.dp),
             dragHandle = {
                 Column(
                     modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
@@ -112,9 +115,10 @@ fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: MutableState<Boolean>, friendViewModel: FriendViewModel, onDismiss:()->Unit){
+fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>,time:Long, isPressed: MutableState<Boolean>, friendViewModel: FriendViewModel, onDismiss:()->Unit){
     val name = "${friend["firstname"]} ${friend["lastname"]}"
     val avatarUri = Uri.parse(friend["avatar"].toString())
     val userId=friend["uid"]
@@ -123,10 +127,10 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {onDismiss()},
-            modifier=Modifier.fillMaxWidth().height(150.dp).background(MaterialTheme.colorScheme.background),
+            modifier=Modifier.fillMaxWidth(),
             dragHandle = {
                 Column(
-                    modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
+                    modifier=Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ){
                     Button(onClick = { },
@@ -146,8 +150,13 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
                             Spacer(Modifier.width(10.dp))
                             Column(){
                                 Text(text=name
-                                    , color = Color.Black
+                                    , color = MaterialTheme.colorScheme.onBackground
                                     , fontSize = 19.sp
+                                    ,modifier=Modifier.padding(top=2.dp))
+                                Spacer(Modifier.height(5.dp))
+                                Text(text= convertToTime(time)
+                                    , color = MaterialTheme.colorScheme.onBackground
+                                    , fontSize = 12.sp
                                     ,modifier=Modifier.padding(top=2.dp))
                             }
                         }
@@ -166,9 +175,6 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
                     onClick = {
                         friendViewModel.deleteFriend(Firebase.auth.currentUser!!.uid, userId.toString())
                         friendViewModel.deleteFriend(userId.toString(),Firebase.auth.currentUser!!.uid)
-                        friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
-                        friendViewModel.getFriends(userId.toString())
-                        friendViewModel.getFriendInfo(userIds)
                         isPressed.value=true
                     },
                     modifier = Modifier.fillMaxWidth().padding(start = 0.dp).height(120.dp),
@@ -183,7 +189,7 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
                         Box(
                             modifier = Modifier
                                 .size(32.dp) // Kích thước của hình tròn
-                                .background(Color.Gray, shape = CircleShape),
+                                .background(MaterialTheme.colorScheme.onBackground, shape = CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -202,6 +208,52 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, isPressed: Mu
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotificationBottomSheet(notificationViewModel: NotificationViewModel, userId: String, postID: String, context: Context, contentNof:String, onDismiss:()->Unit){
+    val openBottomSheet by remember { mutableStateOf(true) }
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+    if(openBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {onDismiss()},
+            modifier=Modifier.fillMaxWidth().height(80.dp),
+            dragHandle = {
+                Column(
+                    modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
+                    horizontalAlignment = Alignment.CenterHorizontally
+
+                ){}
+            }
+        ) {
+            Button(onClick = {
+                    notificationViewModel.deletePostNotification(Firebase.auth.currentUser!!.uid,userId,postID)
+                Toast.makeText(context,"Đã xóa",Toast.LENGTH_SHORT).show()
+                onDismiss()
+            },modifier=Modifier.fillMaxSize().padding(start = 0.dp)
+                ,colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )){
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxSize()){
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp) // Kích thước của hình tròn
+                            .background(MaterialTheme.colorScheme.background, shape = CircleShape)
+                        , contentAlignment = Alignment.Center
+                    ){
+                        Image(
+                            painter = painterResource(R.drawable.searching),//R.drawable.man
+                            contentDescription = "avatar",
+                            modifier = Modifier.size(25.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(text="Xóa Thông báo" ,fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+                }
+            }
+        }
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -209,8 +261,10 @@ fun cmtPart(
     onDismiss: () -> Unit,
     posterName: String,
     postID: String,
+    userId:String,
     commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?
+    comments: Map<String, Any>?,
+    notificationViewModel: NotificationViewModel
 ){
     val openBottomSheet by remember { mutableStateOf(true) }
     commentViewModel.getComments(postID)
@@ -235,7 +289,7 @@ fun cmtPart(
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
-            listCmt(posterName, postID, commentViewModel, comments) // Gọi hàm hiển thị danh sách bình luận
+            listCmt(posterName, postID,userId, commentViewModel, comments,notificationViewModel) // Gọi hàm hiển thị danh sách bình luận
         }
     }
 }
@@ -244,8 +298,10 @@ fun cmtPart(
 fun listCmt(
     posterName: String,
     postID: String,
+    userId: String,
     commentViewModel: CommentViewModel,
     comments: Map<String, Any>?
+    ,notificationViewModel: NotificationViewModel
 ){
     Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
         // Đặt LazyColumn để cuộn qua danh sách bình luận
@@ -264,7 +320,7 @@ fun listCmt(
         icon()
         Spacer(Modifier.height(4.dp))
         // TextField nằm bên dưới
-        textField(posterName, postID, commentViewModel) // Căn giữa dưới
+        textField(posterName, postID, commentViewModel,userId,notificationViewModel) // Căn giữa dưới
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
@@ -324,9 +380,10 @@ fun getHinhDaiDienCmt(img2 : String){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel){
+fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel,userId: String,notificationViewModel: NotificationViewModel){
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
     Row() {
         getHinhDaiDienCmt5(R.drawable.avt2)
         TextField(
@@ -340,6 +397,15 @@ fun textField(posterName: String, postID: String, commentViewModel: CommentViewM
             keyboardActions = KeyboardActions(
                 onSend = {
                     commentViewModel.updateComment("cmt", text, postID)
+                    if(userId!=Firebase.auth.currentUser!!.uid) {
+                        notificationViewModel.updateNotificationToFireStore(
+                            Firebase.auth.currentUser!!.uid,
+                            postID,
+                            notificationContents[3],
+                            "notRead",
+                            userId
+                        )
+                    }
                     Toast.makeText(context,"Đã gửi",Toast.LENGTH_SHORT).show()
                 }
             ),

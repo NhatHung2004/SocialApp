@@ -1,6 +1,8 @@
 package com.example.social.presentation.ui
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -38,31 +40,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AllFriendReq(navController: NavController, friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel){
-
-    val showBottomSheet = remember { mutableStateOf(false) }
+fun AllFriendReq(navController: NavController
+                 , friendViewModel: FriendViewModel
+                 , friendRequestViewModel: FriendRequestViewModel
+                 , friendSendViewModel: FriendSendViewModel,
+                 notificationViewModel: NotificationViewModel){
 
     val context= LocalContext.current
+    val showBottomSheet = remember { mutableStateOf(false) }
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+
     friendRequestViewModel.getFriendRequests(Firebase.auth.currentUser!!.uid)
     val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
 
     val userInfoList = friendRequestViewModel.userInfo.collectAsState().value
-    val userIdRequests = mutableListOf<String>()
+    val userIdRequests = mutableListOf<Friend>()
     if(friendRequests!=null) {
         for ((index, entry) in friendRequests.entries.withIndex()) {
             val friendRequestData = entry.value as? Map<*, *>
             val userId = friendRequestData?.get("uid") as? String
             val timestamp = friendRequestData?.get("timestamp") as Long
             if (userId != null) {
-                userIdRequests.add(userId)
+                userIdRequests.add(Friend(userId,timestamp))
             }
         }
     }
@@ -118,9 +131,12 @@ fun AllFriendReq(navController: NavController, friendViewModel: FriendViewModel,
         Spacer(Modifier.height(20.dp))
         LazyColumn (modifier=Modifier.fillMaxSize().padding(start=6.dp)){
             item{
-                friendRequestViewModel.getFriendInfo(userIdRequests)
+                friendRequestViewModel.getFriendInfo(userIdRequests.map { it.uid })
                 userInfoList.forEach{userInfo->
-                    FriendReqDisplay(userInfo,userIdRequests,navController,context,friendViewModel,friendRequestViewModel,friendSendViewModel)
+                    val friendData=userIdRequests.find{it.uid==userInfo["uid"]}
+                    if (friendData != null) {
+                        FriendReqDisplay(userInfo,userIdRequests.map { it.uid },friendData.timestamp,friendViewModel,friendRequestViewModel,friendSendViewModel,notificationViewModel,notificationContents)
+                    }
                 }
             }
         }

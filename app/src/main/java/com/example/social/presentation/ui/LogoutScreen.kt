@@ -60,7 +60,7 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
     if(openBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { onDismiss() },
-            modifier=Modifier.height(200.dp).background(MaterialTheme.colorScheme.background),
+            modifier=Modifier.height(200.dp),
         ) {
             Column(modifier = Modifier.fillMaxSize().
             background(color=MaterialTheme.colorScheme.background)) {
