@@ -31,6 +31,10 @@ class PostViewModel: ViewModel() {
         }
     }
 
+    suspend fun countPost(userID: String): Int{
+        return postRepo.countPost(userID)
+    }
+
     suspend fun getFirstname(uid: String): String? {
         return firestoreMethod.fetchInfoData("users", "firstname", uid)
     }
@@ -72,4 +76,9 @@ class PostViewModel: ViewModel() {
             _allPosts.value = postRepo.getAllPost()
         }
     }
+
+    suspend fun getReport(uid:String): String? {
+        return firestoreMethod.fetchInfoData("post", "report",uid)
+    }
+
 }

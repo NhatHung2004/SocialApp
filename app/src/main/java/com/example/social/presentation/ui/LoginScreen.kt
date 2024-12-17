@@ -47,14 +47,22 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.social.R
+import com.example.social.data.model.DataProviderAdmin
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
+import com.example.social.presentation.viewmodel.ProfileViewModel
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
+fun LoginScreen(authViewModel: AuthViewModel, navController: NavController,
+                profileViewModel: ProfileViewModel = viewModel()) {
     val currentUser = authViewModel.currentUser.collectAsState().value
 
     var emailInput by remember { mutableStateOf("") }
@@ -67,6 +75,10 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
         painterResource(id = R.drawable.hide)
 
     val context = LocalContext.current
+
+    fun isAdmin(email: String, password: String): Boolean {
+        return DataProviderAdmin.admin.any { it.username == email && it.password == password }
+    }
 
     Column(
         Modifier
@@ -109,7 +121,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                     fontFamily = FontFamily(Font(R.font.jaro)),
                     fontWeight = FontWeight.Bold,
                     color = colorResource(R.color.pink),
-                    modifier =  Modifier.padding(0.dp, 0.dp, 0.dp, 20.dp)
+                    modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 20.dp)
                 )
                 TextField(
                     value = emailInput,
@@ -118,7 +130,12 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                         isValid = android.util.Patterns.EMAIL_ADDRESS.matcher(emailInput).matches()
                     },
                     placeholder = { Text(text = "abc@gmail.com") },
-                    leadingIcon = { Icon(painter = painterResource(id = R.drawable.baseline_person_24), contentDescription = "Email") },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_person_24),
+                            contentDescription = "Email"
+                        )
+                    },
                     isError = !isValid,
                     supportingText = {
                         if (!isValid)
@@ -139,9 +156,9 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                 )
                 TextField(
                     value = password,
-                    onValueChange = {password = it},
+                    onValueChange = { password = it },
                     placeholder = { Text(text = "Password") },
-                    visualTransformation = if (visiblePassword) VisualTransformation.None else PasswordVisualTransformation() ,
+                    visualTransformation = if (visiblePassword) VisualTransformation.None else PasswordVisualTransformation(),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.password),
@@ -151,7 +168,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                     },
                     singleLine = true,
                     trailingIcon = {
-                        IconButton(onClick = {visiblePassword = !visiblePassword}) {
+                        IconButton(onClick = { visiblePassword = !visiblePassword }) {
                             Icon(
                                 painter = trailingIconPass,
                                 contentDescription = "Visibility",
@@ -172,7 +189,11 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                 Spacer(modifier = Modifier.height(30.dp))
                 Button(
                     onClick = {
-                        authViewModel.login(emailInput, password)
+                        if (isAdmin(emailInput, password)) {
+                            navController.navigate(Routes.NAR_DRAWER)
+                        } else {
+                            authViewModel.login(emailInput, password)
+                        }
                     },
                     colors = ButtonColors(
                         containerColor = Color.White,
@@ -211,11 +232,54 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
     }
     // Nếu đăng nhập thành công, chuyển sang màn hình home
     LaunchedEffect(currentUser) {
+        val firestore = FirebaseFirestore.getInstance()
         if (currentUser != null) {
-            Toast.makeText(context, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
+            if (profileViewModel.checkDelete(currentUser.uid)) {
+                val credential = EmailAuthProvider.getCredential(emailInput, password)
 
-            // Chuyển về màn hình home
-            navController.navigate(Routes.TABS)
+                currentUser.reauthenticate(credential)
+                    .addOnCompleteListener { reauthTask ->
+                        if (reauthTask.isSuccessful) {
+                            // Xoá các dữ liệu liên quan trong Firestore
+                            val userId = currentUser.uid
+                            firestore.collection("users").document(userId).delete()
+                                .addOnCompleteListener { deleteDocTask ->
+                                    if (deleteDocTask.isSuccessful) {
+                                        // Xoá tài khoản Firebase Auth
+                                        currentUser.delete()
+                                            .addOnCompleteListener { deleteTask ->
+                                                if (deleteTask.isSuccessful) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Tài khoản và dữ liệu đã bị xoá",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    navController.navigate(Routes.LOGIN)
+                                                } else {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Xoá tài khoản thất bại",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            }
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Xoá dữ liệu Firestore thất bại",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                        } else {
+                            Toast.makeText(context, "Xác thực thất bại", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            } else {
+                    Toast.makeText(context, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
+                    // Chuyển về màn hình home
+                    navController.navigate(Routes.TABS)
+            }
         }
     }
 }

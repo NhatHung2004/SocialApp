@@ -18,4 +18,10 @@ object Routes {
     const val NOTIFICATION="notification"
     const val POST_FOCUS="post_focus"
     const val SETTING="setting"
+    const val NAR_DRAWER = "NarDrawer"
+    const val QUAN_LI_USER = "QuanLyUser"
+    const val QUAN_LI_POST = "QuanLyBaiDang"
+    const val QUAN_LI_MOI_QH = "QuanLyMQH"
+    const val THONG_KE = "ThongKe"
+    const val CHINH_SUA = "ChinhSua"
 }

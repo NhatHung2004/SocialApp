@@ -33,6 +33,14 @@ class FriendRepo(private val firebaseAuth: FirebaseAuth, private val firestore: 
         }
     }
 
+    suspend fun countFriend(userId: String): Int{
+        val friends: Map<String, Any>? = getFriend(userId,"friends")
+        if (friends != null) {
+            return friends.size
+        }
+        return 0
+    }
+
     suspend fun updateFriend(child: String, userId1:String, userId2:String){
         val timeStamp=System.currentTimeMillis()
         val friendsRef = firestore.collection(child).document(userId1)

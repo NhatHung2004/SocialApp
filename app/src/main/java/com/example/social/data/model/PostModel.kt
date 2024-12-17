@@ -6,5 +6,6 @@ data class Post(
     val content: String,
     val timestamp: Long,
     val imageUris: List<String>,
-    val liked: List<String>
+    val liked: List<String>,
+    val report: String
 )

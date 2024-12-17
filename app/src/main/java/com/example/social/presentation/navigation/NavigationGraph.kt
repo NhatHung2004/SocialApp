@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.social.presentation.ui.LoginScreen
 import com.example.social.presentation.ui.RegisterScreen
 import com.example.social.presentation.ui.TabScreen
+import com.example.social.presentation.ui.admin.NarDrawer
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
 
@@ -29,6 +30,9 @@ fun NavigationGraph(authViewModel: AuthViewModel = viewModel(), themeViewModel: 
         }
         composable(Routes.TABS) {
             TabScreen(navController, authViewModel, themeViewModel)
+        }
+        composable(Routes.NAR_DRAWER){
+            NarDrawer(navController, authViewModel)
         }
     }
 }

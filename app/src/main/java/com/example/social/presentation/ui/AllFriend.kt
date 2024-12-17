@@ -214,6 +214,7 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
         }
     }
 }
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests:List<String>,userIdSends:List<String>,time:Long,friendViewModel: FriendViewModel
                ,friendRequestViewModel: FriendRequestViewModel

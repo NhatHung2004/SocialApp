@@ -40,6 +40,26 @@ class ProfileViewModel: ViewModel() {
         }
     }
 
+    suspend fun checkDelete(uid: String):Boolean{
+        return  if(firestoreMethod.fetchInfoData("users", "deleted",uid) == "false") false
+                 else true
+    }
+
+    suspend fun getMode(uid:String): String? {
+        return firestoreMethod.fetchInfoData("users", "mode",uid)
+    }
+
+    //kiểm tra xem email trong authen có khác với email trong document không
+    //tham số truyền vào là email authen
+    //nếu email trong document khác trong authen thì trả về false
+    suspend fun checkEmail(uid:String, email: String): Boolean{
+        return firestoreMethod.fetchInfoData("users", "email",uid) != email
+    }
+
+    suspend fun getEmailFromDocment(uid:String): String? {
+        return firestoreMethod.fetchInfoData("users", "email",uid)
+    }
+
     fun getUserInfoFromId(userId:String) {
         viewModelScope.launch {
             _firstname.value = userRepo.fetchUserInfoFromUid("firstname",userId).toString()
@@ -67,6 +87,14 @@ class ProfileViewModel: ViewModel() {
             userRepo.updateUserInfoToFirestore(firstname, lastname, email)
             _firstname.value = firstname
             _lastname.value = lastname
+            _email.value = email
+        }
+    }
+
+    //Hàm cho admin dùng
+    fun updateEmail(email: String, uid: String){
+        viewModelScope.launch {
+            userRepo.updateEmail(email, uid)
             _email.value = email
         }
     }
