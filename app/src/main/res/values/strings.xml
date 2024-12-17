@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">social</string>
+    <string-array name="notification_contents">
+        <item>Đã gửi lời mời kết bạn</item>
+        <item>Đã đồng ý kết bạn</item>
+        <item>Đã thích bài viết</item>
+        <item>Đã thêm bình luận</item>
+        <item>Đã đăng một bài viết</item>
+    </string-array>
 </resources>

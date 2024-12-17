@@ -64,7 +64,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
@@ -72,11 +75,29 @@ import com.google.firebase.auth.auth
 
 @SuppressLint("MutableCollectionMutableState", "SdCardPath")
 @Composable
-fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel, postViewModel: PostViewModel){
+fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewModel,friendViewModel: FriendViewModel,
+                notificationViewModel: NotificationViewModel){
+    friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
     profileViewModel.getUserInfo()
-    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
 
-    val context = LocalContext.current
+    val context= LocalContext.current
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+
+    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
+    val friends=friendViewModel.friends.collectAsState().value
+    val friendModels= mutableListOf<Friend>()
+
+    if(friends!=null) {
+        for ((index, entry) in friends.entries.withIndex()) {
+            val friendData = entry.value as? Map<*, *>
+            val userId = friendData?.get("uid") as? String
+            val timestamp = friendData?.get("timestamp") as Long
+            if (userId != null) {
+                friendModels.add(Friend(userId,timestamp))
+            }
+        }
+    }
+
     // ghi nhớ trạng thái chụp ảnh
     var imageBitmap   by remember { mutableStateOf<Bitmap?>(null) }
     // ghi nhớ trạng thái chọn ảnh từ thư viện
@@ -127,7 +148,9 @@ fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel
                 imageUris,
                 text,
                 postViewModel,
-                navController
+                friendModels.map { it.uid },
+                notificationViewModel,
+                notificationContents
             ) // Đặt firstLine2 ở trên
             HorizontalDivider(
                 thickness = 1.dp,
@@ -230,7 +253,7 @@ fun StatusScreen(navController: NavController,profileViewModel: ProfileViewModel
 @Composable
 fun FirstLine2(
     context: Context, imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>, text: String,
-    postViewModel: PostViewModel,navController: NavController){
+    postViewModel: PostViewModel,friendId:List<String>,notificationViewModel: NotificationViewModel,notificationContents:Array<String>){
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Tạo bài đăng", color = colorResource(R.color.pink),
@@ -241,13 +264,31 @@ fun FirstLine2(
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
             if (imageUris.isNotEmpty()) {
-                postViewModel.updateToFirestore(imageUris, text, context)
+                postViewModel.updateToFirestore(imageUris, text, context) { postId ->
+                    if(postId!=null) {
+                        friendId.forEach { id ->
+                            notificationViewModel.updateNotificationToFireStore(
+                                Firebase.auth.currentUser!!.uid,
+                                postId, notificationContents[4], "notRead", id
+                            )
+                        }
+                    }
+                }
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
                 imageUris.clear()
             }
             if (imageBitmaps.isNotEmpty()) {
                 val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmaps)
-                postViewModel.updateToFirestore(imgBitmapUris, text, context)
+                postViewModel.updateToFirestore(imgBitmapUris, text, context) {postId->
+                    if(postId!=null) {
+                        friendId.forEach { id ->
+                            notificationViewModel.updateNotificationToFireStore(
+                                Firebase.auth.currentUser!!.uid,
+                                postId, notificationContents[4], "notRead", id
+                            )
+                        }
+                    }
+                }
                 Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
                 imageBitmaps.clear()
             }

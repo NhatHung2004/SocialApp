@@ -14,16 +14,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class PostViewModel: ViewModel() {
-    private val imageProcess = ImageProcess(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+class PostFocusViewModel: ViewModel() {
     private val postRepo = PostRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     private val _posts = MutableStateFlow<Map<String, Any>?>(null)
-    private val _allPosts = MutableStateFlow<List<Map<String, Any>>?>(null)
 
     val posts: StateFlow<Map<String, Any>?> get() = _posts
-    val allPosts: StateFlow<List<Map<String, Any>>?> get() = _allPosts
 
     fun getPosts(userID: String) {
         viewModelScope.launch {
@@ -43,23 +40,6 @@ class PostViewModel: ViewModel() {
         return firestoreMethod.fetchInfoData("users", "avatar", uid)
     }
 
-    fun convertBitmap(context: Context, imageBitmaps: MutableList<Bitmap?>): MutableList<Uri> {
-        return imageProcess.convertBitmapListToUriList(context, imageBitmaps)
-    }
-
-    fun updateToFirestore(uris: MutableList<Uri>, text: String, context: Context,onPostCreated: (String?) -> Unit) {
-        viewModelScope.launch {
-            if (uris.isNotEmpty()) {
-                val imageUris = mutableListOf<String>()
-                for (uri in uris) {
-                    val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
-                    imageUris.add(imagePath)
-                }
-                val postId=postRepo.updatePost( text, imageUris)
-                onPostCreated(postId)
-            }
-        }
-    }
 
     fun updateLiked(postID: String, uid: String, uidLike: String) {
         viewModelScope.launch {
@@ -67,9 +47,4 @@ class PostViewModel: ViewModel() {
         }
     }
 
-    fun getAllPosts() {
-        viewModelScope.launch {
-            _allPosts.value = postRepo.getAllPost()
-        }
-    }
 }

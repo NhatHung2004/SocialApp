@@ -1,7 +1,10 @@
 package com.example.social.presentation.ui
 
 
+import android.content.Context
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +43,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -49,49 +54,58 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
+import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
+import com.example.social.domain.utils.convertToTime
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
+import com.example.social.presentation.viewmodel.ProfileOfFriendViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ProfileFriendScreen(navController: NavController, uid:String, profileViewModel: ProfileViewModel,
-                        postViewModel: PostViewModel, friendViewModel: FriendViewModel,commentViewModel: CommentViewModel
+fun ProfileFriendScreen(navController: NavController, uid:String, profileOfFriendViewModel: ProfileOfFriendViewModel,
+                        postViewModel: PostViewModel, friendViewModel: FriendViewModel,commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel
 ) {
+    val context= LocalContext.current
     var isPressed by remember { mutableStateOf(false) }
     val comments = commentViewModel.comments.collectAsState().value
 
     val posts = postViewModel.posts.collectAsState().value
     postViewModel.getPosts(uid)
 
-    val userInfoList = friendViewModel.userInfo.collectAsState().value
-    val friends=friendViewModel.friends.collectAsState().value
-    friendViewModel.getFriends(uid)
+    val userInfoList = profileOfFriendViewModel.userInfo.collectAsState().value
+    val friends=profileOfFriendViewModel.friends.collectAsState().value
+    profileOfFriendViewModel.getFriendOfFriend(uid)
 
+    profileOfFriendViewModel.getUserInfoFromId(uid)
 
-    profileViewModel.getUserInfoFromId(uid)
+    val imageBackground = profileOfFriendViewModel.imageBackgroundUri.collectAsState().value
+    val imageAvatar = profileOfFriendViewModel.imageAvatarUri.collectAsState().value
 
-    val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
-    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
-
-    val firstname = profileViewModel.firstname.collectAsState().value
-    val lastname = profileViewModel.lastname.collectAsState().value
+    val firstname = profileOfFriendViewModel.firstname.collectAsState().value
+    val lastname = profileOfFriendViewModel.lastname.collectAsState().value
 
 
     val showBottomSheet = remember { mutableStateOf(false) }
 
-    val userIds = mutableListOf<String>()
+    val friendModels = mutableListOf<Friend>()
     if(friends!=null) {
         for ((index, entry) in friends.entries.withIndex()) {
             val friendData = entry.value as? Map<*, *>
             val userId = friendData?.get("uid") as? String
             val timestamp = friendData?.get("timestamp") as Long
             if (userId != null) {
-                userIds.add(userId)
+                friendModels.add(Friend(userId,timestamp))
             }
         }
     }
@@ -121,7 +135,7 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                 }
                 item {
                     Spacer(Modifier.height(15.dp))
-                    friendViewModel.getFriendInfo(userIds)
+                    profileOfFriendViewModel.getFriendOfFriendInfo(friendModels.map { it.uid })
                     Column( modifier = Modifier.fillMaxWidth().padding(start = 10.dp),) {
                         userInfoList.chunked(3).forEach { chunk ->
                             Row (horizontalArrangement = Arrangement.spacedBy(25.dp)){
@@ -135,7 +149,7 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                 item{
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Button(
-                            onClick = {navController.navigate(Routes.ALL_FRIEND)},
+                            onClick = {navController.navigate("${Routes.ALL_FRIEND_OF_FRIEND}/$uid")},
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorResource(R.color.white)
                             ),
@@ -164,7 +178,15 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileViewMod
                             val userID = postData["userID"]
                             val post = Post(id.toString(), userID.toString(), content.toString(),
                                 timestamp, imageUris, liked)
-                            FriendPost(post, imageAvatar, "$firstname $lastname", commentViewModel,comments)
+                            val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
+                            if(like) {
+                                FriendPost(post, imageAvatar, "$firstname $lastname", convertToTime(timestamp),
+                                    commentViewModel, postViewModel,notificationViewModel,context, comments, true)
+                            } else {
+                                FriendPost(post, imageAvatar, "$firstname $lastname", convertToTime(timestamp),
+                                    commentViewModel, postViewModel,notificationViewModel,context, comments, false)
+                            }
+
                         }
                     }
                 }
@@ -317,12 +339,23 @@ fun FriendLine1(navController: NavController, friend: Map<String, Any>) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun FriendPost(
-    post: Post, imageAvatar: String?, name: String,
+    post: Post,
+    imageAvatar: String?,
+    name: String,
+    time: String,
     commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?) {
+    postViewModel: PostViewModel,
+    notificationViewModel: NotificationViewModel,
+    context: Context,
+    comments: Map<String, Any>?,
+    like: Boolean) {
     val showBottomSheet = remember { mutableStateOf(false) }
+    var isToggled by remember { mutableStateOf(like) }
+
+    val notificationContents =context.resources.getStringArray(R.array.notification_contents)
 
     Column(modifier=Modifier.fillMaxSize()){
         Row(modifier= Modifier
@@ -343,9 +376,8 @@ fun FriendPost(
                     color = Color.Black,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
-                Text(text = post.timestamp.toString())
+                Text(text = time)
             }
-            //Spacer(Modifier.weight(1f))
         }
         Row (modifier = Modifier.fillMaxWidth()){
             Text(text = post.content, modifier = Modifier.padding(start = 10.dp))
@@ -386,18 +418,43 @@ fun FriendPost(
         }
         Row(modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = {  }, // Đổi trạng thái khi nhấn
-                //Gọi hàm callback: Khi người dùng nhấn nút, hàm callback onLikeChanged sẽ được gọi với trạng thái mới (đã bị đảo ngược), giúp cập nhật trạng thái "liked" trong dữ liệu của bạn.
+            Button(onClick = {
+                isToggled = !isToggled
+                postViewModel.updateLiked(post.id, post.userID, Firebase.auth.currentUser!!.uid)
+                if(post.userID!=Firebase.auth.currentUser!!.uid) {
+                    notificationViewModel.updateNotificationToFireStore(
+                        Firebase.auth.currentUser!!.uid,
+                        post.id,
+                        notificationContents[2],
+                        "notRead",
+                        post.userID
+                    )
+                }
+            },
                 modifier = Modifier.padding(start = 0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
             ) {
-                Image(
-                    painter = painterResource(R.drawable.like),
-                    contentDescription = "option",
-                    modifier = Modifier.size(16.dp)
-                )
+                if(isToggled) {
+                    Image(
+                        painter = painterResource(R.drawable.like1),
+                        contentDescription = "option",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                else{
+                    Image(
+                        painter = painterResource(R.drawable.like),
+                        contentDescription = "option",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 Spacer(Modifier.width(11.dp))
-                Text(text = "Thích",color=Color.Black, fontWeight = FontWeight.Bold)
+                if(isToggled){
+                    Text(text = "Thích",color=Color.Blue, fontWeight = FontWeight.Bold)
+                }
+                else{
+                    Text(text = "Thích",color= MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+                }
             }
             Spacer(Modifier.weight(1f))
 
@@ -414,8 +471,8 @@ fun FriendPost(
         }
     }
     if (showBottomSheet.value) {
-        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,
-            commentViewModel, comments) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,
+            commentViewModel ,comments,notificationViewModel) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }
 

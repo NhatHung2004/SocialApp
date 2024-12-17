@@ -16,12 +16,12 @@ private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
     tertiary = Pink80,
-    background = Color(0xFF1C1C1C), // Màu nền tối
-    surface = Color(0xFF121212),
+    background = Color.Black, // Màu nền tối
+    surface = Color.Black,
     onPrimary = Color.White, // Màu chữ trên primary
     onSecondary = Color.Black,
-    onBackground = Color(0xFFFFFBFE), // Màu chữ trên nền tối
-    onSurface = Color(0xFFFFFBFE),
+    onBackground = Color.White, // Màu chữ trên nền tối
+    onSurface = Color.White,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -30,13 +30,13 @@ private val LightColorScheme = lightColorScheme(
     tertiary = Pink40,
 
     //Other default colors to override
-    background = Color(0xFFFFFBFE),//màu nền trắng
-    surface = Color(0xFFFFFBFE),
+    background = Color.White,//màu nền trắng
+    surface = Color.White,
     onPrimary = Color.Black,
     onSecondary = Color.White,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),//màu chữ trên nền sáng
-    onSurface = Color(0xFF1C1B1F),
+    onBackground = Color.Black,//màu chữ trên nền sáng
+    onSurface = Color.Black,
 )
 
 @Composable

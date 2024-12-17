@@ -71,7 +71,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painter = painterResource(id = R.drawable.login_img),
+            painter = painterResource(id = R.drawable.e4072a241a48a716fe59),
             contentDescription = "User sign in"
         )
         Spacer(modifier = Modifier.height(20.dp))
