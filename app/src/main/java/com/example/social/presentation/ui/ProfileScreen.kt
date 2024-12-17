@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -475,14 +476,14 @@ fun SelfPost(
             Column {
                 Text(
                     text = name,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
                 Text(text = time)
             }
         }
         Row (modifier = Modifier.fillMaxWidth()){
-            Text(text = post.content, modifier = Modifier.padding(start = 10.dp))
+            Text(text = post.content, modifier = Modifier.padding(start = 10.dp),color = MaterialTheme.colorScheme.onBackground)
         }
         // ảnh post
         LazyRow(
@@ -547,6 +548,7 @@ fun SelfPost(
                     Image(
                         painter = painterResource(R.drawable.like),
                         contentDescription = "option",
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -565,10 +567,11 @@ fun SelfPost(
                 Image(
                     painter = painterResource(R.drawable.speechbubble),
                     contentDescription = "option",
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(11.dp))
-                Text(text = "Bình luận",color=Color.Black, fontWeight = FontWeight.Bold)
+                Text(text = "Bình luận",color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold,)
             }
         }
     }

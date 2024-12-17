@@ -55,7 +55,6 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         firestoreMethod.updateData("users", "firstname", firstname)
         firestoreMethod.updateData("users", "lastname", lastname)
         firestoreMethod.updateData("users", "email", email)
-
     }
 
     fun updateUserStatus(status:String){

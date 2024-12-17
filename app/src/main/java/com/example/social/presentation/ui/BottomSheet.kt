@@ -274,7 +274,7 @@ fun cmtPart(
             onDismissRequest = {onDismiss()},
             dragHandle = {
                 Column(
-                    modifier=Modifier.fillMaxWidth().background(Color.White),
+                    modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
@@ -307,17 +307,11 @@ fun listCmt(
         // Đặt LazyColumn để cuộn qua danh sách bình luận
         LazyColumn(modifier = Modifier
             .weight(1f) // Đảm bảo nó chiếm không gian còn lại
-            .background(Color.White).fillMaxWidth()) {
+            .background(MaterialTheme.colorScheme.background).fillMaxWidth()) {
             item {
                 infoCmt(comments, commentViewModel)
             }
         }
-        Divider(
-            color = colorResource(R.color.pink),
-            thickness = 1.dp,
-            modifier = Modifier.fillMaxWidth()
-        )
-        icon()
         Spacer(Modifier.height(4.dp))
         // TextField nằm bên dưới
         textField(posterName, postID, commentViewModel,userId,notificationViewModel) // Căn giữa dưới
@@ -384,6 +378,7 @@ fun textField(posterName: String, postID: String, commentViewModel: CommentViewM
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
     val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+    commentViewModel.getComments(postID)
     Row() {
         getHinhDaiDienCmt5(R.drawable.avt2)
         TextField(
@@ -413,7 +408,7 @@ fun textField(posterName: String, postID: String, commentViewModel: CommentViewM
                 .fillMaxWidth()
                 .background(Color.White),
             colors = TextFieldDefaults.textFieldColors(
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.background,
                 unfocusedIndicatorColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent
             ),
@@ -443,22 +438,5 @@ fun getHinhDaiDienCmt5(img2 : Int){
                 .size(41.dp)
                 .clip(RoundedCornerShape(35.dp))
         )
-    }
-}
-@Composable
-fun icon(){
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top=7.dp)){
-        items(10){ index->//neu lay cac phan tu trong data file thi items(icons.size)
-            val icon=icons[0]
-            Box(
-                modifier= Modifier
-                    .size(25.dp)
-                    .clip(RoundedCornerShape(50.dp))
-                    .background(Color.Green) // Nền màu trắng
-            ){
-                getHinhDaiDienCmt2(icon.iconRes)
-
-            }
-        }
     }
 }

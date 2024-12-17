@@ -6,20 +6,25 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -66,15 +71,27 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(colorResource(R.color.pink).copy(0.25f)),
-        verticalArrangement = Arrangement.Center,
+            .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.e4072a241a48a716fe59),
-            contentDescription = "User sign in"
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(colorResource(R.color.pinkBlur))
+                .height(325.dp)// Màu hồng
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.anhnenngoai2),
+                contentDescription = "User sign in",
+                modifier = Modifier.size(300.dp) // Kích thước tùy chỉnh
+                    .align(Alignment.Center) // Căn giữa trong Box
+            )
+        }
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = colorResource(R.color.pink)
         )
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(45.dp))
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(40.dp))
@@ -172,19 +189,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(20.dp, 0.dp)
                     )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(text = "Forgot", fontSize = 15.sp)
-                    TextButton(onClick = {}) {
-                        Text(
-                            text = "password",
-                            color = colorResource(R.color.text_color),
-                            fontSize = 15.sp
-                        )
-                    }
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
