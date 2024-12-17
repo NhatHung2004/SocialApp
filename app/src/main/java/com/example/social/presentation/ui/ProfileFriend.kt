@@ -172,12 +172,13 @@ fun ProfileFriendScreen(navController: NavController, uid:String, profileOfFrien
                             val postData = entry.value as? Map<*, *>
                             val imageUris = postData?.get("imageUris") as List<String>
                             val liked = postData["liked"] as List<String>
+                            val report = postData["report"]
                             val content = postData["content"]
                             val timestamp = postData["timestamp"] as Long
                             val id = postData["id"]
                             val userID = postData["userID"]
                             val post = Post(id.toString(), userID.toString(), content.toString(),
-                                timestamp, imageUris, liked)
+                                timestamp, imageUris, liked, report.toString())
                             val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
                             if(like) {
                                 FriendPost(post, imageAvatar, "$firstname $lastname", convertToTime(timestamp),

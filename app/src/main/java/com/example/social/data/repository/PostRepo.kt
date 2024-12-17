@@ -21,6 +21,14 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         docRef.set(mapOf<String, Any>(), SetOptions.merge())
     }
 
+    suspend fun countPost(userId: String): Int{
+        val posts: Map<String, Any>? = getPost(userId)
+        if (posts != null) {
+            return posts.size
+        }
+        return 0
+    }
+
     suspend fun getPost(userId: String): Map<String, Any>? {
         val docRef = firestore.collection("posts").document(userId)
         return try {
@@ -51,7 +59,7 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
                 newPostsUri.add(uri)
             }
             val postId = "${UUID.randomUUID()}_${System.currentTimeMillis()}"
-            val postModel = Post(postId, userID, content, timeStamp, newPostsUri, liked)
+            val postModel = Post(postId, userID, content, timeStamp, newPostsUri, liked, "false")
             postsRef.update(postId, postModel)
             commentRepo.createCommentDocument(postId)
             return postId
@@ -78,4 +86,6 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
             }
         }
     }
+
+
 }

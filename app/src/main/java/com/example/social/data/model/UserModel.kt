@@ -10,4 +10,6 @@ data class User(
     val avatar: String,
     val backgroundAvatar: String,
     val status:String,
+    val mode: String,
+    val deleted: String
 )

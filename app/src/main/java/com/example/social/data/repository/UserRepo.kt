@@ -57,8 +57,22 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         firestoreMethod.updateData("users", "email", email)
     }
 
+    //Hàm cho admin dùng
+    fun updateEmail(email: String, uid: String){
+        firestoreMethod.updateData("users","email",email, uid)
+    }
+
     fun updateUserStatus(status:String){
         firestoreMethod.updateData("users","status", status)
     }
 
+    //Hàm cho admin dùng
+    fun updateUserDeleted(deleted:String, uid: String){
+        firestoreMethod.updateData("users","deleted", deleted, uid)
+    }
+
+    //Hàm cho admin dùng
+    fun updateUserMode(mode:String, uid: String){
+        firestoreMethod.updateData("users","mode", mode, uid)
+    }
 }

@@ -51,8 +51,12 @@ class FirestoreMethod(private val firebaseAuth: FirebaseAuth, private val firest
         }
     }
 
-    fun updateData(collections: String, field: String, value: String) {
-        val docRef = firestore.collection(collections).document(Firebase.auth.currentUser!!.uid)
+    fun updateData(collections: String, field: String, value: String,uid:String?=null) {
+        val docRef = if (uid != null) {
+            firestore.collection(collections).document(uid)
+        } else {
+            firestore.collection(collections).document(firebaseAuth.currentUser!!.uid)
+        }
         docRef.update(field, value)
     }
 }

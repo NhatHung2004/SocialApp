@@ -38,9 +38,11 @@ class AuthViewModel: ViewModel() {
         _registrationState.value = state
     }
 
-    fun register(email: String, password: String, ho: String, ten: String, gioiTinh: String, date: String, avatar: String, backgroundAvatar: String,status:String) {
+    fun register(email: String, password: String, ho: String, ten: String, gioiTinh: String, date: String,
+                 avatar: String, backgroundAvatar: String,status:String, mode: String, deleted: String) {
         viewModelScope.launch {
-            val user = authRepository.register(email, password, ho, ten, gioiTinh, date, avatar, backgroundAvatar,status)
+            val user = authRepository.register(email, password, ho, ten, gioiTinh,
+                date, avatar, backgroundAvatar,status, mode, deleted)
             if (user != null) {
                 // Nếu đăng ký thành công, thông báo trạng thái và chuyển về trang đăng nhập
                 setRegistrationState(true)
@@ -61,5 +63,14 @@ class AuthViewModel: ViewModel() {
 
     fun setLogOutStatus(){
         userRepo.updateUserStatus("offline")
+    }
+
+    //Hàm cho amdin dùng
+    fun setDeleted(uid: String){
+        userRepo.updateUserDeleted("true", uid)
+    }
+    //hàm cho admin dùng
+    fun setMode(uid: String, mode: String){
+        userRepo.updateUserMode(mode, uid)
     }
 }

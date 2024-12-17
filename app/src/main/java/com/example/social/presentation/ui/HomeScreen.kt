@@ -168,6 +168,7 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                         val postData = entry.value as? Map<*, *>
                         val imageUris = postData?.get("imageUris") as List<String>
                         val liked = postData["liked"] as List<String>
+                        val report = postData["report"]
                         val content = postData["content"]
                         val timestamp = postData["timestamp"] as Long
                         val id = postData["id"]
@@ -189,7 +190,7 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                         }
                         val post = Post(
                             id.toString(), userIDPost.toString(), content.toString(),
-                            timestamp, imageUris, liked
+                            timestamp, imageUris, liked, report.toString()
                         )
                         val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
                         if (userIds.contains(userIDPost) || userIDPost == Firebase.auth.currentUser!!.uid) {

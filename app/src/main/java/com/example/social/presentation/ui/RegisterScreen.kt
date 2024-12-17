@@ -82,6 +82,8 @@ fun RegisterScreen(authViewModel: AuthViewModel = viewModel(), navController: Na
     val backgroundAvatar = R.drawable.background
 
     var status by remember { mutableStateOf("offline") }
+    var mode by remember { mutableStateOf("false") }
+    var deleted by remember { mutableStateOf("false") }
 
     var date by remember { mutableStateOf("") }
     val calendar = Calendar.getInstance()
@@ -492,7 +494,8 @@ fun RegisterScreen(authViewModel: AuthViewModel = viewModel(), navController: Na
                         onClick = {
                             authViewModel.register(emailInput, password, ho, ten, sex, date,
                                 "android.resource://com.example.social/drawable/$avatar",
-                                "android.resource://com.example.social/drawable/$backgroundAvatar",status)
+                                "android.resource://com.example.social/drawable/$backgroundAvatar",
+                                status, mode, deleted)
                         },
                         colors = ButtonColors(
                             containerColor = Color.White,
