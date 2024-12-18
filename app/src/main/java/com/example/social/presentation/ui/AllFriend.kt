@@ -193,7 +193,10 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
                 }
                 else{
                     userInfoList.forEach{userInfo ->
-                        if ((userInfo["lastname"] as? String)?.lowercase()?.contains(text.lowercase()) == true) {
+                        val firstname = userInfo["firstname"] as? String ?: ""
+                        val lastname = userInfo["lastname"] as? String ?: ""
+                        val fullName = "$firstname $lastname"
+                        if ((fullName as? String)?.lowercase()?.contains(text.lowercase()) == true) {
                             val friendData=userIds.find{it.uid==userInfo["uid"]}
                             if (friendData != null) {
                                 ListFriend(
@@ -249,7 +252,7 @@ fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests
                 )
                 Spacer(Modifier.height(11.dp))
                 if (!isPressed.value) {
-                    Text(text = "100 bạn chung")
+                    Text(text = "")
                 } else {
                     if (buttonBottomSheetState == false) {
                         Row(modifier = Modifier.fillMaxWidth()) {
@@ -290,7 +293,7 @@ fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests
                                     friendSendViewModel.deleteFriendSend(
                                         Firebase.auth.currentUser!!.uid, friend["uid"].toString()
                                     )
-                                    buttonBottomSheetState = true
+                                    buttonBottomSheetState = false
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = colorResource(R.color.white)
@@ -313,7 +316,7 @@ fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests
             Button(
                 onClick = { showBottomSheet.value = true },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.background
                 ),
             )
             {
@@ -322,7 +325,7 @@ fun ListFriend(friend: Map<String,Any>,userIdFriends:List<String>,userIdRequests
                     contentDescription = "option Icon",
                     modifier = Modifier
                         .size(24.dp),
-                    colorFilter = ColorFilter.tint(Color.Gray)
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
                 )
             }
         }

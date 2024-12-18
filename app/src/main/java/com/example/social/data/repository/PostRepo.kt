@@ -1,5 +1,6 @@
 package com.example.social.data.repository
 
+import android.util.Log
 import com.example.social.data.model.Post
 import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.Firebase
@@ -87,5 +88,45 @@ class PostRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
         }
     }
 
+    suspend fun updateReport(uid:String, postId:String, report:String){
+        val posts: Map<String, Any>? = getPost(uid)
+        val postsRef = firestore.collection("posts").document(uid)
+        if (posts != null) {
+            postsRef.update(
+                "$postId.report", report
+            )
+        }
+    }
 
+    suspend fun getReport(uid: String, postId: String): String? {
+        val posts: Map<String, Any>? = getPost(uid)
+        if (posts != null) {
+            val post = posts[postId] as? Map<String, Any>
+            return post?.get("report") as? String
+        }
+        return null // Trả về null nếu bài viết không tồn tại hoặc không có trường report
+    }
+
+    suspend fun deletePost(uid:String,postId:String){
+        val postsRef = firestore.collection("posts").document(uid)
+        val snapshot = postsRef.get().await()
+        val posts=snapshot.data
+
+        if(posts!=null && posts.containsKey(postId)){
+            postsRef.update(postId, FieldValue.delete())
+        }
+    }
+
+    suspend fun deletePostDocument(uid:String) {
+        try {
+            // Tham chiếu đến document có ID là userId
+            val documentRef = firestore.collection("posts").document(uid)
+
+            documentRef.delete().await()
+            Log.d("DeleteDocument", "Document đã được xóa")
+
+        } catch (e: Exception) {
+            Log.d("DeleteDocument", "Document không tồn tại")
+        }
+    }
 }

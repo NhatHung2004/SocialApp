@@ -24,4 +24,5 @@ object Routes {
     const val QUAN_LI_MOI_QH = "QuanLyMQH"
     const val THONG_KE = "ThongKe"
     const val CHINH_SUA = "ChinhSua"
+    const val POST_FOR_MODERATOR = "Post_For_Moderator"
 }

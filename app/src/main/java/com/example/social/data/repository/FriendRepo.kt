@@ -1,6 +1,7 @@
 package com.example.social.data.repository
 
 import android.net.Uri
+import android.util.Log
 import com.example.social.data.model.Friend
 import com.example.social.data.model.User
 import com.google.firebase.Firebase
@@ -78,6 +79,19 @@ class FriendRepo(private val firebaseAuth: FirebaseAuth, private val firestore: 
                     friendsRef.set(updatedFriends).await()
                 }
             }
+        }
+    }
+
+    suspend fun deleteDocument(child:String,userId1:String){
+        try {
+            // Tham chiếu đến document có ID là userId
+            val documentRef = firestore.collection(child).document(userId1)
+
+            documentRef.delete().await()
+            Log.d("DeleteDocument", "Document đã được xóa")
+
+        } catch (e: Exception) {
+            Log.d("DeleteDocument", "Document không tồn tại")
         }
     }
 }

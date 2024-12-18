@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -62,23 +63,21 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
             onDismissRequest = { onDismiss() },
             modifier=Modifier.height(200.dp),
         ) {
-            Column(modifier = Modifier.fillMaxSize().
-            background(color=MaterialTheme.colorScheme.background)) {
+            Column(modifier = Modifier.fillMaxSize()
+            ) {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(10.dp).height(125.dp)
-                        .background(MaterialTheme.colorScheme.background).border(
-                            BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                            shape = RoundedCornerShape(15.dp)
-                        )
                 ) {
-                    Column {
-                        Row(modifier = Modifier.fillMaxWidth().padding(2.dp),
+                    Column(modifier=Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+                        Row(modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Start) {
                             Button(
                                 onClick = {},
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.background
-                                ),
+                                )
+                                ,shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Box() {
                                     Image(
@@ -99,13 +98,6 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                                     style= TextStyle(fontSize = 20.sp,
                                         color = MaterialTheme.colorScheme.onBackground)
                                 )
-                                Spacer(Modifier.weight(1f))
-                                Image(
-                                    painter=painterResource(R.drawable.check),
-                                    contentDescription = "avatar",
-                                    modifier = Modifier.size(15.dp),
-                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background)
-                                )
                             }
                         }
                         Spacer(Modifier.height(10.dp))
@@ -122,20 +114,19 @@ fun SignOutPart(navController: NavController, profileViewModel: ProfileViewModel
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.background
                                 ),
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Box( modifier = Modifier
-                                    .height(75.dp).width(50.dp)
-                                    .clip(RoundedCornerShape(50.dp))
-                                    .background(MaterialTheme.colorScheme.background) ) {
+                                Row(  Modifier.fillMaxWidth()) {
                                     Image(
                                         painter = painterResource(R.drawable.exit),
                                         contentDescription = "avatar",
-                                        modifier = Modifier.size(25.dp).align(Alignment.Center)
+                                        modifier = Modifier.size(25.dp)
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(text = "Đăng xuất", style= TextStyle(fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground)
                                     )
                                 }
-                                Spacer(Modifier.width(10.dp))
-                                Text(text = "Đăng xuất", style= TextStyle(fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground)
-                                )
                             }
                         }
                     }

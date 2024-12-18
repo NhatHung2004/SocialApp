@@ -98,7 +98,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
     val isInAnyNotificationScreen = navBackStackEntryNotification?.destination?.route in listOf(Routes.POST_FOCUS + "/{userId}/{postId}",Routes.ALL_FRIEND,Routes.ALL_FRIEND_REQ)
 
     val navBackStackEntryProfile by navControllerProfile.currentBackStackEntryAsState()
-    val isInAnyProfileScreen = navBackStackEntryProfile?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.PROFILE_EDIT,Routes.SETTING)
+    val isInAnyProfileScreen = navBackStackEntryProfile?.destination?.route in listOf(Routes.ALL_FRIEND,Routes.PROFILE_EDIT,Routes.SETTING,Routes.POST_FOR_MODERATOR)
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState(initial = false)
     //bien check che do sang toi
     SocialTheme(darkTheme = isDarkTheme) {
@@ -194,7 +194,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                         composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
                                             val userId = backStackEntry.arguments?.getString("userId")
                                             if (userId != null) {
-                                                ProfileFriendScreen(navControllerHome, userId,profileOfFriendViewModel, postViewModel, friendViewModel,commentViewModel,notificationViewModel)
+                                                ProfileFriendScreen(navControllerHome, userId,profileViewModel, postViewModel, friendViewModel,commentViewModel,notificationViewModel)
                                             }
                                         }
                                         composable(Routes.ALL_FRIEND_OF_FRIEND + "/{userId}") { backStackEntry ->
@@ -251,7 +251,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                             val userId = backStackEntry.arguments?.getString("userId")
                                             val postId= backStackEntry.arguments?.getString("postId")
                                             if (userId != null && postId != null) {
-                                                PostFocus(postFocusViewModel,postId,userId,profileViewModel,commentViewModel,notificationViewModel)
+                                                PostFocus(postViewModel,postId,userId,profileViewModel,commentViewModel,notificationViewModel)
                                             }
                                         }
                                     }
@@ -276,7 +276,10 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                             ProfileEdit(navControllerProfile, profileViewModel)
                                         }
                                         composable(Routes.SETTING) {
-                                            Setting(themeViewModel)
+                                            Setting(themeViewModel,profileViewModel,navControllerProfile)
+                                        }
+                                        composable(Routes.POST_FOR_MODERATOR) {
+                                            PostForModerator(postViewModel,commentViewModel,notificationViewModel)
                                         }
                                     }
                                 }

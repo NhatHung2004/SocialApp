@@ -1,6 +1,7 @@
 package com.example.social.presentation.ui
 
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -52,18 +53,39 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.social.R
 import com.example.social.data.model.DataProviderAdmin
+import com.example.social.data.model.Friend
+import com.example.social.data.model.Post
+import com.example.social.domain.utils.convertToTime
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
+import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.FriendRequestViewModel
+import com.example.social.presentation.viewmodel.FriendSendViewModel
+import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
+import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LoginScreen(authViewModel: AuthViewModel, navController: NavController,
-                profileViewModel: ProfileViewModel = viewModel()) {
+fun LoginScreen(authViewModel: AuthViewModel, navController: NavController,postViewModel: PostViewModel= viewModel() ,
+                commentViewModel: CommentViewModel= viewModel(),friendViewModel: FriendViewModel= viewModel(),friendRequestViewModel: FriendRequestViewModel= viewModel()
+                ,friendSendViewModel: FriendSendViewModel= viewModel(),profileViewModel: ProfileViewModel= viewModel()
+){
     val currentUser = authViewModel.currentUser.collectAsState().value
+
+    val posts = postViewModel.posts.collectAsState().value
+    val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
+    val friends=friendViewModel.friends.collectAsState().value
+
+
+    val userIdRequests = mutableListOf<Friend>()
+    val userIds = mutableListOf<Friend>()
+
 
     var emailInput by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -83,31 +105,47 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController,
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(color = colorResource(R.color.pinkBlur)),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(colorResource(R.color.pinkBlur))
-                .height(325.dp)// Màu hồng
+                .height(250.dp)// Màu hồng
         ) {
             Image(
                 painter = painterResource(id = R.drawable.anhnenngoai2),
                 contentDescription = "User sign in",
-                modifier = Modifier.size(300.dp) // Kích thước tùy chỉnh
+                modifier = Modifier.size(250.dp) // Kích thước tùy chỉnh
                     .align(Alignment.Center) // Căn giữa trong Box
             )
         }
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = colorResource(R.color.pink)
-        )
-        Spacer(modifier = Modifier.height(45.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxSize().clip(
+                    RoundedCornerShape(
+                        topStart = 55.dp, // Bo góc ở góc trên trái
+                        topEnd = 55.dp,   // Bo góc ở góc trên phải
+                        bottomStart = 0.dp, // Không bo góc ở góc dưới trái
+                        bottomEnd = 0.dp    // Không bo góc ở góc dưới phải
+                    )
+                ).border(
+                    BorderStroke(1.dp, colorResource(R.color.pink)), // Viền 1dp màu hồng
+                    shape = RoundedCornerShape(
+                        topStart = 55.dp,
+                        topEnd = 55.dp,
+                        bottomStart = 0.dp,
+                        bottomEnd = 0.dp
+                    )
+                )
+                .background(colorResource(R.color.white))
+                , contentAlignment = Alignment.TopCenter
+        ) {
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(40.dp))
-                .background(Color.White)
+                .background(Color.White).padding(top=70.dp)
         ) {
             Column(
                 Modifier
@@ -193,6 +231,34 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController,
                             navController.navigate(Routes.NAR_DRAWER)
                         } else {
                             authViewModel.login(emailInput, password)
+                            if (currentUser != null) {
+                                postViewModel.getPosts(currentUser.uid)
+                                friendViewModel.getFriends(currentUser.uid)
+                                friendRequestViewModel.getFriendRequests(currentUser.uid)
+                            }
+                            if (friendRequests != null) {
+                                for ((index, entry) in friendRequests.entries.withIndex()) {
+                                    val friendRequestData = entry.value as? Map<*, *>
+                                    val userId = friendRequestData?.get("uid") as? String
+                                    val timestamp = friendRequestData?.get("timestamp") as Long
+                                    if (userId != null) {
+                                        userIdRequests.add(Friend(userId, timestamp))
+                                    }
+                                }
+                            }
+                            Log.d("FriendRequests", userIdRequests.map { it.uid }.toString())
+
+                            if (friends != null) {
+                                for ((index, entry) in friends.entries.withIndex()) {
+                                    val friendData = entry.value as? Map<*, *>
+                                    val userId = friendData?.get("uid") as? String
+                                    val timestamp = friendData?.get("timestamp") as Long
+                                    if (userId != null) {
+                                        userIds.add(Friend(userId, timestamp))
+                                    }
+                                }
+                            }
+                            Log.d("Friends", friends.toString())
                         }
                     },
                     colors = ButtonColors(
@@ -230,10 +296,12 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController,
             }
         }
     }
+    }
     // Nếu đăng nhập thành công, chuyển sang màn hình home
     LaunchedEffect(currentUser) {
         val firestore = FirebaseFirestore.getInstance()
         if (currentUser != null) {
+
             if (profileViewModel.checkDelete(currentUser.uid)) {
                 val credential = EmailAuthProvider.getCredential(emailInput, password)
 
@@ -245,7 +313,28 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController,
                             firestore.collection("users").document(userId).delete()
                                 .addOnCompleteListener { deleteDocTask ->
                                     if (deleteDocTask.isSuccessful) {
-                                        // Xoá tài khoản Firebase Auth
+                                        if (posts != null) {
+                                            for ((index, entry) in posts.entries.withIndex()) {
+                                                val postData = entry.value as? Map<*, *>
+                                                val id = postData?.get("id") as String
+                                                commentViewModel.deleteComment(id)
+                                            }
+                                        }
+                                        postViewModel.deletePostDocument(userId)
+
+                                       userIds.map { it.uid }.forEach { uid->
+                                           friendViewModel.deleteFriend(uid,userId)
+                                       }
+
+                                        userIdRequests.map { it.uid }.forEach { uid->
+                                            friendRequestViewModel.deleteFriendReq(uid,userId)
+                                        }
+
+                                        friendViewModel.deleteDocument(userId)
+                                        friendRequestViewModel.deleteDocument(userId)
+                                        friendSendViewModel.deleteDocument(userId)
+
+
                                         currentUser.delete()
                                             .addOnCompleteListener { deleteTask ->
                                                 if (deleteTask.isSuccessful) {

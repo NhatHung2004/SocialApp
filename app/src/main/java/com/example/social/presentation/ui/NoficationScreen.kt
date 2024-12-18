@@ -87,7 +87,7 @@ fun NotificationScreen(notificationViewModel: NotificationViewModel,navControlle
             )
         }
         item{
-            FriendNotification(notification,notificationViewModel,context, navController,notificationContents, friendViewModel , friendRequestViewModel , friendSendViewModel )
+            Notification(notification,notificationViewModel,context, navController,notificationContents, friendViewModel , friendRequestViewModel , friendSendViewModel )
         }
     }
 }
@@ -156,7 +156,7 @@ fun NotificationList(viewedNotifications: MutableMap<Int, Boolean>) {
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FriendNotification(nofInfo:Map<String,Any>?
+fun Notification(nofInfo:Map<String,Any>?
                        ,notificationViewModel: NotificationViewModel
                        ,context: Context
                        ,navController: NavController
@@ -172,7 +172,12 @@ fun FriendNotification(nofInfo:Map<String,Any>?
     val content2 = remember { mutableStateOf("") }
     var actionTaken by remember { mutableStateOf<String?>(null) }
     if(nofInfo!=null){
-        for ((index, entry) in nofInfo.entries.withIndex()) {
+        val nofInfoSorted = nofInfo.entries
+            .map { it.key to (it.value as Map<String, Any>) }
+            .sortedByDescending { (it.second["timestamp"] as Long) }
+            .toMap()
+
+        for ((index, entry) in nofInfoSorted.entries.withIndex()) {
             val nofData = entry.value as? Map<*, *>
             val uidUser = nofData?.get("uidUser") as? String
             val uidPost = nofData?.get("uidPost") as? String?

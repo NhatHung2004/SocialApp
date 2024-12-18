@@ -44,4 +44,10 @@ class FriendRequestViewModel: ViewModel()  {
             _userInfos.value = friendInfoList
         }
     }
+
+    fun deleteDocument(userId:String) {
+        viewModelScope.launch {
+            friendRepo.deleteDocument("friendReqs",userId)
+        }
+    }
 }
