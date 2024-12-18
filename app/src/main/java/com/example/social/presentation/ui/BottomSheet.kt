@@ -38,6 +38,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -177,10 +179,11 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>,time:Long, isP
                         friendViewModel.deleteFriend(userId.toString(),Firebase.auth.currentUser!!.uid)
                         isPressed.value=true
                     },
-                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp).height(120.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp).height(120.dp).clip(RectangleShape),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.background
                     )
+                    ,shape = RoundedCornerShape(4.dp),
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -262,8 +265,8 @@ fun cmtPart(
     posterName: String,
     postID: String,
     userId:String,
+    img2: String,
     commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?,
     notificationViewModel: NotificationViewModel
 ){
     val openBottomSheet by remember { mutableStateOf(true) }
@@ -289,7 +292,7 @@ fun cmtPart(
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
-            listCmt(posterName, postID,userId, commentViewModel, comments,notificationViewModel) // Gọi hàm hiển thị danh sách bình luận
+            listCmt(posterName, postID,userId, commentViewModel,notificationViewModel,img2) // Gọi hàm hiển thị danh sách bình luận
         }
     }
 }
@@ -299,30 +302,37 @@ fun listCmt(
     posterName: String,
     postID: String,
     userId: String,
-    commentViewModel: CommentViewModel,
-    comments: Map<String, Any>?
-    ,notificationViewModel: NotificationViewModel
+    commentViewModel: CommentViewModel
+    ,notificationViewModel: NotificationViewModel,img2: String
 ){
+    commentViewModel.getComments(postID)
+    val commentsState by commentViewModel.comments.collectAsState()
+
     Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
         // Đặt LazyColumn để cuộn qua danh sách bình luận
         LazyColumn(modifier = Modifier
             .weight(1f) // Đảm bảo nó chiếm không gian còn lại
             .background(MaterialTheme.colorScheme.background).fillMaxWidth()) {
             item {
-                infoCmt(comments, commentViewModel)
+                infoCmt(commentsState, commentViewModel, postID)
             }
         }
         Spacer(Modifier.height(4.dp))
         // TextField nằm bên dưới
-        textField(posterName, postID, commentViewModel,userId,notificationViewModel) // Căn giữa dưới
+        textField(posterName, postID, commentViewModel,userId,notificationViewModel,img2) // Căn giữa dưới
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel) {
+fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel,postID: String) {
     Spacer(Modifier.height(20.dp))
     if (comments != null) {
-        for ((index, entry) in comments.entries.withIndex()) {
+        val commentsSorted = comments.entries
+            .map { it.key to (it.value as Map<String, Any>) }
+            .sortedByDescending { (it.second["timestamp"] as Long) }
+            .toMap()
+
+        for ((index, entry) in commentsSorted.entries.withIndex()) {
             val cmtData = entry.value as? Map<*, *>
             val contentCmt = cmtData?.get("content") as? String
             val timestamp = cmtData?.get("timestamp") as Long
@@ -374,13 +384,13 @@ fun getHinhDaiDienCmt(img2 : String){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel,userId: String,notificationViewModel: NotificationViewModel){
+fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel,userId: String,notificationViewModel: NotificationViewModel,img2: String){
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
     val notificationContents =context.resources.getStringArray(R.array.notification_contents)
     commentViewModel.getComments(postID)
     Row() {
-        getHinhDaiDienCmt5(R.drawable.avt2)
+        getHinhDaiDienCmt5(img2)
         TextField(
             value = text,
             onValueChange = { newText -> text = newText },
@@ -416,22 +426,11 @@ fun textField(posterName: String, postID: String, commentViewModel: CommentViewM
     }
 }
 @Composable
-fun getHinhDaiDienCmt2(img2 : Int){
-    Image(
-        painter= painterResource(img2),
-        contentDescription="avatar",
-        contentScale = ContentScale.Crop,
-        modifier= Modifier
-            .size(25.dp)
-            .clip(RoundedCornerShape(35.dp))
-    )
-}
-@Composable
-fun getHinhDaiDienCmt5(img2 : Int){
+fun getHinhDaiDienCmt5(img2 :String){
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(8.dp)) // Thêm spacer ở đây để đẩy hình ảnh xuống
         Image(
-            painter = painterResource(img2),
+            painter = rememberAsyncImagePainter(img2),
             contentDescription = "avatar",
             contentScale = ContentScale.Crop,
             modifier = Modifier

@@ -20,14 +20,22 @@ class PostViewModel: ViewModel() {
     private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     private val _posts = MutableStateFlow<Map<String, Any>?>(null)
+    private val _postsFc = MutableStateFlow<Map<String, Any>?>(null)
     private val _allPosts = MutableStateFlow<List<Map<String, Any>>?>(null)
 
     val posts: StateFlow<Map<String, Any>?> get() = _posts
+    val postsFc: StateFlow<Map<String, Any>?> get() = _postsFc
     val allPosts: StateFlow<List<Map<String, Any>>?> get() = _allPosts
 
     fun getPosts(userID: String) {
         viewModelScope.launch {
             _posts.value = postRepo.getPost(userID)
+        }
+    }
+
+    fun getPostsFc(userID: String) {
+        viewModelScope.launch {
+            _postsFc.value = postRepo.getPost(userID)
         }
     }
 
@@ -77,8 +85,23 @@ class PostViewModel: ViewModel() {
         }
     }
 
-    suspend fun getReport(uid:String): String? {
-        return firestoreMethod.fetchInfoData("post", "report",uid)
+    suspend fun getReport(uid:String,postID: String): String? {
+        return postRepo.getReport(uid,postID)
     }
 
+    suspend fun updateReport(uid:String,postId:String, report:String){
+        postRepo.updateReport(uid,postId, report)
+    }
+
+    fun deletePost(uid: String,postID: String){
+        viewModelScope.launch {
+            postRepo.deletePost(uid,postID)
+        }
+    }
+
+    fun deletePostDocument(uid: String){
+        viewModelScope.launch {
+            postRepo.deletePostDocument(uid)
+        }
+    }
 }

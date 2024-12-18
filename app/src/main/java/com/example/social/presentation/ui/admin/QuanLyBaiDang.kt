@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +29,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +58,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
+import com.example.social.domain.utils.SetText
 import com.example.social.domain.utils.convertToTime
 import com.example.social.presentation.ui.GetHinhDaiDienNof
 import com.example.social.presentation.ui.SelfPost
@@ -150,7 +154,7 @@ fun QuanLyBaiDang(navController: NavController,
                             )
                             Spacer(Modifier.height(20.dp))
                             ItemQuanLyPost(post, avatar, "$first $last",
-                                convertToTime(timestamp))
+                                convertToTime(timestamp),postViewModel)
                         }
                     }
                 }
@@ -182,8 +186,18 @@ fun QuanLyBaiDang(navController: NavController,
 fun ItemQuanLyPost(post: Post,
                    imageAvatar: String?,
                    name: String,
-                   time: String,)
+                   time: String,postViewModel: PostViewModel)
 {
+    var report by rememberSaveable { mutableStateOf("") }
+    var newReport by rememberSaveable { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        val currentReport = postViewModel.getReport(post.userID,post.id).toString()
+        report = currentReport
+        newReport = if (currentReport == "true") "false" else "true"
+    }
+
     val showList = remember { mutableStateOf<Boolean>(false) }//trang thái button 3 chấm
     Box(modifier = Modifier.border(width = 1.dp,color = colorResource(R.color.pink)).padding(5.dp).fillMaxSize())
     {
@@ -203,7 +217,31 @@ fun ItemQuanLyPost(post: Post,
                 Spacer(modifier = Modifier.width(16.dp))
                 Column()
                 {
-                    Text(text = name, fontSize = 23.sp)
+                    Row(modifier=Modifier.fillMaxWidth()) {
+                        Text(text = name, fontSize = 23.sp)
+                        Spacer(Modifier.weight(1f))
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    // Gọi hàm updateReport bên trong coroutine
+                                    postViewModel.updateReport(post.userID,post.id,newReport)
+                                }
+                                report = newReport
+                                newReport = if (newReport == "true") "false" else "true"
+                            },
+                            modifier = Modifier.width(75.dp).height(25.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White
+                            ),
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.meatballsmenuc),
+                                contentDescription = "Back",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(25.dp).offset(x = 5.dp)
+                            )
+                        }
+                    }
                     Text(text = time, fontSize = 15.sp)
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -241,25 +279,6 @@ fun ItemQuanLyPost(post: Post,
                 }
             }
         }
-    }
-}
-@Composable
-fun SetText(content: String, isExpanded: Boolean, maxLenght: Int)
-{
-    if(content.length > maxLenght)
-    {
-        if(isExpanded)
-        {
-            Text(text = content)
-        }
-        else
-        {
-            Text(text = content.take(maxLenght) + "...xem thêm")
-        }
-    }
-    else
-    {
-        Text(text = content)
     }
 }
 @Composable

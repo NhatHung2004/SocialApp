@@ -39,6 +39,21 @@ class ProfileViewModel: ViewModel() {
             _imageBackgroundUri.value = userRepo.fetchUserInfo("backgroundAvatar").toString()
         }
     }
+    suspend fun getFirstname(uid: String): String? {
+        return firestoreMethod.fetchInfoData("users", "firstname", uid)
+    }
+
+    suspend fun getLastname(uid: String): String? {
+        return firestoreMethod.fetchInfoData("users", "lastname", uid)
+    }
+
+    suspend fun getAvatar(uid: String): String? {
+        return firestoreMethod.fetchInfoData("users", "avatar", uid)
+    }
+
+    suspend fun getBackground(uid: String): String? {
+        return firestoreMethod.fetchInfoData("users", "backgroundAvatar", uid)
+    }
 
     suspend fun checkDelete(uid: String):Boolean{
         return  if(firestoreMethod.fetchInfoData("users", "deleted",uid) == "false") false

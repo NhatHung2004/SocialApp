@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,7 +60,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
+import com.example.social.domain.utils.SetText
 import com.example.social.domain.utils.convertToTime
+import com.example.social.domain.utils.setText2
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
@@ -195,17 +198,22 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                     item {
                         Spacer(Modifier.height(10.dp))
                         if (posts != null) {
-                            for ((index, entry) in posts.entries.withIndex()) {
+                            val postsSorted = posts.entries
+                                .map { it.key to (it.value as Map<String, Any>) }
+                                .sortedByDescending { (it.second["timestamp"] as Long) }
+                                .toMap()
+
+                            for ((index, entry) in postsSorted.entries.withIndex()) {
                                 val postData = entry.value as? Map<*, *>
                                 val imageUris = postData?.get("imageUris") as List<String>
                                 val liked = postData["liked"] as List<String>
-                                val report = postData["report"]
+                                val report=postData["report"] as String
                                 val content = postData["content"]
                                 val timestamp = postData["timestamp"] as Long
                                 val id = postData["id"]
                                 val userID = postData["userID"]
                                 val post = Post(id.toString(), userID.toString(), content.toString(),
-                                    timestamp, imageUris, liked, report.toString())
+                                    timestamp, imageUris, liked,report)
                                 val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
                                 if(like) {
                                     SelfPost(post, imageAvatar, "$firstname $lastname", convertToTime(timestamp),
@@ -245,19 +253,19 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                     )
                     {
                         Row(){
-                            Text(text= "$firstname $lastname",color= colorResource(R.color.pink), fontSize = 20.sp)
+                            Text(text= "$firstname $lastname",color= colorResource(R.color.pink), fontSize = 15.sp)
                             Spacer(Modifier.width(10.dp))
                             if (isPressed) {
                                 Image(
                                     painter = painterResource(id = R.drawable.uparrow), // Thay đổi thành icon khi bấm
                                     contentDescription = "Icon Pressed",
-                                    modifier = Modifier.size(20.dp) // Kích thước của icon
+                                    modifier = Modifier.size(15.dp) // Kích thước của icon
                                 )
                             } else {
                                 Image(
                                     painter = painterResource(id = R.drawable.down), // Icon mặc định
                                     contentDescription = "Default Icon",
-                                    modifier = Modifier.size(20.dp) // Kích thước của icon
+                                    modifier = Modifier.size(15.dp) // Kích thước của icon
                                 )
                             }
                         }
@@ -369,7 +377,7 @@ fun Firstline5(
     }
 }
 @Composable
-fun FriendLine(navController: NavController,friend: Map<String,Any>){
+fun FriendLine(navController: NavController, friend: Map<String,Any>){
     val name = "${friend["firstname"]} ${friend["lastname"]}"
     val avatarUri = Uri.parse(friend["avatar"].toString())
     Column(
@@ -475,12 +483,24 @@ fun SelfPost(
             )
             Spacer(Modifier.width(10.dp))
             Column {
-                Text(
-                    text = name,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-                )
-                Text(text = time)
+                Row (modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = setText2(name,15),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                    )
+                }
+                Row() {
+                    Text(text = time)
+                    Spacer(Modifier.width(50.dp))
+                    if(post.report=="true") {
+                        Image(
+                            painter = painterResource(R.drawable.reportpost),
+                            contentDescription = "option",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
         Row (modifier = Modifier.fillMaxWidth()){
@@ -577,7 +597,9 @@ fun SelfPost(
         }
     }
     if (showBottomSheet.value) {
-        cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,
-            commentViewModel, comments,notificationViewModel) // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+        if (imageAvatar != null) {
+            cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,imageAvatar,
+                commentViewModel, notificationViewModel)
+        } // Gọi hàm `cmtPart` và ẩn khi hoàn tất
     }
 }

@@ -1,5 +1,6 @@
 package com.example.social.presentation.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,15 +31,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.social.R
+import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
-fun Setting(themeViewModel: ThemeViewModel){
+fun Setting(themeViewModel: ThemeViewModel,profileViewModel: ProfileViewModel,navController: NavController){
+
+    val context= LocalContext.current
+
+    var mode by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        val mode1=profileViewModel.getMode(Firebase.auth.currentUser!!.uid)
+        mode = mode1.toString()
+    }
 
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState(initial = false)
 
@@ -119,13 +134,18 @@ fun Setting(themeViewModel: ThemeViewModel){
                     Switch(
                         checked = isModeratorEnabled,
                         onCheckedChange = { isChecked ->
-                            isModeratorEnabled = isChecked
+                            if(mode=="true") {
+                                isModeratorEnabled = isChecked
+                            }
+                            else{
+                                Toast.makeText(context, "Bạn không phải là người kiểm duyệt", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     )
                 }
                 if (isModeratorEnabled) {
                     Spacer(Modifier.height(10.dp))
-                    Button(onClick = {},modifier=Modifier.fillMaxWidth()
+                    Button(onClick = {navController.navigate(Routes.POST_FOR_MODERATOR)},modifier=Modifier.fillMaxWidth()
                     , colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.background
                         ),) {

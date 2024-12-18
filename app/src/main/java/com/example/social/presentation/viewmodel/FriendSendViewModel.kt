@@ -44,4 +44,10 @@ class FriendSendViewModel : ViewModel() {
             _userInfos.value = friendInfoList
         }
     }
+
+    fun deleteDocument(userId:String) {
+        viewModelScope.launch {
+            friendRepo.deleteDocument("friendSends",userId)
+        }
+    }
 }

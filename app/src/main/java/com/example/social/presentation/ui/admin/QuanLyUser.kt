@@ -441,6 +441,8 @@ fun UserOptionsMenu(uid: String, authViewModel: AuthViewModel,
         )
     }
 }
+
+
 @Composable
 fun EditEmailDialog(
     newEmail: String,

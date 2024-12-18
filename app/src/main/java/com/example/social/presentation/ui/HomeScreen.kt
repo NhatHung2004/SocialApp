@@ -74,7 +74,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                profileViewModel: ProfileViewModel, postViewModel: PostViewModel,
-               commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel
+               commentViewModel: CommentViewModel, notificationViewModel: NotificationViewModel
 ){
     val context= LocalContext.current
     val friends = friendViewModel.friends.collectAsState().value
@@ -97,7 +97,7 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
             val userId = friendData?.get("uid") as? String
             val timestamp = friendData?.get("timestamp") as Long
             if (userId != null) {
-                userIds.add(Friend(userId,timestamp))
+                userIds.add(Friend(userId, timestamp))
             }
         }
     }
@@ -163,8 +163,13 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
         item {
             Spacer(Modifier.height(10.dp))
             if (allPosts != null) {
-                for (posts in allPosts.reversed()) {
-                    for ((index, entry) in posts.entries.withIndex()) {
+                allPosts.forEach {post->
+                    val postsSorted = post.entries
+                        .map { it.key to (it.value as Map<String, Any>) }
+                        .sortedByDescending { (it.second["timestamp"] as Long) }
+                        .toMap()
+
+                    for ((index, entry) in postsSorted.entries.withIndex()) {
                         val postData = entry.value as? Map<*, *>
                         val imageUris = postData?.get("imageUris") as List<String>
                         val liked = postData["liked"] as List<String>
@@ -190,38 +195,39 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                         }
                         val post = Post(
                             id.toString(), userIDPost.toString(), content.toString(),
-                            timestamp, imageUris, liked, report.toString()
+                            timestamp, imageUris, liked,report.toString()
                         )
                         val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
-                        if (userIds.contains(userIDPost) || userIDPost == Firebase.auth.currentUser!!.uid) {
-                        if (like) {
-                            SelfPost(
-                                post,
-                                avatar,
-                                "$first $last",
-                                convertToTime(timestamp),
-                                commentViewModel,
-                                postViewModel,
-                                notificationViewModel,
-                                context,
-                                comments,
-                                true
-                            )
-                        } else {
-                            SelfPost(
-                                post,
-                                avatar,
-                                "$first $last",
-                                convertToTime(timestamp),
-                                commentViewModel,
-                                postViewModel,
-                                notificationViewModel,
-                                context,
-                                comments,
-                                false
-                            )
+                        if (userIds.map { it.uid }
+                                .contains(userIDPost) || userIDPost == Firebase.auth.currentUser!!.uid) {
+                            if (like) {
+                                SelfPost(
+                                    post,
+                                    avatar,
+                                    "$first $last",
+                                    convertToTime(timestamp),
+                                    commentViewModel,
+                                    postViewModel,
+                                    notificationViewModel,
+                                    context,
+                                    comments,
+                                    true
+                                )
+                            } else {
+                                SelfPost(
+                                    post,
+                                    avatar,
+                                    "$first $last",
+                                    convertToTime(timestamp),
+                                    commentViewModel,
+                                    postViewModel,
+                                    notificationViewModel,
+                                    context,
+                                    comments,
+                                    false
+                                )
+                            }
                         }
-                    }
 
                         Spacer(Modifier.height(10.dp))
                     }

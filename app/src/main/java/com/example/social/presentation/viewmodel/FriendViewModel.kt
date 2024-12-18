@@ -69,4 +69,11 @@ class FriendViewModel: ViewModel() {
         }
     }
 
+    fun deleteDocument(userId:String) {
+        viewModelScope.launch {
+            friendRepo.deleteDocument("friends",userId)
+        }
+    }
+
+
 }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 class CommentViewModel: ViewModel() {
     private val commentRepo = CommentRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val firestore = FirebaseFirestore.getInstance()
 
     private val _comments = MutableStateFlow<Map<String, Any>?>(null)
     val comments: StateFlow<Map<String, Any>?> get() = _comments
@@ -22,9 +23,15 @@ class CommentViewModel: ViewModel() {
             _comments.value = commentRepo.getComment(postId)
         }
     }
-
-    fun getComment(): Map<String, Any>? {
-        return _comments.value
+    fun getComment(postID: String) {
+        firestore.collection("comments")
+            .whereEqualTo("postID", postID)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    val commentsMap = snapshot.documents.associate { it.id to it.data!! }
+                    _comments.value = commentsMap
+                }
+            }
     }
 
     suspend fun getAvatar(uid: String): String? {
@@ -40,6 +47,13 @@ class CommentViewModel: ViewModel() {
     fun updateComment(child: String, content: String, postId: String) {
         viewModelScope.launch {
             commentRepo.updateComment(child, content, postId)
+            getComment(postId)
+        }
+    }
+
+    fun deleteComment(postId: String) {
+        viewModelScope.launch {
+            commentRepo.deleteComment(postId)
         }
     }
 }

@@ -15,6 +15,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.social.data.repository.UserRepo
 import com.example.social.presentation.navigation.NavigationGraph
 import com.example.social.presentation.viewmodel.AuthViewModel
+import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.FriendRequestViewModel
+import com.example.social.presentation.viewmodel.FriendSendViewModel
+import com.example.social.presentation.viewmodel.FriendViewModel
+import com.example.social.presentation.viewmodel.PostViewModel
+import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
 import com.example.social.ui.theme.SocialTheme
 import com.google.firebase.auth.FirebaseAuth
@@ -31,7 +37,7 @@ class MainActivity : ComponentActivity() {
             SocialTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val authViewModel: AuthViewModel = viewModel()
-                    NavigationGraph(authViewModel, themeViewModel, Modifier.padding(innerPadding))
+                    NavigationGraph(authViewModel, themeViewModel,Modifier.padding(innerPadding))
                 }
             }
         }

@@ -7,12 +7,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -51,53 +55,32 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
+import com.example.social.domain.utils.convertToTime
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.NotificationViewModel
-import com.example.social.presentation.viewmodel.PostFocusViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
-import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, profileViewModel: ProfileViewModel, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
-    commentViewModel.getComments(postId)
-    postViewModel.getPostsFc(userId)
-    val comments = commentViewModel.comments.collectAsState().value
+fun PostForModerator(postViewModel: PostViewModel,commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
+
     val context= LocalContext.current
-    var name by remember { mutableStateOf("") }
-    var avatar by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
-//        name= postFocusViewModel.getFirstname(userId).toString()+" "+postFocusViewModel.getLastname(userId).toString()
-//        avatar = postFocusViewModel.getAvatar(userId).toString()
-        val f = postViewModel.getFirstname(userId)
-        val l = postViewModel.getLastname(userId)
-        val n = "$f $l"
-        val a = postViewModel.getAvatar(userId)
-        name = n
-        if (a != null) {
-            avatar = a
-        }
-    }
-//    postFocusViewModel.getPosts(userId)
+    postViewModel.getAllPosts()
+    val allPosts = postViewModel.allPosts.collectAsState().value
 
-    commentViewModel.getComments(postId)
-    val posts = postViewModel.postsFc.collectAsState().value
+    val comments = commentViewModel.comments.collectAsState().value
 
-
-    LazyColumn(modifier = Modifier.fillMaxSize()){
+    LazyColumn (modifier = Modifier.fillMaxSize()){
         item{
-            Row(){
+            Row(modifier =  Modifier.fillMaxWidth()) {
                 Button(
                     onClick = {},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.background
                     ),
+
                 ) {
                     Image(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -106,72 +89,101 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, prof
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
                     )
                 }
-                Spacer(Modifier.width(50.dp))
-                Text(text=name, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground
-                    , modifier = Modifier.padding(top=5.dp), fontSize = 25.sp)
+                Spacer(Modifier.width(6.dp))
+                Text(text="Danh sách bài viết ",modifier=Modifier.offset(y=10.dp),fontSize = 19.sp, fontWeight = FontWeight.Bold)
             }
+            Spacer(Modifier.height(5.dp))
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(10.dp))
         }
         item{
-            if (posts != null) {
-                for ((index, entry) in posts.entries.withIndex()) {
-                    val postData = entry.value as? Map<*, *>
-                    val imageUris = postData?.get("imageUris") as List<String>
-                    val liked = postData["liked"] as List<String>
-                    val report = postData["report"]
-                    val content = postData["content"]
-                    val timestamp = postData["timestamp"] as Long
-                    val id = postData["id"]
-                    val userID = postData["userID"]
-                    val post = Post(id.toString(), userID.toString(), content.toString(),
-                        timestamp, imageUris, liked,report.toString())
-                    val currentDate = Instant.ofEpochMilli(post.timestamp)
-                        .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
-                        .toLocalDate()
-                    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                    val formattedDate = currentDate.format(formatter)
-                    val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
-                    if(id==postId){
-                        if(like) {
-                            FocusPost(
-                                post,
-                                avatar,
-                                name,
-                                formattedDate,
-                                commentViewModel,
-                                postViewModel,
-                                notificationViewModel, context,
-                                comments,
-                                true
-                            )
+            if (allPosts != null) {
+                allPosts.forEach {post->
+                    val postsSorted = post.entries
+                        .map { it.key to (it.value as Map<String, Any>) }
+                        .sortedByDescending { (it.second["timestamp"] as Long) }
+                        .toMap()
+
+                    for ((index, entry) in postsSorted.entries.withIndex()) {
+                        val postData = entry.value as? Map<*, *>
+                        val imageUris = postData?.get("imageUris") as List<String>
+                        val liked = postData["liked"] as List<String>
+                        val report = postData["report"]
+                        val content = postData["content"]
+                        val timestamp = postData["timestamp"] as Long
+                        val id = postData["id"]
+                        val userIDPost = postData["userID"]
+                        var first by remember { mutableStateOf("") }
+                        var last by remember { mutableStateOf("") }
+                        var avatar by remember { mutableStateOf("") }
+                        LaunchedEffect(Unit) {
+                            val firstnameResult = postViewModel.getFirstname(userIDPost.toString())
+                            if (firstnameResult != null)
+                                first = firstnameResult
+                            val lastnameResult = postViewModel.getLastname(userIDPost.toString())
+                            if (lastnameResult != null)
+                                last = lastnameResult
+                            val avatarResult = postViewModel.getAvatar(userIDPost.toString())
+                            if (avatarResult != null) {
+                                avatar = avatarResult
+                            }
                         }
-                        else{
-                            FocusPost(
-                                post,
-                                avatar,
-                                name,
-                                formattedDate,
-                                commentViewModel,
-                                postViewModel,
-                                notificationViewModel,
-                                context,
-                                comments,
-                                false
-                            )
-                        }
+                        val post = Post(
+                            id.toString(), userIDPost.toString(), content.toString(),
+                            timestamp, imageUris, liked,report.toString()
+                        )
+                        val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
+                            if (like) {
+                                PostForModeratorDisplay(
+                                    post,
+                                    avatar,
+                                    "$first $last",
+                                    convertToTime(timestamp),
+                                    commentViewModel,
+                                    postViewModel,
+                                    notificationViewModel,
+                                    context,
+                                    comments,
+                                    true
+                                )
+                            } else {
+                                PostForModeratorDisplay(
+                                    post,
+                                    avatar,
+                                    "$first $last",
+                                    convertToTime(timestamp),
+                                    commentViewModel,
+                                    postViewModel,
+                                    notificationViewModel,
+                                    context,
+                                    comments,
+                                    false
+                                )
+                            }
+
+                        Spacer(Modifier.height(10.dp))
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                     }
                 }
             }
         }
-        item{
-            Spacer(Modifier.height(5.dp))
-        }
     }
-
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FocusPost(
+fun PostForModeratorDisplay(
     post: Post,
     imageAvatar: String?,
     name: String,
@@ -187,7 +199,7 @@ fun FocusPost(
     var isToggled by remember { mutableStateOf(like) }
     val notificationContents =context.resources.getStringArray(R.array.notification_contents)
 
-    Column(modifier=Modifier.fillMaxSize()){
+    Column(modifier= Modifier.fillMaxSize()){
         Row(modifier= Modifier
             .fillMaxWidth().padding(start = 10.dp)){
             Image(
@@ -201,12 +213,46 @@ fun FocusPost(
             )
             Spacer(Modifier.width(10.dp))
             Column {
-                Text(
-                    text = name,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-                )
-                Text(text = time)
+                Row (modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = name,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                    )
+
+                    Spacer(Modifier.weight(1f))
+                    Button(
+                        onClick = { postViewModel.deletePost(post.userID,post.id)
+                                    commentViewModel.deleteComment(post.id)
+                                  },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(R.color.pink)
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier
+                            // Đặt kích thước cho nút
+                            .size(width = 75.dp, height = 32.dp)
+                            .clip(RectangleShape)
+
+                    ) {
+                            Text(
+                                text = "Xóa",
+                                color = colorResource(R.color.white),
+                                fontSize = 12.sp,
+                            )
+                    }
+                }
+                Row() {
+                    Text(text = time)
+                    Spacer(Modifier.width(50.dp))
+                    if(post.report=="true") {
+                        Image(
+                            painter = painterResource(R.drawable.reportpost),
+                            contentDescription = "option",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
         Row (modifier = Modifier.fillMaxWidth()){
@@ -251,7 +297,7 @@ fun FocusPost(
             Button(onClick = {
                 isToggled = !isToggled
                 postViewModel.updateLiked(post.id, post.userID, Firebase.auth.currentUser!!.uid)
-                if(post.userID!=Firebase.auth.currentUser!!.uid) {
+                if(post.userID!= Firebase.auth.currentUser!!.uid) {
                     notificationViewModel.updateNotificationToFireStore(
                         Firebase.auth.currentUser!!.uid,
                         post.id,
@@ -281,10 +327,10 @@ fun FocusPost(
                 }
                 Spacer(Modifier.width(11.dp))
                 if(isToggled){
-                    Text(text = "Thích",color=Color.Blue, fontWeight = FontWeight.Bold)
+                    Text(text = "Thích",color= Color.Blue, fontWeight = FontWeight.Bold)
                 }
                 else{
-                    Text(text = "Thích",color=MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+                    Text(text = "Thích",color= MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(Modifier.weight(1f))

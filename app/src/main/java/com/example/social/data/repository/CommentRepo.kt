@@ -1,5 +1,6 @@
 package com.example.social.data.repository
 
+import android.util.Log
 import com.example.social.data.model.Comment
 import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.auth.FirebaseAuth
@@ -43,6 +44,19 @@ class CommentRepo(private val firebaseAuth: FirebaseAuth, private val firestore:
             val newCmtId = "${child}${commentsCount.plus(1)}"
             val commentModel = Comment(userUID, content, timeStamp)
             commentsRef.update(newCmtId, commentModel)
+        }
+    }
+
+    suspend fun deleteComment(postId:String){
+        try {
+            // Tham chiếu đến document có ID là userId
+            val documentRef = firestore.collection("comments").document(postId)
+
+            documentRef.delete().await()
+            Log.d("DeleteDocument", "Document đã được xóa")
+
+        } catch (e: Exception) {
+            Log.d("DeleteDocument", "Document không tồn tại")
         }
     }
 }
