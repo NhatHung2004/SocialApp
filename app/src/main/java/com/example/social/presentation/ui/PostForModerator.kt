@@ -85,7 +85,7 @@ fun PostForModerator(navController: NavController,postViewModel: PostViewModel,c
                         containerColor = MaterialTheme.colorScheme.background
                     ),
 
-                ) {
+                    ) {
                     Image(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
@@ -140,33 +140,33 @@ fun PostForModerator(navController: NavController,postViewModel: PostViewModel,c
                             timestamp, imageUris, liked,report.toString()
                         )
                         val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
-                            if (like) {
-                                PostForModeratorDisplay(
-                                    post,
-                                    avatar,
-                                    "$first $last",
-                                    timestamp.toPrettyTime(),
-                                    commentViewModel,
-                                    postViewModel,
-                                    notificationViewModel,
-                                    context,
-                                    comments,
-                                    true
-                                )
-                            } else {
-                                PostForModeratorDisplay(
-                                    post,
-                                    avatar,
-                                    "$first $last",
-                                    timestamp.toPrettyTime(),
-                                    commentViewModel,
-                                    postViewModel,
-                                    notificationViewModel,
-                                    context,
-                                    comments,
-                                    false
-                                )
-                            }
+                        if (like) {
+                            PostForModeratorDisplay(
+                                post,
+                                avatar,
+                                "$first $last",
+                                timestamp.toPrettyTime(),
+                                commentViewModel,
+                                postViewModel,
+                                notificationViewModel,
+                                context,
+                                comments,
+                                true
+                            )
+                        } else {
+                            PostForModeratorDisplay(
+                                post,
+                                avatar,
+                                "$first $last",
+                                timestamp.toPrettyTime(),
+                                commentViewModel,
+                                postViewModel,
+                                notificationViewModel,
+                                context,
+                                comments,
+                                false
+                            )
+                        }
 
                         Spacer(Modifier.height(10.dp))
                         HorizontalDivider(
@@ -228,8 +228,8 @@ fun PostForModeratorDisplay(
                     Spacer(Modifier.weight(1f))
                     Button(
                         onClick = {
-                                    showDialog.value=true
-                                  },
+                            showDialog.value=true
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colorResource(R.color.pink)
                         ),
@@ -240,11 +240,11 @@ fun PostForModeratorDisplay(
                             .clip(RectangleShape)
 
                     ) {
-                            Text(
-                                text = "Xóa",
-                                color = colorResource(R.color.white),
-                                fontSize = 12.sp,
-                            )
+                        Text(
+                            text = "Xóa",
+                            color = colorResource(R.color.white),
+                            fontSize = 12.sp,
+                        )
                     }
                 }
                 Row() {

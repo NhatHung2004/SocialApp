@@ -36,6 +36,7 @@ fun ThongKe(navController: NavController, allUserViewModel: AllUserViewModel)
     val onlineCount = remember { mutableIntStateOf(0) }
     val offlineCount = remember { mutableIntStateOf(0) }
 
+    allUserViewModel.getAllUsersInfo()
     val users = allUserViewModel.allUsers.collectAsState().value
 
     fun isOnline(user: Map<String, Any>): Boolean {

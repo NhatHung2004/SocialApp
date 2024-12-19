@@ -69,8 +69,10 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
 ) {
 
     val context= LocalContext.current
+    allUserViewModel.getAllUsersInfo()
     val users = allUserViewModel.allUsers.collectAsState().value
     val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+
 
     val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
     friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)

@@ -103,6 +103,7 @@ fun QuanLyUser(navController: NavController,
     val showAddUserDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) } // Trạng thái cho danh sách mở rộng
+    allUserViewModel.getAllUsersInfo()
     val users by allUserViewModel.allUsers.collectAsState() // Danh sách tất cả user trên firebase
 
 
