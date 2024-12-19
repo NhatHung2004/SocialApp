@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,15 +27,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,30 +46,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
-import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
 import com.example.social.domain.utils.SetText
 import com.example.social.domain.utils.convertToTime
-import com.example.social.presentation.ui.GetHinhDaiDienNof
-import com.example.social.presentation.ui.SelfPost
-import com.example.social.presentation.viewmodel.AllUserViewModel
-import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
-import com.example.social.presentation.viewmodel.ProfileViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun QuanLyBaiDang(navController: NavController,
-                  allUserViewModel: AllUserViewModel,
                   postViewModel: PostViewModel)
 {
     var expanded by remember { mutableStateOf(false) }
@@ -84,16 +72,16 @@ fun QuanLyBaiDang(navController: NavController,
     // State để lưu số lượng người dùng
     val postIds = mutableListOf<String>()
     allPosts?.forEach{
-        post -> for ((index, entry) in post.entries.withIndex()) {
+            post -> for ((index, entry) in post.entries.withIndex()) {
         val friendData = entry.value as? Map<*, *>
         val postID = friendData?.get("id") as? String
         if (postID != null) {
             postIds.add(postID)
-            }
         }
     }
+    }
 
-    Column(modifier = Modifier.padding(top = 100.dp,start = 20.dp, end = 20.dp))
+    Column(modifier = Modifier.padding(top = 110.dp))
     {
         Box(modifier = Modifier.border(BorderStroke(1.dp, colorResource(id = R.color.pink)),
             RoundedCornerShape(15.dp)).
@@ -106,16 +94,16 @@ fun QuanLyBaiDang(navController: NavController,
                 Text(text = postIds.size.toString(), fontSize = 23.sp, color = Color.Black)
             }
         }
-        Spacer(modifier = Modifier.fillMaxWidth().height(30.dp))
-        Row()
+        Spacer(modifier = Modifier.height(30.dp))
+        Row(modifier = Modifier.padding(start = 15.dp))
         {
-            Text(text = "Danh sách bài đăng", fontSize = 23.sp, color = Color.Black)
+            Text(text = "Danh sách bài đăng", fontSize = 25.sp,
+                fontWeight = FontWeight.Bold,color = Color.Black)
         }
-        Spacer(modifier = Modifier.fillMaxWidth().height(15.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         LazyColumn() {
             item()
             {
-                Spacer(Modifier.height(10.dp))
                 if (allPosts != null)
                 {
                     for (posts in allPosts.reversed())
@@ -152,7 +140,7 @@ fun QuanLyBaiDang(navController: NavController,
                                 id.toString(), userIDPost.toString(), content.toString(),
                                 timestamp, imageUris, liked, report.toString()
                             )
-                            Spacer(Modifier.height(20.dp))
+                            Spacer(Modifier.height(10.dp))
                             ItemQuanLyPost(post, avatar, "$first $last",
                                 convertToTime(timestamp),postViewModel)
                         }
@@ -199,9 +187,16 @@ fun ItemQuanLyPost(post: Post,
     }
 
     val showList = remember { mutableStateOf<Boolean>(false) }//trang thái button 3 chấm
-    Box(modifier = Modifier.border(width = 1.dp,color = colorResource(R.color.pink)).padding(5.dp).fillMaxSize())
+    Box(modifier = Modifier.fillMaxSize()
+        .height(520.dp)
+        .background(color = colorResource(R.color.lightGrey))
+        .border(
+            BorderStroke(1.dp, color = Color.Black), // Viền 1dp màu hồng
+
+        ),
+        contentAlignment = Alignment.Center)
     {
-        Column()
+        Column(modifier = Modifier.padding(15.dp))
         {
             Row()
             {
@@ -219,33 +214,19 @@ fun ItemQuanLyPost(post: Post,
                 {
                     Row(modifier=Modifier.fillMaxWidth()) {
                         Text(text = name, fontSize = 23.sp)
-                        Spacer(Modifier.weight(1f))
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    // Gọi hàm updateReport bên trong coroutine
-                                    postViewModel.updateReport(post.userID,post.id,newReport)
-                                }
-                                report = newReport
-                                newReport = if (newReport == "true") "false" else "true"
-                            },
-                            modifier = Modifier.width(75.dp).height(25.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White
-                            ),
-                        ) {
+                        if(post.report == "true"){
+                            Spacer(Modifier.width(30.dp))
                             Image(
-                                painter = painterResource(R.drawable.meatballsmenuc),
-                                contentDescription = "Back",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(25.dp).offset(x = 5.dp)
+                                painter = painterResource(R.drawable.reportpost),
+                                contentDescription = "option",
+                                modifier = Modifier.size(20.dp)
                             )
                         }
+                        Spacer(Modifier.weight(1f))
+                        PostOptionsMenu(post,postViewModel)
                     }
                     Text(text = time, fontSize = 15.sp)
                 }
-                Spacer(modifier = Modifier.weight(1f))
-//                PostOptionMenu(showList)
             }
             var isExpanded by remember { mutableStateOf(false) }
             // Kiểm tra chiều dài của nội dung để quyết định có hiển thị nút "Xem thêm" hay không
@@ -280,31 +261,22 @@ fun ItemQuanLyPost(post: Post,
             }
         }
     }
+    Spacer(Modifier.height(20.dp))
 }
 @Composable
-fun PostOptionsMenu(uid: String, authViewModel: AuthViewModel,
-                    profileViewModel: ProfileViewModel
+fun PostOptionsMenu(post: Post, postViewModel: PostViewModel
 ) {
 
     var expanded by remember { mutableStateOf(false) }
-    var showEmailDialog by remember { mutableStateOf(false) }
-    var newEmail by remember { mutableStateOf("") }
     var report by rememberSaveable { mutableStateOf("") }
     var newReport by rememberSaveable { mutableStateOf("") }
+    var text by remember { mutableStateOf("") }
     val context = LocalContext.current
-
-    // Gọi hàm lấy vai trò trong LaunchedEffect khi khởi chạy
-    LaunchedEffect(Unit) {
-        val currentReport = profileViewModel.getMode(uid).toString()
-        report = currentReport
-        newReport = if (currentReport == "true") "false" else "true"
-    }
-
-
+    val coroutineScope = rememberCoroutineScope()
 
     Box {
         androidx.compose.material.IconButton(onClick = { expanded = true }) {
-            androidx.compose.material.Icon(Icons.Default.MoreVert, contentDescription = "Options")
+            androidx.compose.material.Icon(Icons.Default.MoreHoriz, contentDescription = "Options")
         }
 
         androidx.compose.material.DropdownMenu(
@@ -313,53 +285,36 @@ fun PostOptionsMenu(uid: String, authViewModel: AuthViewModel,
         ) {
             androidx.compose.material.DropdownMenuItem(onClick = {
                 expanded = false
-                showEmailDialog = true
+                coroutineScope.launch {
+                    // Gọi hàm updateReport bên trong coroutine
+                    val currentReport = postViewModel.getReport(post.userID,post.id).toString()
+                    report = currentReport
+                    newReport = if (currentReport == "true") "false" else "true"
+                    text = report
+                    postViewModel.updateReport(post.userID,post.id,newReport)
+                }
+                report = newReport
+                newReport = if (newReport == "true") "false" else "true"
+                text = newReport
+                Toast.makeText(
+                    context,
+                    if(report == "true") "Đã gỡ cờ thành công" else "Đã gắn cờ thành công",
+                    Toast.LENGTH_SHORT
+                ).show()
             }) {
-                androidx.compose.material.Text("Sửa email")
+                androidx.compose.material.Text(text = "Gắn/gỡ cờ")
             }
             androidx.compose.material.DropdownMenuItem(onClick = {
                 expanded = false
-                authViewModel.setDeleted(uid)
+                postViewModel.deletePost(post.userID,post.id)
                 Toast.makeText(
                     context,
                     "Đã xoá thành công",
                     Toast.LENGTH_SHORT
                 ).show()
             }) {
-                androidx.compose.material.Text("Xóa tài khoản")
-            }
-            androidx.compose.material.DropdownMenuItem(onClick = {
-                expanded = false
-                Toast.makeText(
-                    context,
-                    "Đã chuyển vai trò thành công",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }) {
-                androidx.compose.material.Text("Chuyển đổi vai trò")
+                androidx.compose.material.Text("Xóa")
             }
         }
     }
-
-    // Dialog chỉnh sửa email
-    if (showEmailDialog) {
-        EditEmailDialog(
-            newEmail = newEmail,
-            onEmailChange = { newEmail = it },
-            onConfirm = {
-                profileViewModel.updateEmail(newEmail, uid)
-                Toast.makeText(
-                    context,
-                    "Đã sửa thành công",
-                    Toast.LENGTH_SHORT
-                ).show()
-                showEmailDialog = false
-            },
-            onDismiss = { showEmailDialog = false }
-        )
-    }
 }
-
-
-
-

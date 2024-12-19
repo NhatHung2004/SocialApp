@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +26,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
+import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -76,7 +79,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.social.presentation.viewmodel.CommentViewModel
+import com.example.social.presentation.viewmodel.FriendRequestViewModel
+import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun QuanLyUser(navController: NavController,
@@ -160,8 +168,8 @@ fun QuanLyUser(navController: NavController,
                 key = { user -> user["uid"].toString() }) { user ->
 
                 // Gọi ItemQuanLyUser
-                ItemQuanLyUser(user, friendViewModel, postViewModel)
-                Spacer(modifier = Modifier.fillMaxWidth().height(15.dp))
+                ItemQuanLyUser(user,postViewModel)
+                Spacer(modifier = Modifier.height(15.dp))
             }
 
             item()//thanh xem tất cả hoặc ẩn bớt
@@ -192,17 +200,19 @@ fun QuanLyUser(navController: NavController,
 @Composable
 fun ItemQuanLyUser(
     user: Map<String, Any>,
-    friendViewModel: FriendViewModel,
     postViewModel: PostViewModel,
+    friendViewModel: FriendViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
-    profileViewModel: ProfileViewModel = viewModel()
+    profileViewModel: ProfileViewModel = viewModel(),
 ) {
     val uid = user["uid"].toString()
     val name = "${user["firstname"]} ${user["lastname"]}"
     val status = user["status"].toString()
     val avatarUri = Uri.parse(user["avatar"].toString())
     val mode = user["mode"].toString()
-    // Điều kiện thể hiện trạng thái
+
+    val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
+// Điều kiện thể hiện trạng thái
     val imageResource = if (status == "online") {
         R.drawable.online // Thay bằng ảnh khi điều kiện đúng
     } else {
@@ -218,14 +228,19 @@ fun ItemQuanLyUser(
         friendCount = friendViewModel.countFriend(uid)
     }
 
-    Box(modifier = Modifier.border(width = 1.dp,color = colorResource(R.color.pink)).padding(5.dp).fillMaxSize())
+    Box(modifier = Modifier
+        .clip(RoundedCornerShape(32.dp)) // Clip trước
+        .background(colorResource(R.color.lightGrey)) // Nền sau
+        .height(180.dp),
+        contentAlignment = Alignment.Center
+    )
     {
-        Column()
+        Column(modifier = Modifier.padding(start = 15.dp))
         {
             Row()
             {
                 GetHinhDaiDien(avatarUri)
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(25.dp))
                 Column()
                 {
                     Text(text = name,fontSize = 23.sp)
@@ -251,11 +266,10 @@ fun ItemQuanLyUser(
                 Spacer(modifier = Modifier.weight(1f))
                 UserOptionsMenu(uid,authViewModel,profileViewModel)
             }
-
+            Spacer(modifier = Modifier.height(10.dp))
             Row(modifier = Modifier.padding(top = 20.dp))
             {
-                Box(modifier = Modifier.border(width = 1.dp,color = colorResource(R.color.pink)).
-                padding(5.dp).
+                Box(modifier = Modifier.padding(5.dp).
                 clip(RoundedCornerShape(50.dp)))
                 {
                     Row()
@@ -263,10 +277,11 @@ fun ItemQuanLyUser(
                         Image(
                             painter = painterResource(id = imageResource), contentDescription = null,
                             modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(text = status)
                     }
                 }
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(120.dp))
                 Image(
                     painterResource(R.drawable.clock), contentDescription = null,
                     modifier = Modifier.size(40.dp).padding(top = 10.dp))
@@ -360,14 +375,18 @@ fun AddUserDialog(
 }
 @Composable
 fun UserOptionsMenu(uid: String, authViewModel: AuthViewModel,
-                    profileViewModel: ProfileViewModel) {
+                    profileViewModel: ProfileViewModel,) {
 
     var expanded by remember { mutableStateOf(false) }
-    var showEmailDialog by remember { mutableStateOf(false) }
-    var newEmail by remember { mutableStateOf("") }
+    var showDialog by remember { mutableStateOf(false) }
     var mode by rememberSaveable { mutableStateOf("") }
     var newMode by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
+    var first by remember { mutableStateOf("") }
+    var last by remember { mutableStateOf("") }
+
+    first = profileViewModel.firstname.collectAsState().value
+    last = profileViewModel.lastname.collectAsState().value
 
     // Gọi hàm lấy vai trò trong LaunchedEffect khi khởi chạy
     LaunchedEffect(Unit) {
@@ -377,10 +396,9 @@ fun UserOptionsMenu(uid: String, authViewModel: AuthViewModel,
     }
 
 
-
     Box {
         androidx.compose.material.IconButton(onClick = { expanded = true }) {
-            androidx.compose.material.Icon(Icons.Default.MoreVert, contentDescription = "Options")
+            androidx.compose.material.Icon(Icons.Default.MoreHoriz, contentDescription = "Options")
         }
 
         androidx.compose.material.DropdownMenu(
@@ -389,21 +407,20 @@ fun UserOptionsMenu(uid: String, authViewModel: AuthViewModel,
         ) {
             androidx.compose.material.DropdownMenuItem(onClick = {
                 expanded = false
-                showEmailDialog = true
+                showDialog = true
             }) {
-                androidx.compose.material.Text("Sửa email")
+                androidx.compose.material.Text("Sửa họ tên bất hợp pháp")
             }
-            androidx.compose.material.DropdownMenuItem(onClick = {
-                expanded = false
-                authViewModel.setDeleted(uid)
-                Toast.makeText(
-                    context,
-                    "Đã xoá thành công",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }) {
-                androidx.compose.material.Text("Xóa tài khoản")
-            }
+//            androidx.compose.material.DropdownMenuItem(onClick = {
+//                expanded = false
+//                Toast.makeText(
+//                    context,
+//                    "Đã xoá thành công",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            }) {
+//                androidx.compose.material.Text("Xóa tài khoản")
+//            }
             androidx.compose.material.DropdownMenuItem(onClick = {
                 expanded = false
                 // Thay đổi vai trò trong ViewModel
@@ -423,61 +440,47 @@ fun UserOptionsMenu(uid: String, authViewModel: AuthViewModel,
         }
     }
 
-    // Dialog chỉnh sửa email
-    if (showEmailDialog) {
-        EditEmailDialog(
-            newEmail = newEmail,
-            onEmailChange = { newEmail = it },
-            onConfirm = {
-                profileViewModel.updateEmail(newEmail, uid)
-                Toast.makeText(
-                    context,
-                    "Đã sửa thành công",
-                    Toast.LENGTH_SHORT
-                ).show()
-                showEmailDialog = false
+    // Dialog sửa họ tên
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Sửa họ tên") },
+            text = {
+                Column {
+// TextField cho Họ
+                    TextField(
+                        value = first,
+                        onValueChange = { first = it },
+                        label = { Text("Họ") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp)) // Khoảng cách giữa 2 TextField
+                    // TextField cho Tên
+                    TextField(
+                        value = last,
+                        onValueChange = { last = it },
+                        label = { Text("Tên") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
-            onDismiss = { showEmailDialog = false }
+            confirmButton = {
+                TextButton(onClick = {
+                    profileViewModel.updateHoTen(last, first, uid)
+                    showDialog = false
+                }) {
+                    Text("Lưu")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Hủy")
+                }
+            }
         )
     }
 }
 
-
-@Composable
-fun EditEmailDialog(
-    newEmail: String,
-    onEmailChange: (String) -> Unit,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { androidx.compose.material.Text("Chỉnh sửa email") },
-        text = {
-            Column {
-                androidx.compose.material.OutlinedTextField(
-                    value = newEmail,
-                    onValueChange = onEmailChange,
-                    label = { androidx.compose.material.Text("Email mới") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            androidx.compose.material.Button(
-                onClick = onConfirm,
-            ) {
-                androidx.compose.material.Text("Lưu")
-            }
-        },
-        dismissButton = {
-            androidx.compose.material.Button(onClick = onDismiss) {
-                androidx.compose.material.Text("Hủy")
-            }
-        }
-    )
-}
 @Composable
 fun GetHinhDaiDien(img2 : Uri)
 {
@@ -486,8 +489,9 @@ fun GetHinhDaiDien(img2 : Uri)
         contentDescription="avatar",
         contentScale = ContentScale.Crop,
         modifier= Modifier
-            .size(60.dp)
+            .size(75.dp)
             .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, color = Color.Black,RoundedCornerShape(16.dp))
     )
 }
 suspend fun CountObject(type: String): Int {
@@ -500,13 +504,3 @@ suspend fun CountObject(type: String): Int {
         0 // Trả về 0 nếu có lỗi xảy ra
     }
 }
-
-
-
-
-
-
-
-
-
-

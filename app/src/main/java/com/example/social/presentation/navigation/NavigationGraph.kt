@@ -12,17 +12,7 @@ import com.example.social.presentation.ui.LoginScreen
 import com.example.social.presentation.ui.RegisterScreen
 import com.example.social.presentation.ui.TabScreen
 import com.example.social.presentation.ui.admin.NarDrawer
-import com.example.social.presentation.viewmodel.AllUserViewModel
 import com.example.social.presentation.viewmodel.AuthViewModel
-import com.example.social.presentation.viewmodel.CommentViewModel
-import com.example.social.presentation.viewmodel.FriendRequestViewModel
-import com.example.social.presentation.viewmodel.FriendSendViewModel
-import com.example.social.presentation.viewmodel.FriendViewModel
-import com.example.social.presentation.viewmodel.NotificationViewModel
-import com.example.social.presentation.viewmodel.PostFocusViewModel
-import com.example.social.presentation.viewmodel.PostViewModel
-import com.example.social.presentation.viewmodel.ProfileOfFriendViewModel
-import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)

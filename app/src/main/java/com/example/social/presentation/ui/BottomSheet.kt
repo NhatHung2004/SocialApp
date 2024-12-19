@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -58,13 +56,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
-import com.example.social.db.icons
-import com.example.social.db.userPostDataProvider
-import com.example.social.domain.utils.convertToTime
+import com.example.social.domain.utils.toPrettyTime
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
@@ -120,7 +115,7 @@ fun FriendReqToSendBottomSheet(navController: NavController,onDismiss:()->Unit){
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>,time:Long, isPressed: MutableState<Boolean>, friendViewModel: FriendViewModel, onDismiss:()->Unit){
+fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>, time:Long, isPressed: MutableState<Boolean>, friendViewModel: FriendViewModel, onDismiss:()->Unit){
     val name = "${friend["firstname"]} ${friend["lastname"]}"
     val avatarUri = Uri.parse(friend["avatar"].toString())
     val userId=friend["uid"]
@@ -156,7 +151,7 @@ fun FriendBottomSheet(friend:Map<String,Any>,userIds:List<String>,time:Long, isP
                                     , fontSize = 19.sp
                                     ,modifier=Modifier.padding(top=2.dp))
                                 Spacer(Modifier.height(5.dp))
-                                Text(text= convertToTime(time)
+                                Text(text= time.toPrettyTime()
                                     , color = MaterialTheme.colorScheme.onBackground
                                     , fontSize = 12.sp
                                     ,modifier=Modifier.padding(top=2.dp))
@@ -229,7 +224,7 @@ fun NotificationBottomSheet(notificationViewModel: NotificationViewModel, userId
             }
         ) {
             Button(onClick = {
-                    notificationViewModel.deletePostNotification(Firebase.auth.currentUser!!.uid,userId,postID)
+                notificationViewModel.deletePostNotification(Firebase.auth.currentUser!!.uid,userId,postID,contentNof)
                 Toast.makeText(context,"Đã xóa",Toast.LENGTH_SHORT).show()
                 onDismiss()
             },modifier=Modifier.fillMaxSize().padding(start = 0.dp)
@@ -303,7 +298,7 @@ fun listCmt(
     postID: String,
     userId: String,
     commentViewModel: CommentViewModel
-    ,notificationViewModel: NotificationViewModel,img2: String
+    ,notificationViewModel: NotificationViewModel, img2: String
 ){
     commentViewModel.getComments(postID)
     val commentsState by commentViewModel.comments.collectAsState()
@@ -314,17 +309,17 @@ fun listCmt(
             .weight(1f) // Đảm bảo nó chiếm không gian còn lại
             .background(MaterialTheme.colorScheme.background).fillMaxWidth()) {
             item {
-                infoCmt(commentsState, commentViewModel, postID)
+                infoCmt(commentsState, commentViewModel)
             }
         }
         Spacer(Modifier.height(4.dp))
         // TextField nằm bên dưới
-        textField(posterName, postID, commentViewModel,userId,notificationViewModel,img2) // Căn giữa dưới
+        textField(posterName, postID, commentViewModel, userId, notificationViewModel, img2) // Căn giữa dưới
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel,postID: String) {
+fun infoCmt(comments: Map<String, Any>?, commentViewModel: CommentViewModel) {
     Spacer(Modifier.height(20.dp))
     if (comments != null) {
         val commentsSorted = comments.entries
@@ -384,13 +379,19 @@ fun getHinhDaiDienCmt(img2 : String){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel,userId: String,notificationViewModel: NotificationViewModel,img2: String){
+fun textField(posterName: String, postID: String, commentViewModel: CommentViewModel, userId: String,notificationViewModel: NotificationViewModel, img2: String){
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
     val notificationContents =context.resources.getStringArray(R.array.notification_contents)
     commentViewModel.getComments(postID)
+
+    var avatar by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        val avatarResult = commentViewModel.getAvatar(Firebase.auth.currentUser!!.uid).toString()
+        avatar = avatarResult
+    }
     Row() {
-        getHinhDaiDienCmt5(img2)
+        getHinhDaiDienCmt5(avatar)
         TextField(
             value = text,
             onValueChange = { newText -> text = newText },
@@ -412,6 +413,7 @@ fun textField(posterName: String, postID: String, commentViewModel: CommentViewM
                         )
                     }
                     Toast.makeText(context,"Đã gửi",Toast.LENGTH_SHORT).show()
+                    text=""
                 }
             ),
             modifier = Modifier

@@ -78,7 +78,7 @@ class NotificationRepo(private val firebaseAuth: FirebaseAuth, private val fires
         }
     }
 
-    suspend fun deleteNotificationPost(userId1: String, userId2: String, postId: String){
+    suspend fun deleteNotificationPost(userId1: String, userId2: String, postId: String,content:String){
         val NofsRef = firestore.collection("notifications").document(userId1)
         val document = NofsRef.get().await()
 
@@ -90,7 +90,8 @@ class NotificationRepo(private val firebaseAuth: FirebaseAuth, private val fires
                     if (value is Map<*, *>) {
                         val uidUser = value["uidUser"] as? String
                         val currentPostId = value["uidPost"] as? String
-                        uidUser == userId2 && currentPostId == postId
+                        val content1=value["content"] as? String
+                        uidUser == userId2 && currentPostId == postId && content==content1
                     } else {
                         false
                     }

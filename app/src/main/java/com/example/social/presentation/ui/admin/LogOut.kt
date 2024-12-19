@@ -1,6 +1,8 @@
 package com.example.social.presentation.ui.admin
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -14,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,11 +29,13 @@ fun LogOut(navController: NavController)
 {
     val showDialog = remember { mutableStateOf(false) }
     NavigationDrawerItem(
-        label = { Text(text = "Đăng xuất", color = Color.Black, fontSize = 20.sp) },
+        label = { Text(text = "Đăng xuất", color = Color.Black,
+            fontSize = 27.sp,
+            fontWeight = FontWeight.Bold) },
         selected = false,
-        icon = {},
-        onClick = { showDialog.value = true },
-        modifier = Modifier.padding(start = 50.dp)
+        icon = {Image(painter = painterResource(R.drawable.exit),
+            contentDescription = null)},
+        onClick = { showDialog.value = true }
     )
     if(showDialog.value){
         YesNoDialog(

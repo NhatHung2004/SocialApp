@@ -8,7 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.PostRepo
 import com.example.social.domain.utils.FirestoreMethod
 import com.example.social.domain.utils.ImageProcess
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +20,7 @@ class PostViewModel: ViewModel() {
     private val imageProcess = ImageProcess(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val postRepo = PostRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val firestore = FirebaseFirestore.getInstance()
 
     private val _posts = MutableStateFlow<Map<String, Any>?>(null)
     private val _postsFc = MutableStateFlow<Map<String, Any>?>(null)
@@ -79,6 +82,17 @@ class PostViewModel: ViewModel() {
         }
     }
 
+    fun getPost(userID: String){
+        firestore.collection("posts")
+            .whereEqualTo("userID",userID )
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    val notiMap = snapshot.documents.associate { it.id to it.data!! }
+                        _posts.value = notiMap
+                }
+            }
+    }
+
     fun getAllPosts() {
         viewModelScope.launch {
             _allPosts.value = postRepo.getAllPost()
@@ -96,6 +110,8 @@ class PostViewModel: ViewModel() {
     fun deletePost(uid: String,postID: String){
         viewModelScope.launch {
             postRepo.deletePost(uid,postID)
+            getAllPosts()
+            getPost(Firebase.auth.currentUser!!.uid)
         }
     }
 

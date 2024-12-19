@@ -5,8 +5,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import com.example.social.R
-import com.example.social.db.userPostDataProvider
-
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -39,18 +37,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -58,27 +49,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.social.data.model.Friend
-import com.example.social.domain.utils.convertToTime
+import com.example.social.domain.utils.toPrettyTime
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.AllUserViewModel
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.NotificationViewModel
-import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
                  , friendRequestViewModel: FriendRequestViewModel
-                 , friendSendViewModel: FriendSendViewModel, profileViewModel: ProfileViewModel, allUserViewModel: AllUserViewModel
+                 , friendSendViewModel: FriendSendViewModel, allUserViewModel: AllUserViewModel
                  , notificationViewModel: NotificationViewModel
 ) {
 
@@ -155,16 +141,15 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
                 Button(
                     onClick = { navController.navigate(Routes.ALL_FRIEND_REQ)},
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = colorResource(R.color.white)
+                        containerColor = Color.LightGray
                     ),
                     modifier = Modifier
                         // Đặt kích thước cho nút
                         .border(
-                            BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                            shape = RoundedCornerShape(10.dp)
+                            BorderStroke(1.dp, color = colorResource(R.color.lightGrey)),
+                            shape = RoundedCornerShape(15.dp)
                         )
                         .size(width = 335.dp, height = 32.dp)
-
                 ) {
                     Text(text = "Xem tất cả", color = colorResource(R.color.pink))
                 }
@@ -194,7 +179,6 @@ fun FriendScreen(navController: NavController, friendViewModel: FriendViewModel
                 RecommendFriendTab(
                     user,
                     context,
-                    friendViewModel,
                     friendRequestViewModel,
                     friendSendViewModel,
                     notificationViewModel,
@@ -241,7 +225,6 @@ fun FirstLine(navController: NavController){
 }
 @Composable
 fun RecommendFriendTab(user: Map<String, Any>, context: Context
-                       , friendViewModel: FriendViewModel
                        , friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel
                        , notificationViewModel: NotificationViewModel
                        , notificationContents: Array<String>
@@ -366,7 +349,7 @@ fun FriendSendDisplay(friend: Map<String,Any>, userIds:List<String>,time:Long, n
             Row() {
                 Text(text = name)
                 Spacer(Modifier.weight(1f))
-                Text(text= convertToTime(time))
+                Text(text= time.toPrettyTime())
             }
             Spacer(Modifier.height(10.dp))
             Row() {
@@ -434,7 +417,7 @@ fun FriendReqDisplay(friend: Map<String,Any>, userIds:List<String>,time:Long, fr
                 Text(text = name,color=MaterialTheme.colorScheme.onBackground)
             }
             Spacer(Modifier.height(2.dp))
-            Text(text= convertToTime(time))
+            Text(text= time.toPrettyTime())
             Spacer(Modifier.height(2.dp))
             Row() {
                 Row() {

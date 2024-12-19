@@ -2,7 +2,6 @@ package com.example.social.presentation.ui
 
 import android.annotation.SuppressLint
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -52,7 +51,6 @@ import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.NotificationViewModel
-import com.example.social.presentation.viewmodel.PostFocusViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileOfFriendViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
@@ -74,7 +72,6 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
     val allUserViewModel: AllUserViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
     val profileOfFriendViewModel: ProfileOfFriendViewModel = viewModel()
-    val postFocusViewModel: PostFocusViewModel = viewModel()
 
     val scope = rememberCoroutineScope()//o một coroutine scope để quản lý các coroutine bên trong composable này.
     // Điều này thường được sử dụng để thực hiện các tác vụ bất đồng bộ như thay đổi trang trong HorizontalPager.
@@ -109,7 +106,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                     TopAppBar(
                         title = {
                             Text(
-                                text = "TÊN APP",
+                                text = "SOCIAL APP ",
                                 color = Color(0xFFFF4081), // Màu chữ hồng
                                 fontFamily = FontFamily.Cursive,
                                 fontWeight = FontWeight.ExtraBold
@@ -129,7 +126,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                     .padding(top = it.calculateTopPadding())//Đặt kích thước của Column để chiếm toàn bộ không gian
                 //có sẵn và thêm padding ở trên để tránh che khuất bởi TopAppBar.
             ) {
-                if (!isInAnyHomeScreen && !isInAnyFriendScreen&& !isInAnyNotificationScreen&& !isInAnyProfileScreen && selectedIndex.value!=HomeTabs.Status.ordinal && !isInAnyHomeScreen) {
+                if (!isInAnyHomeScreen && !isInAnyFriendScreen&& !isInAnyNotificationScreen&& !isInAnyProfileScreen && selectedIndex.value!=HomeTabs.Status.ordinal) {
                     TabRow(//Cấu trúc hiển thị các tab
                         selectedTabIndex = selectedIndex.value,//Chỉ định tab nào đang được chọn dựa trên giá trị selectedIndex.
                         modifier = Modifier.fillMaxWidth(),//Đặt kích thước của TabRow để chiếm toàn bộ chiều rộng.
@@ -173,7 +170,8 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                     state = pagerState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .weight(1f) // Sử dụng weight để chiếm không gian còn lại
+                        .weight(1f), // Sử dụng weight để chiếm không gian còn lại
+                    userScrollEnabled = !isInAnyFriendScreen && !isInAnyHomeScreen && !isInAnyProfileScreen && !isInAnyNotificationScreen
                 ) {pageIndex->
                     Box(//Chứa nội dung của trang, với nội dung được căn giữa.
                         modifier = Modifier.fillMaxWidth(),
@@ -194,7 +192,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                         composable(Routes.FRIEND_PROFILE + "/{userId}") { backStackEntry ->
                                             val userId = backStackEntry.arguments?.getString("userId")
                                             if (userId != null) {
-                                                ProfileFriendScreen(navControllerHome, userId,profileViewModel, postViewModel, friendViewModel,commentViewModel,notificationViewModel)
+                                                ProfileFriendScreen(navControllerHome, userId,profileViewModel, postViewModel, friendViewModel,friendRequestViewModel,commentViewModel,notificationViewModel)
                                             }
                                         }
                                         composable(Routes.ALL_FRIEND_OF_FRIEND + "/{userId}") { backStackEntry ->
@@ -214,7 +212,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                         modifier = Modifier.fillMaxSize()
                                     ) {
                                         composable(Routes.FRIEND) {
-                                            FriendScreen(navControllerFriend,friendViewModel,friendRequestViewModel, friendSendViewModel, profileViewModel, allUserViewModel,notificationViewModel)
+                                            FriendScreen(navControllerFriend,friendViewModel,friendRequestViewModel, friendSendViewModel,  allUserViewModel,notificationViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND_REQ) {
                                             AllFriendReq(navControllerFriend,friendViewModel, friendRequestViewModel, friendSendViewModel,notificationViewModel)
@@ -223,7 +221,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                             AllFriendSend(navControllerFriend,friendViewModel, friendRequestViewModel, friendSendViewModel,notificationViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND) {
-                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel, navControllerFriend)
                                         }
                                     }
                                 }
@@ -245,13 +243,13 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                             AllFriendReq(navControllerNotification,friendViewModel, friendRequestViewModel, friendSendViewModel,notificationViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND) {
-                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel, navControllerNotification)
                                         }
                                         composable(Routes.POST_FOCUS + "/{userId}/{postId}") { backStackEntry ->
                                             val userId = backStackEntry.arguments?.getString("userId")
                                             val postId= backStackEntry.arguments?.getString("postId")
                                             if (userId != null && postId != null) {
-                                                PostFocus(postViewModel,postId,userId,profileViewModel,commentViewModel,notificationViewModel)
+                                                PostFocus(postViewModel,postId,userId,commentViewModel,notificationViewModel)
                                             }
                                         }
                                     }
@@ -270,7 +268,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                                 friendViewModel, notificationViewModel,friendRequestViewModel,themeViewModel)
                                         }
                                         composable(Routes.ALL_FRIEND) {
-                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel)
+                                            AllFriend(friendViewModel, friendRequestViewModel, friendSendViewModel, navControllerProfile)
                                         }
                                         composable(Routes.PROFILE_EDIT) {
                                             ProfileEdit(navControllerProfile, profileViewModel)

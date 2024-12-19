@@ -1,7 +1,6 @@
 package com.example.social.presentation.ui
 
 import android.app.DatePickerDialog
-import android.net.Uri
 import android.widget.DatePicker
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -34,7 +33,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -81,9 +79,9 @@ fun RegisterScreen(authViewModel: AuthViewModel = viewModel(), navController: Na
     val avatar = if (sex == "Nam") R.drawable.nam else if (sex == "Nữ") R.drawable.nu else R.drawable.khac
     val backgroundAvatar = R.drawable.background
 
-    var status by remember { mutableStateOf("offline") }
-    var mode by remember { mutableStateOf("false") }
-    var deleted by remember { mutableStateOf("false") }
+    val status by remember { mutableStateOf("offline") }
+    val mode by remember { mutableStateOf("false") }
+    val deleted by remember { mutableStateOf("false") }
 
     var date by remember { mutableStateOf("") }
     val calendar = Calendar.getInstance()

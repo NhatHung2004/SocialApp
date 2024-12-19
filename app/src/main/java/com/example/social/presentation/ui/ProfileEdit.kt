@@ -292,7 +292,7 @@ fun TextFieldHo(ho: String, onHoChange: (String) ->Unit){
         onValueChange = { newHo -> onHoChange(newHo) },
         label = { Text("Họ") },  // Nhãn nổi phía trên
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), // Bo góc nhẹ
+        shape = RoundedCornerShape(8.dp), // Bo góc nhẹ
         colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
             focusedBorderColor = colorResource(R.color.pink),   // Màu viền khi được chọn
             unfocusedBorderColor = Color.Gray  // Màu viền khi không chọn
@@ -309,7 +309,7 @@ fun TextFieldTen(ten: String, onHoChange: (String) ->Unit){
         onValueChange = { newTen -> onHoChange(newTen) },
         label = { Text("Tên") },  // Nhãn nổi phía trên
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), // Bo góc nhẹ
+        shape = RoundedCornerShape(8.dp), // Bo góc nhẹ
         colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
             focusedBorderColor = colorResource(R.color.pink),   // Màu viền khi được chọn
             unfocusedBorderColor = Color.Gray  // Màu viền khi không chọn
@@ -326,7 +326,7 @@ fun TextFieldEmail(email: String, onEmailChange: (String) ->Unit){
         onValueChange = { newEmail -> onEmailChange(newEmail) },
         label = { Text("Tên") },  // Nhãn nổi phía trên
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), // Bo góc nhẹ
+        shape = RoundedCornerShape(8.dp), // Bo góc nhẹ
         colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
             focusedBorderColor = colorResource(R.color.pink),   // Màu viền khi được chọn
             unfocusedBorderColor = Color.Gray  // Màu viền khi không chọn

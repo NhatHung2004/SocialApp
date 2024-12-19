@@ -52,22 +52,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Friend
-import com.example.social.db.userPostDataProvider
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel, friendSendViewModel: FriendSendViewModel){
+fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRequestViewModel,
+              friendSendViewModel: FriendSendViewModel, navController: NavController){
     var text by remember { mutableStateOf("") }
     val context= LocalContext.current
     val friends=friendViewModel.friends.collectAsState().value
@@ -120,7 +117,9 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
     Column(modifier= Modifier.fillMaxSize()){
         Row(modifier =  Modifier.fillMaxWidth()) {
             Button(
-                onClick = {},
+                onClick = {
+                    navController.popBackStack()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
@@ -145,12 +144,11 @@ fun AllFriend(friendViewModel: FriendViewModel, friendRequestViewModel: FriendRe
             modifier = Modifier
                 .padding(horizontal = 10.dp)
                 // Đặt kích thước cho nút
-                .border(
-                    BorderStroke(1.dp, color = colorResource(R.color.pink)),
-                    shape = RoundedCornerShape(15.dp)
-                )
-                .fillMaxWidth().height(52.dp)
-                .background(MaterialTheme.colorScheme.background),
+//                .border(
+//                    BorderStroke(1.dp,),
+//                    shape = RoundedCornerShape(15.dp)
+//                )
+                .fillMaxWidth().height(52.dp),
             contentAlignment = Alignment.Center
         ) {
             TextFieldFriendSearch(text=text){
@@ -346,7 +344,7 @@ fun TextFieldFriendSearch( text: String, onTextChange: (String) -> Unit){
     TextField(
         value = text,
         onValueChange = { newText -> onTextChange(newText) },
-        placeholder = { Text("Tìm kiếm bạn bè ") }, // Sử dụng placeholder
+        placeholder = { Text("Tìm kiếm bạn bè ",color=Color.Black) }, // Sử dụng placeholder
         leadingIcon = {
             Image(
                 painter = painterResource(R.drawable.searching),
@@ -365,10 +363,10 @@ fun TextFieldFriendSearch( text: String, onTextChange: (String) -> Unit){
 //            }
 //        ),
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .background(Color.White),
         colors = TextFieldDefaults.textFieldColors(
-            containerColor = Color.White,
+            containerColor = Color.LightGray,
             unfocusedIndicatorColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent
         ),

@@ -47,73 +47,156 @@ fun QuanLyMQH(navController: NavController,
               friendViewModel: FriendViewModel)
 {
     var expanded by remember { mutableStateOf(false) } // Trạng thái cho danh sách mở rộng
+    var visibleUsers by remember { mutableStateOf(false) } // Trạng thái cho danh sách mở rộng
     val users = allUserViewModel.allUsers.collectAsState().value
-    LazyColumn(modifier = Modifier.padding(top = 100.dp, start = 20.dp, end = 20.dp, bottom = 40.dp))
-    {
-        item()
-        {
-            for (user in users)
-            {
-                val uid = user["uid"].toString()
-                var friends by remember { mutableStateOf<Map<String, Any>?>(null) }
-                LaunchedEffect(Unit) {
-                    val friend = friendViewModel.getFriend(uid)
-                    friends = friend
-                }
-                val name = "${user["firstname"]} ${user["lastname"]}"
-                val avatarUri = Uri.parse(user["avatar"].toString())
-                val countFriend = friends?.size.toString()
+//    LazyColumn(modifier = Modifier.padding(top = 100.dp, start = 20.dp, end = 20.dp, bottom = 40.dp))
+//    {
+//        item()
+//        {
+//            for (user in  users )
+//            {
+//                val uid = user["uid"].toString()
+//                var friends by remember { mutableStateOf<Map<String, Any>?>(null) }
+//                LaunchedEffect(Unit) {
+//                    val friend = friendViewModel.getFriend(uid)
+//                    friends = friend
+//                }
+//                val name = "${user["firstname"]} ${user["lastname"]}"
+//                val avatarUri = Uri.parse(user["avatar"].toString())
+//                val countFriend = friends?.size.toString()
+//
+//                Spacer(modifier = Modifier.fillMaxWidth().height(20.dp))
+//                Box(modifier = Modifier.border(width = 1.dp,
+//                    color = colorResource(R.color.pink)).padding(5.dp).fillMaxSize()
+//                    .clickable {
+//                        visibleUsers = !visibleUsers
+//                    })
+//                {
+//                    Column()
+//                    {
+//                        Row()
+//                        {
+//                            GetHinhDaiDien(avatarUri)
+//                            Spacer(modifier = Modifier.width(16.dp))
+//                            Column()
+//                            {
+//                                Text(text = name,fontSize = 23.sp)
+//                                Text(text = "Có $countFriend bạn bè ")
+//                            }
+//                        }
+//                    }
+//                }
+//                friends?.let { if(visibleUsers) ListFriends(it,friendViewModel) }
+//            }
+//        }
+//        item()//thanh xem tất cả hoặc ẩn bớt
+//        {
+//            Spacer(modifier = Modifier.fillMaxWidth().height(20.dp))
+//            Box(modifier = Modifier.clip(RoundedCornerShape(30.dp))
+//                .border(BorderStroke(1.dp, colorResource(R.color.pink)), RoundedCornerShape(15.dp))
+//                .padding(2.dp)
+//            )
+//            {
+//                Text(
+//                    text = if (expanded) "Ẩn bớt" else "Xem tất cả",
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(2.dp)
+//                        .clickable
+//                        {
+//                            expanded = !expanded // Khi nút được nhấn, mở rộng danh sách
+//                        }
+//                        .wrapContentSize(Alignment.Center) // Căn giữa văn bản
+//                )
+//            }
+//        }
+//    }
+    val expandedState = remember { mutableStateMapOf<String, Boolean>() }
+    LazyColumn(
+        modifier = Modifier.padding(top = 100.dp, start = 20.dp, end = 20.dp, bottom = 40.dp)
+    ) {
+        // Hiển thị từng user
+        items(users) { user ->
+            val uid = user["uid"].toString()
+            var friends by remember { mutableStateOf<Map<String, Any>?>(null) }
+            val name = "${user["firstname"]} ${user["lastname"]}"
+            val avatarUri = Uri.parse(user["avatar"].toString())
+            val isExpanded = expandedState[uid] ?: false // Lấy trạng thái mở rộng của user này
+            val countFriend = if(friends != null) friends!!.size else 0
 
-                Spacer(modifier = Modifier.fillMaxWidth().height(20.dp))
-                Box(modifier = Modifier.border(width = 1.dp,
-                    color = colorResource(R.color.pink)).padding(5.dp).fillMaxSize())
-                {
-                    Column()
-                    {
-                        Row()
-                        {
-                            GetHinhDaiDien(avatarUri)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column()
-                            {
-                                Text(text = name,fontSize = 23.sp)
+            LaunchedEffect(isExpanded) {
+                if (isExpanded && friends == null) {
+                    friends = friendViewModel.getFriend(uid)
+                }
+            }
+
+            Spacer(modifier = Modifier.fillMaxWidth().height(20.dp))
+            Box(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxSize()
+                    .clickable {
+                        // Chỉ thay đổi trạng thái của user hiện tại
+                        expandedState[uid] = !(expandedState[uid] ?: false)
+                    }
+            ) {
+                Column {
+                    Row {
+                        GetHinhDaiDien(avatarUri)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(text = name, fontSize = 23.sp)
+                            Spacer(modifier = Modifier.height(20.dp))
+                            if(friends != null){
                                 Text(text = "Có $countFriend bạn bè ")
                             }
                         }
                     }
+
+                    // Hiển thị danh sách bạn bè nếu trạng thái mở rộng của user này là true
+                    if (isExpanded) {
+                        friends?.let { ListFriends(it, friendViewModel) }
+                    }
                 }
-                friends?.let { ListFriends(it,friendViewModel) }
             }
         }
-        item()//thanh xem tất cả hoặc ẩn bớt
-        {
-            Spacer(modifier = Modifier.fillMaxWidth().height(20.dp))
-            Box(modifier = Modifier.clip(RoundedCornerShape(30.dp))
-                .border(BorderStroke(1.dp, colorResource(R.color.pink)), RoundedCornerShape(15.dp))
-                .padding(2.dp)
-            )
-            {
-                Text(
-                    text = if (expanded) "Ẩn bớt" else "Xem tất cả",
+
+        // Nút "Xem tất cả" hoặc "Ẩn bớt" (chỉ hiển thị nếu danh sách user > 3)
+        if (users.size > 3) {
+            item {
+                Spacer(modifier = Modifier.fillMaxWidth().height(20.dp))
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(30.dp))
+                        .border(BorderStroke(1.dp, colorResource(R.color.pink)), RoundedCornerShape(15.dp))
                         .padding(2.dp)
-                        .clickable
-                        {
-                            expanded = !expanded // Khi nút được nhấn, mở rộng danh sách
-                        }
-                        .wrapContentSize(Alignment.Center) // Căn giữa văn bản
-                )
+                ) {
+                    Text(
+                        text = if (expandedState.values.any { it }) "Ẩn bớt" else "Xem tất cả",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(2.dp)
+                            .clickable {
+                                // Mở rộng hoặc ẩn tất cả các user
+                                val expandAll = expandedState.values.any { it }
+                                expandedState.keys.forEach { uid ->
+                                    expandedState[uid] = !expandAll
+                                }
+                            }
+                            .wrapContentSize(Alignment.Center)
+                    )
+                }
             }
         }
     }
+
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ListFriends(friends: Map<String,Any>,friendViewModel: FriendViewModel)
 {
     Spacer(modifier = Modifier.fillMaxWidth().height(15.dp))
-    Column (modifier = Modifier.padding(start = 75.dp))
+    Column (modifier = Modifier.padding(start = 40.dp))
     {
         for ((index, entry) in friends.entries.withIndex()) {
             val friendData = entry.value as? Map<*, *>
@@ -143,20 +226,19 @@ fun ListFriends(friends: Map<String,Any>,friendViewModel: FriendViewModel)
 fun ItemFriend(firstName: String, lastName: String, avatar: String, time: Long)
 {
     val avatarUri = Uri.parse(avatar)
-    Box(modifier = Modifier.border(width = 1.dp,
-        color = colorResource(R.color.pink)).padding(5.dp).fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Row ()
         {
             GetHinhDaiDien(avatarUri)
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(text = firstName + lastName)
-                Text(text = convertToTime(time))
+                Spacer(Modifier.height(5.dp))
+                Row(modifier =Modifier.fillMaxWidth()){
+                    Text(text ="Vào lúc:" +" ")
+                    Text(text= convertToTime(time))
+                }
             }
         }
     }
 }
-
-
-
-
