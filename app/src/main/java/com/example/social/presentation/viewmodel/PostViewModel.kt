@@ -62,16 +62,18 @@ class PostViewModel: ViewModel() {
         return imageProcess.convertBitmapListToUriList(context, imageBitmaps)
     }
 
-    fun updateToFirestore(uris: MutableList<Uri>, text: String, context: Context,onPostCreated: (String?) -> Unit) {
+    fun updateToFirestore(uris: MutableList<Uri>?, text: String, context: Context,onPostCreated: (String?) -> Unit) {
         viewModelScope.launch {
-            if (uris.isNotEmpty()) {
-                val imageUris = mutableListOf<String>()
-                for (uri in uris) {
-                    val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
-                    imageUris.add(imagePath)
+            if (uris != null) {
+                if (uris.isNotEmpty()) {
+                    val imageUris = mutableListOf<String>()
+                    for (uri in uris) {
+                        val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
+                        imageUris.add(imagePath)
+                    }
+                    val postId=postRepo.updatePost( text, imageUris)
+                    onPostCreated(postId)
                 }
-                val postId=postRepo.updatePost( text, imageUris)
-                onPostCreated(postId)
             }
         }
     }

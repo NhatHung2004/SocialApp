@@ -163,6 +163,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
                         imageUris.clear()
                         text = ""
                     }
+
                     if (imageBitmapSelected.isNotEmpty()) {
                         val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmapSelected)
                         postViewModel.updateToFirestore(imgBitmapUris, text, context) { postId->

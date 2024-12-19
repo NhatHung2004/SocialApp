@@ -490,10 +490,15 @@ fun RegisterScreen(authViewModel: AuthViewModel = viewModel(), navController: Na
                 ) {
                     Button(
                         onClick = {
-                            authViewModel.register(emailInput, password, ho, ten, sex, date,
-                                "android.resource://com.example.social/drawable/$avatar",
-                                "android.resource://com.example.social/drawable/$backgroundAvatar",
-                                status, mode, deleted)
+                            if(emailInput != "" && password != "" && date != "" && sex != "" && confirmPassword == password && isValidEmail && isValidPassword && ho != "" && ten != "") {
+                                authViewModel.register(emailInput, password, ho, ten, sex, date,
+                                    "android.resource://com.example.social/drawable/$avatar",
+                                    "android.resource://com.example.social/drawable/$backgroundAvatar",
+                                    status, mode, deleted)
+                            }
+                            else{
+                                Toast.makeText(context,"Đăng ký thất bại", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         colors = ButtonColors(
                             containerColor = Color.White,

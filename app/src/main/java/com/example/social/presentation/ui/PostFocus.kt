@@ -2,11 +2,13 @@ package com.example.social.presentation.ui
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +49,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
@@ -63,7 +66,7 @@ import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
+fun PostFocus(navController: NavController,postViewModel: PostViewModel, postId: String, userId: String, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
     commentViewModel.getComments(postId)
     postViewModel.getPostsFc(userId)
     val comments = commentViewModel.comments.collectAsState().value
@@ -89,7 +92,7 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, comm
         item{
             Row(){
                 Button(
-                    onClick = {},
+                    onClick = {navController.popBackStack()},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.background
                     ),
@@ -133,6 +136,7 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, comm
                                 comments,
                                 true
                             )
+                            Log.i("idTest",id.toString())
                         }
                         else{
                             FocusPost(

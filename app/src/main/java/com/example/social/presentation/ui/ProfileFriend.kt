@@ -27,6 +27,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -128,6 +131,26 @@ fun ProfileFriendScreen(navController: NavController, uid: String, profileViewMo
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             LazyColumn() {
+                item{
+                    Row(){
+                        Button(
+                            onClick = {navController.popBackStack()},
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.background
+                            ),
+                        ) {
+                            Image(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier.size(24.dp),
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
+                            )
+                        }
+                        Spacer(Modifier.width(50.dp))
+                        Text(text= "$first $last", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground
+                            , modifier = Modifier.padding(top=5.dp), fontSize = 25.sp)
+                    }
+                }
                 item {
                     //, imageAvatar, imageBackground
                     FirstlineFriend5(
@@ -234,8 +257,8 @@ fun ProfileFriendScreen(navController: NavController, uid: String, profileViewMo
     }
 }
 
-@Composable
 
+@Composable
 fun FirstlineFriend5(
     navController: NavController, imageAvatar: String?, imageBackground: String?,
     firstname: String, lastname: String,posts: Map<String,Any>?,friends: Map<String,Any>?,friendRequests: Map<String,Any>?

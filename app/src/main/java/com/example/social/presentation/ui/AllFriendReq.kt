@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.social.R
 import com.example.social.data.model.Friend
+import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
@@ -75,7 +76,7 @@ fun AllFriendReq(navController: NavController
         Row(modifier =  Modifier.fillMaxWidth()) {
             Button(
                 onClick = {
-                    navController.popBackStack()
+                    navController.navigate(Routes.FRIEND)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.background

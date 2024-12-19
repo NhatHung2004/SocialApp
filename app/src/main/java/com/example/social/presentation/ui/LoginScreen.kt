@@ -134,7 +134,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController
                         value = emailInput,
                         onValueChange = {
                             emailInput = it
-                            isValid = android.util.Patterns.EMAIL_ADDRESS.matcher(emailInput).matches()
+                            isValid = it.contains("@gmail.com")
                         },
                         placeholder = { Text(text = "abc@gmail.com") },
                         leadingIcon = {

@@ -52,6 +52,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
@@ -67,7 +68,7 @@ import com.google.firebase.auth.auth
 @SuppressLint("SuspiciousIndentation")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PostForModerator(postViewModel: PostViewModel,commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
+fun PostForModerator(navController: NavController,postViewModel: PostViewModel,commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
 
     val context= LocalContext.current
     postViewModel.getAllPosts()
@@ -79,7 +80,7 @@ fun PostForModerator(postViewModel: PostViewModel,commentViewModel: CommentViewM
         item{
             Row(modifier =  Modifier.fillMaxWidth()) {
                 Button(
-                    onClick = {},
+                    onClick = {navController.popBackStack()},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.background
                     ),

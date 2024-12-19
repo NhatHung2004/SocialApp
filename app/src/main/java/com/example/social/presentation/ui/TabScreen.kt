@@ -249,7 +249,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                             val userId = backStackEntry.arguments?.getString("userId")
                                             val postId= backStackEntry.arguments?.getString("postId")
                                             if (userId != null && postId != null) {
-                                                PostFocus(postViewModel,postId,userId,commentViewModel,notificationViewModel)
+                                                PostFocus(navControllerNotification,postViewModel,postId,userId,commentViewModel,notificationViewModel)
                                             }
                                         }
                                     }
@@ -277,7 +277,7 @@ fun TabScreen(navController: NavController, authViewModel: AuthViewModel, themeV
                                             Setting(themeViewModel,profileViewModel,navControllerProfile)
                                         }
                                         composable(Routes.POST_FOR_MODERATOR) {
-                                            PostForModerator(postViewModel,commentViewModel,notificationViewModel)
+                                            PostForModerator(navControllerProfile,postViewModel,commentViewModel,notificationViewModel)
                                         }
                                     }
                                 }
