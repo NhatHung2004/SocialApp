@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Friend
-import com.example.social.db.friendData
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
 import com.example.social.presentation.viewmodel.FriendSendViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
@@ -59,10 +58,6 @@ import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.ProfileOfFriendViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import org.checkerframework.checker.units.qual.C
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -272,7 +267,6 @@ fun ListFriendOfFriend(friend: Map<String,Any>
 
     val name = "${friend["firstname"]} ${friend["lastname"]}"
     val avatarUri = Uri.parse(friend["avatar"].toString())
-    val uid = friend["uid"]
     Row(modifier = Modifier.fillMaxWidth()) {
         Image(
             painter = rememberAsyncImagePainter(avatarUri),

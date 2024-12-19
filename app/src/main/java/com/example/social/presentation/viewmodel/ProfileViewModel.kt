@@ -107,10 +107,12 @@ class ProfileViewModel: ViewModel() {
     }
 
     //Hàm cho admin dùng
-    fun updateEmail(email: String, uid: String){
+
+    fun updateHoTen(ho: String, ten :String,uid: String){
         viewModelScope.launch {
-            userRepo.updateEmail(email, uid)
-            _email.value = email
+            userRepo.updateHoTen(ho,ten, uid)
+            _firstname.value = ten
+            _lastname.value = ten
         }
     }
 }

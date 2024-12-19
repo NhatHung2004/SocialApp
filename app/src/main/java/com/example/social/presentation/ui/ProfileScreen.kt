@@ -3,13 +3,12 @@ package com.example.social.presentation.ui
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,7 +31,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -60,10 +59,10 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
-import com.example.social.domain.utils.SetText
-import com.example.social.domain.utils.convertToTime
 import com.example.social.domain.utils.setText2
+import com.example.social.domain.utils.toPrettyTime
 import com.example.social.presentation.navigation.Routes
+import com.example.social.presentation.ui.admin.YesNoDialog
 import com.example.social.presentation.viewmodel.AuthViewModel
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendRequestViewModel
@@ -74,10 +73,6 @@ import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.example.social.presentation.viewmodel.ThemeViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -104,6 +99,9 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
     val friends=friendViewModel.friends.collectAsState().value
     friendViewModel.getFriends(Firebase.auth.currentUser!!.uid)
+
+    val friendRequests=friendRequestViewModel.friendRequests.collectAsState().value
+    friendRequestViewModel.getFriendRequests(Firebase.auth.currentUser!!.uid)
 
     val imageBackground = profileViewModel.imageBackgroundUri.collectAsState().value
     val imageAvatar = profileViewModel.imageAvatarUri.collectAsState().value
@@ -159,7 +157,9 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             imageBackground,
                             firstname,
                             lastname,
-                            posts
+                            posts,
+                            friends,
+                            friendRequests
                         )
                     }
                     item {
@@ -180,15 +180,17 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                             Button(
                                 onClick = {navControllerTab.navigate(Routes.ALL_FRIEND)},
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorResource(R.color.white)
+                                    containerColor = Color.LightGray
                                 ),
+                                shape = RoundedCornerShape(4.dp),
                                 modifier = Modifier
                                     // Đặt kích thước cho nút
                                     .border(
-                                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
+                                        BorderStroke(1.dp, color = colorResource(R.color.lightGrey)),
                                         shape = RoundedCornerShape(10.dp)
                                     )
                                     .size(width = 335.dp, height = 32.dp)
+                                    .clip(RectangleShape)
                             ) {
                                 Text(text = "Xem tất cả", color = colorResource(R.color.pink))
                             }
@@ -216,11 +218,11 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
                                     timestamp, imageUris, liked,report)
                                 val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
                                 if(like) {
-                                    SelfPost(post, imageAvatar, "$firstname $lastname", convertToTime(timestamp),
-                                        commentViewModel, postViewModel,notificationViewModel,context, comments, true)
+                                    SelfPost(post, imageAvatar, "$firstname $lastname", timestamp,
+                                        commentViewModel, postViewModel,notificationViewModel,context, true)
                                 } else {
-                                    SelfPost(post, imageAvatar, "$firstname $lastname", convertToTime(timestamp),
-                                        commentViewModel, postViewModel,notificationViewModel,context, comments, false)
+                                    SelfPost(post, imageAvatar, "$firstname $lastname", timestamp,
+                                        commentViewModel, postViewModel,notificationViewModel,context, false)
                                 }
 
                             }
@@ -300,7 +302,8 @@ fun ProfileScreen(navController: NavController, navControllerTab: NavController,
 
 fun Firstline5(
     navController: NavController, imageAvatar: String?, imageBackground: String?,
-    firstname: String, lastname: String, posts: Map<String, Any>?
+    firstname: String, lastname: String, posts: Map<String, Any>?,friends:Map<String,Any>?,
+    friendRequests: Map<String, Any>?
 ){
     Column(modifier= Modifier.fillMaxWidth()){
         Box(modifier = Modifier
@@ -325,12 +328,16 @@ fun Firstline5(
                             }
                             Spacer(Modifier.width(20.dp))
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                if (friends != null) {
+                                    Text(text = friends.size.toString(),modifier=Modifier.padding(start = 25.dp))
+                                }
                                 Text(text = "Bạn bè")
                             }
                             Spacer(Modifier.width(20.dp))
                             Column {
-                                Text(text = "0",modifier=Modifier.padding(start = 25.dp))
+                                if (friendRequests != null) {
+                                    Text(text = friendRequests.size.toString(),modifier=Modifier.padding(start = 25.dp))
+                                }
                                 Text(text = "Theo dõi")
                             }
                         }
@@ -348,12 +355,12 @@ fun Firstline5(
             Button(
                 onClick = {navController.navigate(Routes.PROFILE_EDIT)},
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
+                    containerColor = Color.LightGray
                 ),
                 modifier = Modifier
                     // Đặt kích thước cho nút
                     .border(
-                        BorderStroke(1.dp, color = colorResource(R.color.pink)),
+                        BorderStroke(1.dp, color = colorResource(R.color.lightGrey)),
                         shape = RoundedCornerShape(15.dp)
                     )
                     .size(width = 200.dp, height = 32.dp)
@@ -457,17 +464,17 @@ fun SelfPost(
     post: Post,
     imageAvatar: String?,
     name: String,
-    time: String,
+    time: Long,
     commentViewModel: CommentViewModel,
     postViewModel: PostViewModel,
     notificationViewModel: NotificationViewModel,
     context: Context,
-    comments: Map<String, Any>?,
     like: Boolean
 ){
     val showBottomSheet = remember { mutableStateOf(false) }
     var isToggled by remember { mutableStateOf(like) }
     val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+    val showDialog= remember { mutableStateOf(false) }
 
     Column(modifier=Modifier.fillMaxSize()){
         Row(modifier= Modifier
@@ -489,9 +496,27 @@ fun SelfPost(
                         color = MaterialTheme.colorScheme.onBackground,
                         style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                     )
+                    Spacer(Modifier.weight(1f))
+                    if(post.userID==Firebase.auth.currentUser!!.uid){
+                        Button(
+                            onClick = {
+                                showDialog.value=true
+                            },
+                            modifier = Modifier.width(75.dp).height(25.dp),
+                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.background),
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.close),
+                                contentDescription = "Back",
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(25.dp).offset(x = 5.dp)
+                            )
+                        }
+                    }
                 }
                 Row() {
-                    Text(text = time)
+                    Text(text = time.toPrettyTime())
                     Spacer(Modifier.width(50.dp))
                     if(post.report=="true") {
                         Image(
@@ -545,7 +570,7 @@ fun SelfPost(
             Button(onClick = {
                 isToggled = !isToggled
                 postViewModel.updateLiked(post.id, post.userID, Firebase.auth.currentUser!!.uid)
-                if(post.userID!=Firebase.auth.currentUser!!.uid) {
+                if(post.userID!=Firebase.auth.currentUser!!.uid && isToggled) {
                     notificationViewModel.updateNotificationToFireStore(
                         Firebase.auth.currentUser!!.uid,
                         post.id,
@@ -601,5 +626,16 @@ fun SelfPost(
             cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,imageAvatar,
                 commentViewModel, notificationViewModel)
         } // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+    }
+    if(showDialog.value){
+        YesNoDialog(
+            showDialog = showDialog,
+            "Xóa bài viết",
+            "Bạn có muốn xóa không?",
+            onClickAction = ({
+                postViewModel.deletePost(post.userID,post.id)
+                commentViewModel.deleteComment(post.id)
+                Toast.makeText(context, "Xóa thành công bài viết của bạn", Toast.LENGTH_SHORT).show()
+            }))
     }
 }

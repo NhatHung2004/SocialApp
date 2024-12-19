@@ -26,13 +26,18 @@ class FriendRequestViewModel: ViewModel()  {
         }
     }
 
+    suspend fun getFriendRequest(userID: String): Map<String, Any>? {
+        // Lấy danh sách bạn bè từ repository
+        return friendRepo.getFriend(userID, "friendReqs")
+    }
+
     fun updateFriendRequestToFirestore(userId1:String, userId2:String) {
         viewModelScope.launch {
             friendRepo.updateFriend("friendReqs",userId1,userId2)
         }
     }
 
-    fun  deleteFriendReq(userId1:String,userId2:String){
+    fun  deleteFriendReq(userId1:String, userId2:String){
         viewModelScope.launch {
             friendRepo.deleteFriend("friendReqs",userId1,userId2)
         }

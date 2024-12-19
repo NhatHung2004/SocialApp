@@ -51,21 +51,19 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
+import com.example.social.domain.utils.toPrettyTime
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.NotificationViewModel
-import com.example.social.presentation.viewmodel.PostFocusViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
-import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, profileViewModel: ProfileViewModel, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
+fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
     commentViewModel.getComments(postId)
     postViewModel.getPostsFc(userId)
     val comments = commentViewModel.comments.collectAsState().value
@@ -73,8 +71,6 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, prof
     var name by remember { mutableStateOf("") }
     var avatar by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
-//        name= postFocusViewModel.getFirstname(userId).toString()+" "+postFocusViewModel.getLastname(userId).toString()
-//        avatar = postFocusViewModel.getAvatar(userId).toString()
         val f = postViewModel.getFirstname(userId)
         val l = postViewModel.getLastname(userId)
         val n = "$f $l"
@@ -84,7 +80,6 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, prof
             avatar = a
         }
     }
-//    postFocusViewModel.getPosts(userId)
 
     commentViewModel.getComments(postId)
     val posts = postViewModel.postsFc.collectAsState().value
@@ -124,11 +119,6 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, prof
                     val userID = postData["userID"]
                     val post = Post(id.toString(), userID.toString(), content.toString(),
                         timestamp, imageUris, liked,report.toString())
-                    val currentDate = Instant.ofEpochMilli(post.timestamp)
-                        .atZone(ZoneId.systemDefault()) // Lấy múi giờ hệ thống
-                        .toLocalDate()
-                    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                    val formattedDate = currentDate.format(formatter)
                     val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
                     if(id==postId){
                         if(like) {
@@ -136,7 +126,7 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, prof
                                 post,
                                 avatar,
                                 name,
-                                formattedDate,
+                                timestamp,
                                 commentViewModel,
                                 postViewModel,
                                 notificationViewModel, context,
@@ -149,7 +139,7 @@ fun PostFocus(postViewModel: PostViewModel, postId: String, userId: String, prof
                                 post,
                                 avatar,
                                 name,
-                                formattedDate,
+                                timestamp,
                                 commentViewModel,
                                 postViewModel,
                                 notificationViewModel,
@@ -175,7 +165,7 @@ fun FocusPost(
     post: Post,
     imageAvatar: String?,
     name: String,
-    time: String,
+    time: Long,
     commentViewModel: CommentViewModel,
     postViewModel: PostViewModel,
     notificationViewModel: NotificationViewModel,
@@ -206,7 +196,7 @@ fun FocusPost(
                     color = MaterialTheme.colorScheme.onBackground,
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                 )
-                Text(text = time)
+                Text(text = time.toPrettyTime())
             }
         }
         Row (modifier = Modifier.fillMaxWidth()){
@@ -251,7 +241,7 @@ fun FocusPost(
             Button(onClick = {
                 isToggled = !isToggled
                 postViewModel.updateLiked(post.id, post.userID, Firebase.auth.currentUser!!.uid)
-                if(post.userID!=Firebase.auth.currentUser!!.uid) {
+                if(post.userID!=Firebase.auth.currentUser!!.uid && isToggled) {
                     notificationViewModel.updateNotificationToFireStore(
                         Firebase.auth.currentUser!!.uid,
                         post.id,

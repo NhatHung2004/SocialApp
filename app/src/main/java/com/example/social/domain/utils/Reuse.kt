@@ -4,10 +4,17 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import org.ocpsoft.prettytime.PrettyTime
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
+
+fun Long.toPrettyTime(): String {
+    val prettyTime = PrettyTime(Locale.getDefault()) // Sử dụng ngôn ngữ hệ thống
+    return prettyTime.format(Date(this))
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

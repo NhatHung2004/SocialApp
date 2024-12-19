@@ -2,17 +2,14 @@ package com.example.social.presentation.ui
 
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,9 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,18 +39,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.data.model.Friend
 import com.example.social.data.model.Post
-import com.example.social.db.userAvatars
-import com.example.social.db.userPostDataProvider
-import com.example.social.db.userPosts
-import com.example.social.domain.utils.convertToTime
 import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.FriendViewModel
@@ -65,10 +53,6 @@ import com.example.social.presentation.viewmodel.PostViewModel
 import com.example.social.presentation.viewmodel.ProfileViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -169,68 +153,66 @@ fun HomeScreen(navController: NavController, friendViewModel: FriendViewModel,
                         .sortedByDescending { (it.second["timestamp"] as Long) }
                         .toMap()
 
-                    for ((index, entry) in postsSorted.entries.withIndex()) {
-                        val postData = entry.value as? Map<*, *>
-                        val imageUris = postData?.get("imageUris") as List<String>
-                        val liked = postData["liked"] as List<String>
-                        val report = postData["report"]
-                        val content = postData["content"]
-                        val timestamp = postData["timestamp"] as Long
-                        val id = postData["id"]
-                        val userIDPost = postData["userID"]
-                        var first by remember { mutableStateOf("") }
-                        var last by remember { mutableStateOf("") }
-                        var avatar by remember { mutableStateOf("") }
-                        LaunchedEffect(Unit) {
-                            val firstnameResult = postViewModel.getFirstname(userIDPost.toString())
-                            if (firstnameResult != null)
-                                first = firstnameResult
-                            val lastnameResult = postViewModel.getLastname(userIDPost.toString())
-                            if (lastnameResult != null)
-                                last = lastnameResult
-                            val avatarResult = postViewModel.getAvatar(userIDPost.toString())
-                            if (avatarResult != null) {
-                                avatar = avatarResult
-                            }
+                for ((index, entry) in postsSorted.entries.withIndex()) {
+                    val postData = entry.value as? Map<*, *>
+                    val imageUris = postData?.get("imageUris") as List<String>
+                    val liked = postData["liked"] as List<String>
+                    val report = postData["report"]
+                    val content = postData["content"]
+                    val timestamp = postData["timestamp"] as Long
+                    val id = postData["id"]
+                    val userIDPost = postData["userID"]
+                    var first by remember { mutableStateOf("") }
+                    var last by remember { mutableStateOf("") }
+                    var avatar by remember { mutableStateOf("") }
+                    LaunchedEffect(Unit) {
+                        val firstnameResult = postViewModel.getFirstname(userIDPost.toString())
+                        if (firstnameResult != null)
+                            first = firstnameResult
+                        val lastnameResult = postViewModel.getLastname(userIDPost.toString())
+                        if (lastnameResult != null)
+                            last = lastnameResult
+                        val avatarResult = postViewModel.getAvatar(userIDPost.toString())
+                        if (avatarResult != null) {
+                            avatar = avatarResult
                         }
-                        val post = Post(
-                            id.toString(), userIDPost.toString(), content.toString(),
-                            timestamp, imageUris, liked,report.toString()
-                        )
-                        val like = post.liked.contains(Firebase.auth.currentUser!!.uid)
-                        if (userIds.map { it.uid }
-                                .contains(userIDPost) || userIDPost == Firebase.auth.currentUser!!.uid) {
-                            if (like) {
-                                SelfPost(
-                                    post,
-                                    avatar,
-                                    "$first $last",
-                                    convertToTime(timestamp),
-                                    commentViewModel,
-                                    postViewModel,
-                                    notificationViewModel,
-                                    context,
-                                    comments,
-                                    true
-                                )
-                            } else {
-                                SelfPost(
-                                    post,
-                                    avatar,
-                                    "$first $last",
-                                    convertToTime(timestamp),
-                                    commentViewModel,
-                                    postViewModel,
-                                    notificationViewModel,
-                                    context,
-                                    comments,
-                                    false
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(10.dp))
                     }
+                    val post1 = Post(
+                        id.toString(), userIDPost.toString(), content.toString(),
+                        timestamp, imageUris, liked,report.toString()
+                    )
+                    val like = post1.liked.contains(Firebase.auth.currentUser!!.uid)
+                    if (userIds.map { it.uid }
+                            .contains(userIDPost) || userIDPost == Firebase.auth.currentUser!!.uid) {
+                        if (like) {
+                            SelfPost(
+                                post1,
+                                avatar,
+                                "$first $last",
+                                timestamp,
+                                commentViewModel,
+                                postViewModel,
+                                notificationViewModel,
+                                context,
+                                true
+                            )
+                        } else {
+                            SelfPost(
+                                post1,
+                                avatar,
+                                "$first $last",
+                                timestamp,
+                                commentViewModel,
+                                postViewModel,
+                                notificationViewModel,
+                                context,
+                                false
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                }
                 }
             }
         }

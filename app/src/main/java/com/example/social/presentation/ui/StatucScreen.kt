@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,11 +60,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Friend
-import com.example.social.presentation.navigation.Routes
 import com.example.social.presentation.viewmodel.FriendViewModel
 import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
@@ -142,16 +139,60 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
             verticalArrangement = Arrangement.Top, // Căn đều theo chiều dọc
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            FirstLine2(
-                context,
-                imageBitmapSelected,
-                imageUris,
-                text,
-                postViewModel,
-                friendModels.map { it.uid },
-                notificationViewModel,
-                notificationContents
-            ) // Đặt firstLine2 ở trên
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Tạo bài đăng", color = colorResource(R.color.pink),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 29.sp,
+                    modifier = Modifier.padding(start = 11.dp)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Button(onClick = {
+                    if (imageUris.isNotEmpty()) {
+                        postViewModel.updateToFirestore(imageUris, text, context) { postId ->
+                            if(postId!=null) {
+                                friendModels.map{it.uid}.forEach { id ->
+                                    notificationViewModel.updateNotificationToFireStore(
+                                        Firebase.auth.currentUser!!.uid,
+                                        postId, notificationContents[4], "notRead", id
+                                    )
+                                }
+                            }
+                        }
+                        Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
+                        imageUris.clear()
+                        text = ""
+                    }
+                    if (imageBitmapSelected.isNotEmpty()) {
+                        val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmapSelected)
+                        postViewModel.updateToFirestore(imgBitmapUris, text, context) { postId->
+                            if(postId!=null) {
+                                friendModels.map{it.uid}.forEach { id ->
+                                    notificationViewModel.updateNotificationToFireStore(
+                                        Firebase.auth.currentUser!!.uid,
+                                        postId, notificationContents[4], "notRead", id
+                                    )
+                                }
+                            }
+                        }
+                        Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
+                        imageBitmapSelected.clear()
+                        text = ""
+                    }
+                },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    ),
+                ){
+                    Image(
+                        painter = painterResource(R.drawable.email),
+                        contentDescription = "option Icon",
+                        modifier = Modifier
+                            .size(29.dp)
+                            .offset(y = (-5).dp)
+                    )
+                }
+            }
             HorizontalDivider(
                 thickness = 1.dp,
                 color = colorResource(R.color.pink)
@@ -172,7 +213,7 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
                 }
                 item{
                     TextFieldStatus(text, context){
-                        text=it
+                        text = it
                     }
                 }
                 item{
@@ -246,64 +287,6 @@ fun StatusScreen(profileViewModel: ProfileViewModel, postViewModel: PostViewMode
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun FirstLine2(
-    context: Context, imageBitmaps: MutableList<Bitmap?>, imageUris: MutableList<Uri>, text: String,
-    postViewModel: PostViewModel,friendId:List<String>,notificationViewModel: NotificationViewModel,notificationContents:Array<String>){
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Tạo bài đăng", color = colorResource(R.color.pink),
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 29.sp,
-            modifier = Modifier.padding(start = 11.dp)
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Button(onClick = {
-            if (imageUris.isNotEmpty()) {
-                postViewModel.updateToFirestore(imageUris, text, context) { postId ->
-                    if(postId!=null) {
-                        friendId.forEach { id ->
-                            notificationViewModel.updateNotificationToFireStore(
-                                Firebase.auth.currentUser!!.uid,
-                                postId, notificationContents[4], "notRead", id
-                            )
-                        }
-                    }
-                }
-                Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
-                imageUris.clear()
-            }
-            if (imageBitmaps.isNotEmpty()) {
-                val imgBitmapUris = postViewModel.convertBitmap(context, imageBitmaps)
-                postViewModel.updateToFirestore(imgBitmapUris, text, context) {postId->
-                    if(postId!=null) {
-                        friendId.forEach { id ->
-                            notificationViewModel.updateNotificationToFireStore(
-                                Firebase.auth.currentUser!!.uid,
-                                postId, notificationContents[4], "notRead", id
-                            )
-                        }
-                    }
-                }
-                Toast.makeText(context, "Bài đăng đã được tạo thành công!", Toast.LENGTH_SHORT).show()
-                imageBitmaps.clear()
-            }
-        },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.background
-            ),
-        ){
-            Image(
-                painter = painterResource(R.drawable.email),
-                contentDescription = "option Icon",
-                modifier = Modifier
-                    .size(29.dp)
-                    .offset(y = (-5).dp)
-            )
         }
     }
 }

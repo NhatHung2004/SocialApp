@@ -83,43 +83,34 @@ fun NarDrawer(navController: NavController, authViewModel: AuthViewModel,
             ModalDrawerSheet()
             {
                 //Trang chủ
-                Box(modifier = Modifier.fillMaxWidth().height(65.dp)
+                Box(modifier = Modifier.fillMaxWidth().height(100.dp)
                     .background(colorResource(R.color.pink)),
                     contentAlignment = Alignment.Center)
                 {
                     Text(text = "Trang chủ",color = Color.White
-                        ,fontSize = 30.sp,fontWeight = FontWeight.Bold,
+                        ,fontSize = 37.sp,fontWeight = FontWeight.Bold,
                         modifier = Modifier.wrapContentSize(Alignment.Center).clickable
-                            {
-                                coroutineScope.launch {drawerState.close()}
-                                navControllerNarDrawer.navigate(Routes.THONG_KE)
-                                {popUpTo(0)}
-                                onItemClick(1)
-                            }
-                        )
+                        {
+                            coroutineScope.launch {drawerState.close()}
+                            navControllerNarDrawer.navigate(Routes.THONG_KE)
+                            {popUpTo(0)}
+                            onItemClick(1)
+                        }
+                    )
                 }
                 Divider()
                 Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
-                //Quản lý
-                NavigationDrawerItem(
-                    label =
-                    {Text(text = "Quản lý", color = Color.Black,
-                        fontSize = 30.sp, fontWeight = FontWeight.Bold)},
-                    selected = false,
-                    icon = {Image(painter = painterResource(R.drawable.quanly),
-                        contentDescription = null)},
-                    onClick ={}
-                )
                 ////QL user
                 NavigationDrawerItem(
                     label =
                     {
                         Text(text = "Quản lý người dùng",
-                            color = Color.Black, fontSize = 20.sp)
+                            color = Color.Black, fontSize = 27.sp,
+                            fontWeight = FontWeight.Bold)
                     },
-                    selected = selectedItem == 2,
-                    icon = {},
-                    modifier = Modifier.padding(start = 50.dp),
+                    selected = false,
+                    icon = {Image(painter = painterResource(R.drawable.user),
+                        contentDescription = null)},
                     onClick =
                     {
                         coroutineScope.launch { drawerState.close() }
@@ -128,13 +119,14 @@ fun NarDrawer(navController: NavController, authViewModel: AuthViewModel,
                         onItemClick(2)
                     }
                 )
+                Spacer(modifier = Modifier.fillMaxWidth().height(70.dp))
                 ////QL bài đăng
                 NavigationDrawerItem(
                     label = { Text(text = "Quản lý bài đăng",
-                        color = Color.Black, fontSize = 20.sp) },
-                    selected = selectedItem == 3,
-                    icon = {},
-                    modifier = Modifier.padding(start = 50.dp),
+                        color = Color.Black,  fontSize = 27.sp, fontWeight = FontWeight.Bold) },
+                    selected = false,
+                    icon = {Image(painter = painterResource(R.drawable.arrow5),
+                        contentDescription = null)},
                     onClick =
                     {
                         coroutineScope.launch { drawerState.close() }
@@ -143,13 +135,14 @@ fun NarDrawer(navController: NavController, authViewModel: AuthViewModel,
                         onItemClick(3)
                     }
                 )
+                Spacer(modifier = Modifier.fillMaxWidth().height(70.dp))
                 ////QL mối quan hệ
                 NavigationDrawerItem(
                     label = { Text(text = "Quản lý mối quan hệ",
-                        color = Color.Black, fontSize = 20.sp) },
-                    selected = selectedItem == 4,
-                    icon = {},
-                    modifier = Modifier.padding(start = 50.dp),
+                        color = Color.Black, fontSize = 27.sp, fontWeight = FontWeight.Bold) },
+                    selected = false,
+                    icon = {Image(painter = painterResource(R.drawable.friends),
+                        contentDescription = null)},
                     onClick =
                     {
                         coroutineScope.launch { drawerState.close() }
@@ -158,36 +151,12 @@ fun NarDrawer(navController: NavController, authViewModel: AuthViewModel,
                         onItemClick(4)
                     }
                 )
-                Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
-                //Tài khoản
-                NavigationDrawerItem(
-                    label = { Text(text = "Tài khoản",
-                        color = Color.Black, fontSize = 30.sp, fontWeight = FontWeight.Bold) },
-                    selected = false,
-                    icon = { Image(painter = painterResource(R.drawable.user),
-                        contentDescription = null) },
-                    onClick ={}
-                )
-                ////Chỉnh sửa tài khoản
-                NavigationDrawerItem(
-                    label = { Text(text = "Chỉnh sửa",
-                        color = Color.Black, fontSize = 20.sp) },
-                    selected = selectedItem == 5,
-                    icon = {},
-                    modifier = Modifier.padding(start = 50.dp),
-                    onClick =
-                    {
-                        coroutineScope.launch { drawerState.close() }
-                        navControllerNarDrawer.navigate(Routes.CHINH_SUA)
-                        {popUpTo(0)}
-                        onItemClick(5)
-                    }
-                )
+                Spacer(modifier = Modifier.fillMaxWidth().height(70.dp))
                 ////Đăng xuất tài khoản
                 LogOut(navController)
             }
         }
-        )
+    )
     {
         Scaffold(
             topBar =
@@ -195,8 +164,9 @@ fun NarDrawer(navController: NavController, authViewModel: AuthViewModel,
                 val coroutineScope1= rememberCoroutineScope()
                 TopAppBar(
                     title = { Text(text = GetTitle(selectedItem),
-                        style = TextStyle(fontSize = 30.sp),
-                        color = colorResource(R.color.pink)
+                        style = TextStyle(fontSize = 27.sp),
+                        color = colorResource(R.color.pink),
+                        fontWeight = FontWeight.Bold
                     ) },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.White,
@@ -210,30 +180,21 @@ fun NarDrawer(navController: NavController, authViewModel: AuthViewModel,
                             Image(painterResource(R.drawable.menubar), contentDescription = null)
                         }
 
-                    },
-                    actions =
-                    {
-                        IconButton(
-                            onClick = { Toast.makeText(context, "", Toast.LENGTH_SHORT).show()})
-                        {
-                            Image(painterResource(R.drawable.user), contentDescription = null)
-                        }
                     }
                 )
             }
         ){
 
-           NavHost(navController = navControllerNarDrawer, startDestination = Routes.THONG_KE)
-           {
-               composable(Routes.THONG_KE){ ThongKe(navControllerNarDrawer,allUserViewModel) }
-               composable(Routes.QUAN_LI_USER){ QuanLyUser(navControllerNarDrawer, authViewModel,
+            NavHost(navController = navControllerNarDrawer, startDestination = Routes.THONG_KE)
+            {
+                composable(Routes.THONG_KE){ ThongKe(navControllerNarDrawer,allUserViewModel) }
+                composable(Routes.QUAN_LI_USER){ QuanLyUser(navControllerNarDrawer, authViewModel,
                     allUserViewModel, friendViewModel, postViewModel)}
-               composable(Routes.QUAN_LI_POST){ QuanLyBaiDang(navControllerNarDrawer,
-                   allUserViewModel,postViewModel )}
-               composable(Routes.QUAN_LI_MOI_QH){ QuanLyMQH(navControllerNarDrawer,
+                composable(Routes.QUAN_LI_POST){ QuanLyBaiDang(navControllerNarDrawer,
+                    postViewModel )}
+                composable(Routes.QUAN_LI_MOI_QH){ QuanLyMQH(navControllerNarDrawer,
                     allUserViewModel, friendViewModel)}
-//               composable(Routes.CHINH_SUA){ ChinhSua(navControllerNarDrawer, id)}
-           }
+            }
         }
     }
 }
@@ -245,11 +206,6 @@ fun GetTitle(stt: Int): String
         2 -> "Quản lí người dùng"
         3 -> "Quản lí bài viết"
         4 -> "Quản lí mối quan hệ"
-        5 -> "Chỉnh sửa"
         else -> "Đăng xuất"
     }
 }
-
-
-
-

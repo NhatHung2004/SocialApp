@@ -1,13 +1,14 @@
 package com.example.social.presentation.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -55,13 +56,15 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.social.R
 import com.example.social.data.model.Post
-import com.example.social.domain.utils.convertToTime
+import com.example.social.domain.utils.toPrettyTime
+import com.example.social.presentation.ui.admin.YesNoDialog
 import com.example.social.presentation.viewmodel.CommentViewModel
 import com.example.social.presentation.viewmodel.NotificationViewModel
 import com.example.social.presentation.viewmodel.PostViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
+@SuppressLint("SuspiciousIndentation")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PostForModerator(postViewModel: PostViewModel,commentViewModel: CommentViewModel,notificationViewModel: NotificationViewModel){
@@ -141,7 +144,7 @@ fun PostForModerator(postViewModel: PostViewModel,commentViewModel: CommentViewM
                                     post,
                                     avatar,
                                     "$first $last",
-                                    convertToTime(timestamp),
+                                    timestamp.toPrettyTime(),
                                     commentViewModel,
                                     postViewModel,
                                     notificationViewModel,
@@ -154,7 +157,7 @@ fun PostForModerator(postViewModel: PostViewModel,commentViewModel: CommentViewM
                                     post,
                                     avatar,
                                     "$first $last",
-                                    convertToTime(timestamp),
+                                    timestamp.toPrettyTime(),
                                     commentViewModel,
                                     postViewModel,
                                     notificationViewModel,
@@ -198,6 +201,7 @@ fun PostForModeratorDisplay(
     val showBottomSheet = remember { mutableStateOf(false) }
     var isToggled by remember { mutableStateOf(like) }
     val notificationContents =context.resources.getStringArray(R.array.notification_contents)
+    val showDialog= remember { mutableStateOf(false) }
 
     Column(modifier= Modifier.fillMaxSize()){
         Row(modifier= Modifier
@@ -222,8 +226,8 @@ fun PostForModeratorDisplay(
 
                     Spacer(Modifier.weight(1f))
                     Button(
-                        onClick = { postViewModel.deletePost(post.userID,post.id)
-                                    commentViewModel.deleteComment(post.id)
+                        onClick = {
+                                    showDialog.value=true
                                   },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colorResource(R.color.pink)
@@ -353,5 +357,16 @@ fun PostForModeratorDisplay(
             cmtPart(onDismiss = { showBottomSheet.value = false }, name, post.id,post.userID,imageAvatar,
                 commentViewModel, notificationViewModel)
         } // Gọi hàm `cmtPart` và ẩn khi hoàn tất
+    }
+    if(showDialog.value){
+        YesNoDialog(
+            showDialog = showDialog,
+            "Xóa bài viết",
+            "Bạn có muốn xóa không?",
+            onClickAction = ({
+                postViewModel.deletePost(post.userID,post.id)
+                commentViewModel.deleteComment(post.id)
+                Toast.makeText(context, "Xóa thành công bài viết của  $name", Toast.LENGTH_SHORT).show()
+            }))
     }
 }

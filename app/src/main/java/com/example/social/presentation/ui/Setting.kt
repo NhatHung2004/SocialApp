@@ -45,7 +45,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
 @Composable
-fun Setting(themeViewModel: ThemeViewModel,profileViewModel: ProfileViewModel,navController: NavController){
+fun Setting(themeViewModel: ThemeViewModel,profileViewModel: ProfileViewModel, navController: NavController){
 
     val context= LocalContext.current
 
@@ -66,7 +66,9 @@ fun Setting(themeViewModel: ThemeViewModel,profileViewModel: ProfileViewModel,na
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier =  Modifier.fillMaxWidth()) {
             Button(
-                onClick = {},
+                onClick = {
+                    navController.navigate(Routes.PROFILE_SCREEN)
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
