@@ -75,4 +75,9 @@ class UserRepo(private val firebaseAuth: FirebaseAuth, private val firestore: Fi
     fun updateUserMode(mode:String, uid: String){
         firestoreMethod.updateData("users","mode", mode, uid)
     }
+
+    fun updateHoTen(ho: String, ten: String ,uid: String){
+        firestoreMethod.updateData("users","firstname",ten, uid)
+        firestoreMethod.updateData("users", "lastname",ho, uid)
+    }
 }

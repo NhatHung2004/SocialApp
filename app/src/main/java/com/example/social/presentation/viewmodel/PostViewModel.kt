@@ -8,7 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.PostRepo
 import com.example.social.domain.utils.FirestoreMethod
 import com.example.social.domain.utils.ImageProcess
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +20,7 @@ class PostViewModel: ViewModel() {
     private val imageProcess = ImageProcess(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val postRepo = PostRepo(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     private val firestoreMethod = FirestoreMethod(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    private val firestore = FirebaseFirestore.getInstance()
 
     private val _posts = MutableStateFlow<Map<String, Any>?>(null)
     private val _postsFc = MutableStateFlow<Map<String, Any>?>(null)
@@ -59,16 +62,18 @@ class PostViewModel: ViewModel() {
         return imageProcess.convertBitmapListToUriList(context, imageBitmaps)
     }
 
-    fun updateToFirestore(uris: MutableList<Uri>, text: String, context: Context,onPostCreated: (String?) -> Unit) {
+    fun updateToFirestore(uris: MutableList<Uri>?, text: String, context: Context,onPostCreated: (String?) -> Unit) {
         viewModelScope.launch {
-            if (uris.isNotEmpty()) {
-                val imageUris = mutableListOf<String>()
-                for (uri in uris) {
-                    val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
-                    imageUris.add(imagePath)
+            if (uris != null) {
+                if (uris.isNotEmpty()) {
+                    val imageUris = mutableListOf<String>()
+                    for (uri in uris) {
+                        val imagePath = imageProcess.uploadImageToCloudinary(uri, context)
+                        imageUris.add(imagePath)
+                    }
+                    val postId=postRepo.updatePost( text, imageUris)
+                    onPostCreated(postId)
                 }
-                val postId=postRepo.updatePost( text, imageUris)
-                onPostCreated(postId)
             }
         }
     }
@@ -77,6 +82,17 @@ class PostViewModel: ViewModel() {
         viewModelScope.launch {
             postRepo.updateLiked(postID, uid, uidLike)
         }
+    }
+
+    fun getPost(userID: String){
+        firestore.collection("posts")
+            .whereEqualTo("userID",userID )
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    val notiMap = snapshot.documents.associate { it.id to it.data!! }
+                        _posts.value = notiMap
+                }
+            }
     }
 
     fun getAllPosts() {
@@ -96,6 +112,8 @@ class PostViewModel: ViewModel() {
     fun deletePost(uid: String,postID: String){
         viewModelScope.launch {
             postRepo.deletePost(uid,postID)
+            getAllPosts()
+            getPost(Firebase.auth.currentUser!!.uid)
         }
     }
 

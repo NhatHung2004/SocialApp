@@ -1,9 +1,8 @@
 package com.example.social.data.repository
 
-import android.net.Uri
 import android.util.Log
 import com.example.social.data.model.Friend
-import com.example.social.data.model.User
+import com.example.social.domain.utils.FirestoreMethod
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -13,6 +12,8 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class FriendRepo(private val firebaseAuth: FirebaseAuth, private val firestore: FirebaseFirestore) {
+    private val firestoreMethod = FirestoreMethod(firebaseAuth, firestore)
+
     fun createFriendDocument(child:String) {
         val docRef = firestore.collection(child).document(Firebase.auth.currentUser!!.uid)
         // tạo collection posts rỗng khi đăng nhập tài khoản, nếu có rồi thì không tạo nữa
@@ -93,5 +94,9 @@ class FriendRepo(private val firebaseAuth: FirebaseAuth, private val firestore: 
         } catch (e: Exception) {
             Log.d("DeleteDocument", "Document không tồn tại")
         }
+    }
+
+    suspend fun getAllFriendReqs(): List<Map<String, Any>>? {
+        return firestoreMethod.fetchAllInfoData("friendReqs")
     }
 }

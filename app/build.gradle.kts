@@ -66,6 +66,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.firebase:firebase-firestore-ktx:25.0.0")
+    implementation("org.ocpsoft.prettytime:prettytime:5.0.2.Final")
 
 
 
