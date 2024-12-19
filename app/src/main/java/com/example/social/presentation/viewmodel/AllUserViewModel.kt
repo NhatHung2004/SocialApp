@@ -15,11 +15,8 @@ class AllUserViewModel: ViewModel() {
     private val _allUsers = MutableStateFlow<List<Map<String, Any>>>(emptyList())
     val allUsers: StateFlow<List<Map<String, Any>>> get() = _allUsers
 
-    init{
-        getAllUsersInfo()
-    }
 
-    private fun getAllUsersInfo() {
+    fun getAllUsersInfo() {
         viewModelScope.launch {
             val users = userRepo.fetchAllUsers()
             if (users != null) {

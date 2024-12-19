@@ -3,6 +3,7 @@ package com.example.social.presentation.viewmodel
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.social.data.repository.PostRepo
@@ -101,6 +102,18 @@ class PostViewModel: ViewModel() {
         }
     }
 
+//    fun getAllPost() {
+//        viewModelScope.launch {
+//            firestore.collection("posts")
+//                .addSnapshotListener { snapshot, _ ->
+//                    if (snapshot != null) {
+//                        val commentsMap = snapshot.documents.associate { it.id to it.data!! }
+//                            _allPosts.value = listOf( commentsMap)
+//                    }
+//                }
+//        }
+//    }
+
     suspend fun getReport(uid:String,postID: String): String? {
         return postRepo.getReport(uid,postID)
     }
@@ -112,8 +125,6 @@ class PostViewModel: ViewModel() {
     fun deletePost(uid: String,postID: String){
         viewModelScope.launch {
             postRepo.deletePost(uid,postID)
-            getAllPosts()
-            getPost(Firebase.auth.currentUser!!.uid)
         }
     }
 
